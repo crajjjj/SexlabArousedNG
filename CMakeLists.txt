@@ -6,7 +6,7 @@ message("Using toolchain file ${CMAKE_TOOLCHAIN_FILE}.")
 ########################################################################################################################
 project(
         SexlabArousedNG
-        VERSION 0.0.0.1
+        VERSION 1.0.0
         DESCRIPTION "Next generation arousal for Sexlab"
         LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 23)

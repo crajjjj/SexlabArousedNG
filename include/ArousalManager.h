@@ -46,7 +46,8 @@ namespace SLA {
         int32_t GetHighestUnusedEffectId();
         std::string GetUnusedEffectId(int32_t id);
         ArousalEffectData& GetStaticArousalEffect(RE::Actor* who, int32_t effectIdx);
-        ArousalData& GetArousalData(RE::Actor* who);
+        ArousalData* GetArousalData(RE::Actor* who);
+        ArousalData* TryGetArousalData(RE::Actor* who);
 
         ArousalManager() = default;
         mutable std::mutex _lock;
@@ -57,6 +58,7 @@ namespace SLA {
         ArousalData* lastData = nullptr;
 
         std::array<std::atomic_flag, 3> locks;
+        std::atomic_flag cleanupLock = ATOMIC_FLAG_INIT;
     };
 
 #pragma warning(pop)

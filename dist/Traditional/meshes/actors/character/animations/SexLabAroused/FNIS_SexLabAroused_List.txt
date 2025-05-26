@@ -1,0 +1,71 @@
+' Format:
+'			<type> [-<option,option,...>] <AnimEvent> <AnimFile> [<AnimObject> ...]		(FNIS Animation)
+'			AnimVar <AnimVar> [ BOOL | INT32 | REAL ] <numeric_value>					(Behavior Variable)
+'
+' <type>:
+'			b	 	basic: simple idle animation with one animation file
+'			o		AnimObject: basic animation with one or more AnimObjects
+'			s		sequenced animation (SA): first of at least 2 animation played as sequence 
+'			so		sequenced optimized: SA with AnimObjects and optimized Equip/UnEquip 
+'			fu		furniture animation: first of at least 3 animations played on a furniture object
+'			fuo		furniture animation optimized: fu with AnimObjects and optimized Equip/UnEquip
+'			+		second to last animation of a s/so/fu/fuo definition 
+'			ofa		offset arm animation: animations modifying arm position while other animations play  
+'
+' <option>: 
+'			a		acyclic animation: 1-time only (default: cyclic)
+'			o		one or more AnimObjects
+'			Tn		transition next: character keeps position after -a animation (no IdleForceDefaultState)
+'			h		headtracking ON (default OFF)
+'			Bn.m	blendtime n.m sec
+'			k		"known" animation file (part of vanilla or different mod) -> excl. from consistance check
+'			bsa	animation file part of bsa file -> excluded from consistence check 
+'			st	sticky AO -> AO will not be unequipped at the end of animation (last animation only)
+'
+' <AnimEvent>		Animation Event, used for Idle Definition (CK) or SendAnimationEvent() (script)
+' <AnimFile>		Animation File for this AnimEvent; path relative to "animations/<mod name>"
+' <AnimObject>		any Animation Object defined in CK (can also be standard or from different mod)
+' <AnimVar>			e.g. used for GetAnimationVariableInt() (Script) or GetGraphVariableInt condition (CK)
+'
+' For details please refer to "FNIS 4_0 for Modders Documentation"
+' http://skyrim.nexusmods.com/mods/11811/?tab=2&navtag=%2Fajax%2Fmodfiles%2F%3Fid%3D11811&pUp=1	
+'
+'Examples:
+'	b -a,h,Tn,B1.2 MyAnimEvent1 MyAnimFile1.hkx
+'	o -h MyAnimEvent2 AnimationWithAO.hkx MyAnimObject01 MyAnimObject02
+'	s -a SA1entry SAanim1.hkx  
+'	+ -h,o,k SA1loop ..\OtherMod\OtherModAnim.hkx MYAnimObject03
+'	+ -a SA1exit SAanim3.hkx
+'	fu -a FURNITURE1_Enter FURNITURE1_Enter.hkx 
+'	+ FURNITURE1_Loop FURNITURE1_Loop.hkx
+'	+ -a FURNITURE1_Exit FURNITURE1_Exit.hkx
+'
+' AnimEvents and Animation File names have to be unique through all mods (even for files in different folders)
+' so it's a good idea to use mod specific abbreviations for all your names
+
+' sexy idle Animation by red3113@3dm
+' http://www.loverslab.com/topic/24339-sexy-idle-animation-by-red31133dm/
+
+' Leito Aroused Animation 1
+' http://www.loverslab.com/topic/19513-cbbeunp-nude-female-cover-animations-updated-8-10-13/
+b -a,h Aroused_Idle1 leito_aroused_f_1.hkx
+
+' Leito Aroused Animation 2
+' http://www.loverslab.com/topic/19513-cbbeunp-nude-female-cover-animations-updated-8-10-13/
+b -a,h Aroused_Idle2 leito_aroused_f_2.hkx
+
+
+' Leito Male Aroused Animation 1
+' http://www.loverslab.com/topic/19513-cbbeunp-nude-female-cover-animations-updated-8-10-13/
+b -a,h Aroused_Male_Idle1 leito_aroused_m_1.hkx
+
+' Leito Male Aroused Animation 2
+' http://www.loverslab.com/topic/19513-cbbeunp-nude-female-cover-animations-updated-8-10-13/
+b -a,h Aroused_Male_Idle2 leito_aroused_m_2.hkx
+
+
+' Leito Tease Animation
+' http://www.loverslab.com/topic/19513-cbbeunp-nude-female-cover-animations-updated-8-10-13/
+b -a,h Aroused_Tease leito_tease_f_1.hkx
+
+

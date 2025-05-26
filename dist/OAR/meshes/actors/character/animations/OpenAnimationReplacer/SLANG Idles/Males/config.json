@@ -1,0 +1,51 @@
+{
+    "name": "Male aroused idles",
+    "priority": 99001,
+    "interruptible": true,
+    "conditions": [
+        {
+            "condition": "CompareValues",
+            "requiredVersion": "1.0.0.0",
+            "Value A": {
+                "form": {
+                    "pluginName": "SexLabAroused.esm",
+                    "formID": "08CD5A"
+                }
+            },
+            "Comparison": "==",
+            "Value B": {
+                "value": 1.0
+            }
+        },
+        {
+            "condition": "IsFemale",
+            "requiredVersion": "1.0.0.0",
+            "negated": true
+        },
+        {
+            "condition": "IsChild",
+            "requiredVersion": "1.0.0.0",
+            "negated": true
+        },
+        {
+            "condition": "IsInFaction",
+            "requiredVersion": "1.0.0.0",
+            "Faction": {
+                "pluginName": "SexLabAroused.esm",
+                "formID": "3FC36"
+            }
+        },
+        {
+            "condition": "FactionRank",
+            "requiredVersion": "1.0.0.0",
+            "Faction": {
+                "pluginName": "SexLabAroused.esm",
+                "formID": "3FC36"
+            },
+            "Comparison": ">",
+            "Numeric value": {
+                "value": 50.0
+            }
+        }
+    ]
+}
