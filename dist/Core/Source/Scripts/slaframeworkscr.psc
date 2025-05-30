@@ -20,11 +20,12 @@ Faction Property slaFrustration Auto
 Faction Property slaExposureRate Auto
 Faction Property slaTrauma Auto
 
-GlobalVariable Property sla_NextMaintenance Auto  
+
+GlobalVariable Property sla_NextMaintenance Auto
 
 Int Property slaArousalCap = 100 AutoReadOnly
 
-SexLabFramework Property sexLab auto
+SexLabFramework Property sexLab auto ;deprecated
 
 Actor Property playerRef Auto
 
@@ -84,7 +85,8 @@ Int Function GetGenderPreference(Actor who, Bool forConfig = False)
 		
 		;;; Doombell algorithm - I think this overprivileged bisexuality, so instead of 35 | 30 | 35, I have 40 | 20 | 40
         ; TODO - toggle for bisexuality so it can be disabled altogether for PC or NPCs seperately.
-		Int ratio = SexLab.Stats.GetSexuality(who)
+
+		Int ratio = slaMain.sexlabPlugin.getSexuality(who)
 		if ratio > 60
 			genderPreference =  1 - who.GetLeveledActorBase().GetSex()
 		ElseIf ratio < 30
@@ -212,7 +214,8 @@ Float Function GetActorDaysSinceLastOrgasm(Actor who)
 	
 	If (lastOrgasmTime < -1.0)
         ; Orgasm not yet; set try SexLab
-		Return SexLab.Stats.DaysSinceLastSex(who)
+		
+		Return slaMain.sexlabPlugin.daysSinceLastSex(who)
 	EndIf
 	
 	Return Utility.GetCurrentGameTime() - lastOrgasmTime
@@ -229,7 +232,7 @@ Float Function GetActorDaysSinceLastRape(Actor who)
 	
 	If (lastRapeTime < -1.0)
         ; Rape not yet; set try SexLab
-		Return SexLab.Stats.DaysSinceLastSex(who)
+		Return slaMain.sexlabPlugin.daysSinceLastSex(who)
 	EndIf
 	
 	Return Utility.GetCurrentGameTime() - lastRapeTime
@@ -302,10 +305,10 @@ EndFunction
 
 
 Function UpdateSOSPosition(Actor who, Int actorArousal)
-
+	Faction animFaction = slaMain.sexlabPlugin.getSLAnimatingFaction()
 	If !who || !slaConfig.IsUseSOS
 		Return
-	ElseIf who.IsInFaction(SexLab.AnimatingFaction)
+	ElseIf animFaction && who.IsInFaction(animFaction)
 		Return
 	EndIf
 	

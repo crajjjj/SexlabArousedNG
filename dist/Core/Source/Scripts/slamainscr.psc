@@ -1,7 +1,7 @@
 Scriptname slaMainScr extends Quest  
 
 Int Function GetCurrentVersion()
-    Return 20201103
+    return slaConfig.GetVersion() 
 EndFunction
 
 ; FOLDSTART - Properties
@@ -24,13 +24,14 @@ GlobalVariable Property sla_UseLineOfSight Auto
 Formlist Property sla_NakedArmorList Auto
 Float Property updateFrequency = 30.00 Auto Hidden
 Int[] Property actorTypes Auto Hidden ; [0] = 43/kNPC [1] = 44/kLeveledCharacter [2] = 62/kCharacter
-SexLabFramework Property sexLab Auto ; SexLab
+SexLabFramework Property sexLab Auto ; deprecated
 Actor Property playerRef Auto
 GlobalVariable Property gameDaysPassed Auto
 Quest Property slaScanAllNpcs Auto
 
 sla_DefaultPlugin Property defaultPlugin Auto
-
+sla_sexlabplugin Property sexlabPlugin Auto
+sla_OStimPlugin Property ostimPlugin Auto
 ; FOLDEND - Properties
 
 
@@ -82,7 +83,7 @@ State cleaning
     
         GotoState("")
         
-        slax.Info("SLAX - cleaning state - OnUpdate")
+        slax.Info("SLOANG - cleaning state - OnUpdate")
         CleanActorStorage()
         RegisterForSingleUpdate(updateFrequency)
         
@@ -95,10 +96,10 @@ State initializing
 
     Event OnUpdate()
         
-        slax.Info("SLAX - initialize state - OnUpdate")
+        slax.Info("SLOANG - initialize state - OnUpdate")
 
         If modVersion < GetCurrentVersion()
-            slax.Info("SLAX - Updating to version " + GetCurrentVersion() + " from version " + modVersion)
+            slax.Info("SLOANG - Updating to version " + GetCurrentVersion() + " from version " + modVersion)
     
             slaConfig.IsUseSOS = False
             slaConfig.slaPuppetActor = playerRef
@@ -142,7 +143,7 @@ State initializing
         
         nakedArmorWord = Keyword.GetKeyword("EroticArmor")
         
-        slax.Info("SLAX - Initialize state - set up key handling")
+        slax.Info("SLOANG - Initialize state - set up key handling")
         UnregisterForAllKeys()
         UpdateKeyRegistery()
 
@@ -150,14 +151,14 @@ State initializing
 
 
         
-        slax.Info("SLAX - return to empty state")
+        slax.Info("SLOANG - return to empty state")
         GotoState("")
         RegisterForSingleUpdate(updateFrequency) ;Start scanning in two minutes
         bWasInitialized = True
 
-        If(slaConfig.wantsPurging && (GameDaysPassed.getValue() >= sla_NextMaintenance.getValue()))
+        if (GameDaysPassed.getValue() >= sla_NextMaintenance.getValue())
             StartCleaning()
-        EndIf
+        endif
 		
 		if pluginCount == 0
 		    plugins = new sla_PluginBase[8]
@@ -347,7 +348,7 @@ function SetDynamicArousalEffect(Form whoF, string effectId, float initialValue,
     if who == none
         return
     endIf
-    slax.Info("SLAX - SetDynamicArousalEffect(" + who.GetLeveledActorBase().GetName() + ", " + effectId + ", " + initialValue + ", " + functionId + ", "+ param+ "," + limit + ")")
+    slax.Info("SLOANG - SetDynamicArousalEffect(" + who.GetLeveledActorBase().GetName() + ", " + effectId + ", " + initialValue + ", " + functionId + ", "+ param+ "," + limit + ")")
     slaInternalModules.SetDynamicArousalEffect(who, effectId, initialValue, functionId, param, limit)
 endFunction
 
@@ -356,37 +357,37 @@ function ModDynamicArousalEffect(Form whoF, string effectId, float modifier, flo
     if who == none
         return
     endIf
-    slax.Info("SLAX - ModDynamicArousalEffect(" + who.GetLeveledActorBase().GetName() + ", " + effectId + ", " + modifier + "," + limit + ")")
+    slax.Info("SLOANG - ModDynamicArousalEffect(" + who.GetLeveledActorBase().GetName() + ", " + effectId + ", " + modifier + "," + limit + ")")
     slaInternalModules.ModDynamicArousalEffect(who, effectId, modifier, limit)
 endFunction
 
 float function ModEffectValue(Actor who, int effectIdx, float diff, float limit) 
-    slax.Info("SLAX - ModEffectValue(" + who.GetLeveledActorBase().GetName() + ", " + GetEffectTitle(effectIdx) + ", " + diff + ", " + limit + ")")
+    slax.Info("SLOANG - ModEffectValue(" + who.GetLeveledActorBase().GetName() + ", " + GetEffectTitle(effectIdx) + ", " + diff + ", " + limit + ")")
     return slaInternalModules.ModStaticArousalValue(who, effectIdx, diff, limit)
 endFunction
 
 function SetEffectValue(Actor who, int effectIdx, float value) 
-    slax.Info("SLAX - SetEffectValue(" + who.GetLeveledActorBase().GetName() + ", " + GetEffectTitle(effectIdx) + ", " + value + ")")
+    slax.Info("SLOANG - SetEffectValue(" + who.GetLeveledActorBase().GetName() + ", " + GetEffectTitle(effectIdx) + ", " + value + ")")
     slaInternalModules.SetStaticArousalValue(who, effectIdx, value)
 endFunction
 
 function SetTimedEffectFunction(Actor who, int effectIdx, int functionId, float param, float limit, int auxilliary) 
-    slax.Info("SLAX - SetTimedEffect(" + who.GetLeveledActorBase().GetName() + ", " + GetEffectTitle(effectIdx) + ", " + functionId + ", " + param + ")")
+    slax.Info("SLOANG - SetTimedEffect(" + who.GetLeveledActorBase().GetName() + ", " + GetEffectTitle(effectIdx) + ", " + functionId + ", " + param + ")")
     slaInternalModules.SetStaticArousalEffect(who, effectIdx, functionId, param, limit, auxilliary)
 endFunction
 
 bool function GroupEffects(Actor who, int effIdx1, int effIdx2)
-    slax.Info("SLAX - GroupEffects(" + who.GetLeveledActorBase().GetName() + ", " + GetEffectTitle(effIdx1) + ", " + GetEffectTitle(effIdx2) + ")")
+    slax.Info("SLOANG - GroupEffects(" + who.GetLeveledActorBase().GetName() + ", " + GetEffectTitle(effIdx1) + ", " + GetEffectTitle(effIdx2) + ")")
     return slaInternalModules.GroupEffects(who, effIdx1, effIdx2)
 endFunction
 
 bool function RemoveEffectGroup(Actor who, int effIdx)
-    slax.Info("SLAX - RemoveEffectGroup(" + who.GetLeveledActorBase().GetName() + ", " + GetEffectTitle(effIdx) + ")")
+    slax.Info("SLOANG - RemoveEffectGroup(" + who.GetLeveledActorBase().GetName() + ", " + GetEffectTitle(effIdx) + ")")
     return slaInternalModules.RemoveEffectGroup(who, effIdx)
 endFunction
 
 function UpdateSingleActorArousal(Actor who) 
-    slax.Info("SLAX - UpdateArousal(" + who.GetLeveledActorBase().GetName() + ")")
+    slax.Info("SLOANG - UpdateArousal(" + who.GetLeveledActorBase().GetName() + ")")
     slaInternalModules.UpdateSingleActorArousal(who, GameDaysPassed.GetValue())
 
     int arousal = slaUtil.GetActorArousal(who)
@@ -472,7 +473,7 @@ Event OnInit()
 EndEvent
 
 Function SetCleaningTime()
-    Float nextTime = GameDaysPassed.GetValue() + 10.0 
+    Float nextTime = GameDaysPassed.GetValue() + 5.0 
     sla_NextMaintenance.SetValue(nextTime)
 EndFunction
 
@@ -494,7 +495,7 @@ Function Maintenance()
     lastActorScanTime = 0
     bUseLOS = GetUseLOS() As Bool
     
-    slax.Info("SLAX - trigger maintenance OnUpdate in 10.0 seconds")
+    slax.Info("SLOANG - trigger maintenance OnUpdate in 10.0 seconds")
     
     RegisterForSingleUpdate(10.0)
 
@@ -502,11 +503,9 @@ EndFunction
 
 
 Function StartCleaning()
-
     UnregisterForUpdate()
     GotoState("cleaning")
     RegisterForSingleUpdate(10.0)
-    
 EndFunction
 
 
@@ -514,26 +513,25 @@ EndFunction
 Int Function GetAllActors(Int lockID)
     slax.EnableDebugSpam(True)
     slax.DebugSpam_SetInfo()
-    slax.Info("SLAX - GetAllActors(" + lockID + ")")
+    slax.Info("SLOANG - GetAllActors(" + lockID + ")")
     
     ; Fails if ANY lock already taken
     If(!slaInternalModules.TryLock(lockID))
-        slax.Info("SLAX - GetAllActors(" + lockID + ") - LOCK NOT TAKEN")
+        slax.Info("SLOANG - GetAllActors(" + lockID + ") - LOCK NOT TAKEN")
         ;Debug.Trace("Was locked, returning lock failed indicator")
         Return -1 ; Lock not taken
-        
     EndIf
     
     ; TODO: can add feature here to never process creatures for arousal ... some might find it useful (use slaScanAllNpcs)
     slaScanAllScript scanner = slaScanAll As slaScanAllScript
     Float now = Utility.GetCurrentRealTime()    ; In seconds
     
-    slax.Info("SLAX - GetAllActors(" + lockID + ") - start scan at " + now)
+    slax.Info("SLOANG - GetAllActors(" + lockID + ") - start scan at " + now)
     
     If now - lastActorScanTime > 10.0           ; Don't rescan actors if not enough time passed
     
         _Internal_actorCount = scanner.GetArousedActors()
-        slax.Info("SLAX - GetAllActors - scanned " + _Internal_actorCount + " local actors")
+        slax.Info("SLOANG - GetAllActors - scanned " + _Internal_actorCount + " local actors")
 
         lastActorScanTime = now
         
@@ -546,8 +544,8 @@ Int Function GetAllActors(Int lockID)
     slaInternalModules.Unlock(lockID)
 
     Float final = Utility.GetCurrentRealTime()
-    slax.Info("SLAX - GetAllActors(" + lockID + ") - end scan at " + now + " = " + (final - now) + " seconds")
-    slax.Info("SLAX - got " + theActors.Length + " actors")
+    slax.Info("SLOANG - GetAllActors(" + lockID + ") - end scan at " + now + " = " + (final - now) + " seconds")
+    slax.Info("SLOANG - got " + theActors.Length + " actors")
     
     Return theActors.Length
 
@@ -805,7 +803,7 @@ EndFunction
 
 Function UpdateKeyRegistery() ; Wish I could fix the spelling of this.
 
-    slax.Info("SLAX - UpdateKeyRegistry - key " + slaConfig.NotificationKey)
+    slax.Info("SLOANG - UpdateKeyRegistry - key " + slaConfig.NotificationKey)
     RegisterForKey(slaConfig.NotificationKey)
     
 EndFunction
@@ -816,7 +814,7 @@ Function SetVersion(Int  newVersion)
     If modVersion < newVersion
         modVersion = newVersion
     ElseIf (modVersion > newVersion)
-        Debug.Notification("SexLab Aroused error : downgrading to version " + newVersion + " is not supported")
+        Debug.Notification("SLO Aroused NG error : downgrading to version " + newVersion + " is not supported")
     EndIf
     
 EndFunction
@@ -836,10 +834,10 @@ EndFunction
 
 Event OnKeyDown(Int keyCode)    
 
-    slax.Info("SLAX - Key DOWN - key code " + keyCode + " expecting " + slaConfig.NotificationKey)
+    slax.Info("SLOANG - Key DOWN - key code " + keyCode + " expecting " + slaConfig.NotificationKey)
     If !Utility.IsInMenuMode() && slaConfig.NotificationKey == keyCode
 
-        slax.Info("SLAX - performing key action")
+        slax.Info("SLOANG - performing key action")
         Debug.Notification(playerRef.GetLeveledActorBase().GetName() + " arousal level " + slaUtil.GetActorArousal(playerRef))
         
         If crosshairRef
@@ -865,25 +863,15 @@ EndEvent
 
 
 Function StartPCMasturbation()
+ slax.Info("SLOANG - StartPCMasturbation")
+ if sexlabplugin.isEnabled
+    sexlabplugin.StartPCMasturbation()
+ elseif ostimPlugin.isEnabled
+    ostimPlugin.StartPCMasturbation()
+ else
+    Debug.Notification("SLOANG (StartPCMasturbation) - Sexlab or ostim plugins are not enabled")
+ endif
 
-    slax.Info("SLAX - StartPCMasturbation")
-    ; TODO - hook into SLD masturbation if present
-    
-    sslBaseAnimation[] animations
-    Actor[] sexActors = new Actor[1]
-    sexActors[0] = playerRef
-            
-    If 0 == playerRef.GetLeveledActorBase().GetSex()
-        animations = SexLab.GetAnimationsByTag(1, "Masturbation", "M")
-    Else
-        animations = SexLab.GetAnimationsByTag(1, "Masturbation", "F")
-    EndIf
-            
-    Int id = SexLab.StartSex(sexActors, animations)
-    If id < 0
-        Debug.Notification("SexLab animation failed to start [" + id + "]")
-    EndIf
-    
 EndFunction
 
 
@@ -927,8 +915,13 @@ Function CleanActorStorage()
     Debug.Notification("SLAX cleaning actor storage")
     
     setCleaningTime()
-        
-    int removedCount = slaInternalModules.CleanUpActors(gameDaysPassed.GetValue() - 3.0)
+    float days
+    if slaConfig.wantsPurging
+        days = 5.0
+    else
+        days = 10.0
+    endif
+    int removedCount = slaInternalModules.CleanUpActors(gameDaysPassed.GetValue() - days)
 
     Debug.Trace("Removed " + removedCount + " unused settings.  Finished at " + Utility.GetCurrentRealTime());
     Debug.Notification("Actor cleaning complete removed: " + removedCount)
@@ -966,3 +959,20 @@ Function RegisterForModEvents()
     RegisterForModEvent("slaUpdateExposure", "ModifyExposure")
     
 EndFunction
+
+Actor [] function getLoadedActors(int lockNum)
+    Actor [] actors = GetNearbyActors()
+   ; slax.Info("SLAX - getLoadedActors(" + lockNum + ")")
+    If actors.Length > 0
+       ; slax.Info("SLAX - getLoadedActors: GetNearbyActors: " + actors.Length + " actors")
+       ; slax.Info("SLAX - getLoadedActors: the actors: " + theActors.Length + " actors")
+        return actors
+    EndIf
+    ;slax.Info("SLAX - getLoadedActors: GetNearbyActors(" + lockNum + ") - returned None")
+    return new Actor[1]
+endFunction
+
+bool function UnlockScan(int lockNum)
+    ;compatibility method
+	return true
+endFunction

@@ -27,7 +27,7 @@ Event OnUpdate()
 		return
 	endif
 	ResetQuests()
-	;Debug.notification("SexLab Aroused upgraded to version " + getVersion())
+	;Debug.notification("SLO Aroused NG upgraded to version " + getVersion())
 
 endEvent
 
@@ -51,7 +51,7 @@ function ResetQuests()
 ;	slaConfig.Reset()
 	slaInternal.Reset()
 	slaFramework.Reset()
-	debug.notification("Sexlab Aroused is ready to use")
+	debug.notification("Aroused NG is ready to use")
 	
 endFunction
 

@@ -159,10 +159,19 @@ Armor[] emptyArmorArray
 ; FOLDEND - Quasi constants
 
 
-Int Function GetVersion()
-	return 29
+Int Function GetVersion() 
+    Return       30000000
+	;	0.00.00000
+    ; 1.0.0   -> 10000000
+    ; 1.1.0   -> 10100000
+    ; 1.1.1  ->  10100001
+    ; 1.61  ->   16100000
+    ; 10.61.20 ->10610020
 EndFunction
 
+String Function GetVersionString() 
+    Return "3.0.0"
+EndFunction
 
 Event OnVersionUpdate(int newVersion)
 
@@ -187,7 +196,7 @@ EndEvent
 
 Event OnGameReload()
 
-    slax.Info("SLAX - OnGameReload")
+    slax.Info("SLOANG - OnGameReload")
     
     ResetConstants()
 
@@ -298,7 +307,7 @@ EndEvent
 
 Event OnConfigClose()
 
-    slax.Info("SLAX - OnConfigClose - update spells and key registry")
+    slax.Info("SLOANG - OnConfigClose - update spells and key registry")
     
 	slaMain.UpdateDesireSpell()
 	slaMain.UpdateKeyRegistery()
@@ -332,7 +341,7 @@ Event OnPageReset(String page)
         
 		SetCursorFillMode(TOP_TO_BOTTOM)
 
-		AddTextOption("$SLA_Version" , "" + GetVersion() + "(" + slaUtil.GetVersion() + ")", OPTION_FLAG_DISABLED)
+		AddTextOption("$SLA_Version" , "" + GetVersionString() + "(" + slaUtil.GetVersion() + ")", OPTION_FLAG_DISABLED)
         
 		AddHeaderOption("$SLA_General")
         
@@ -430,7 +439,7 @@ function AddOptionHelper(sla_PluginBase plugin, int option)
     string optionType = StorageUtil.GetStringValue(slaMain, prefix + ".Type")
     string format = StorageUtil.GetStringValue(slaMain, prefix + ".Format", "{0}")
     int oid
-    ; Debug.Trace("SLAX - Option Type = " + optionType, 2)
+    ; Debug.Trace("SLOANG - Option Type = " + optionType, 2)
     if optionType == "toggle"
         oid = AddToggleOption(title, plugin.GetOptionValue(option) != 0.0)
     else

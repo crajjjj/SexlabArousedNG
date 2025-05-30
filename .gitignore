@@ -543,3 +543,4 @@ xmake-requires.lock
 dist/Core/skyrimse.ppj
 dist/Core/SkyrimSE.code-workspace
 /dist/Core/.vscode
+.vscode/settings.json

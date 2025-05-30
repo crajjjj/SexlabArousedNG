@@ -109,7 +109,7 @@ function OnUpdateOption(int optionId, float value)
 endFunction
 
 function OnOrgasm(Actor who, float enjoyment)
-	slax.Info("SLAX - OnOrgasm(" + who + ", "+ enjoyment + ")")
+	slax.Info("SLOANG - OnOrgasm(" + who + ", "+ enjoyment + ")")
 	StorageUtil.SetFloatValue(who, "SLAroused.LastOrgasmDate", Utility.GetCurrentGameTime()) ;Added by Bane for Radiant Prostitution Orgasm Detection in V0.1.2 28/06/2023
 	SetArousalEffectValue(who, timedEff, 0.0)
 	float satisfaction = -orgasmBase - enjoyment * orgasmRate

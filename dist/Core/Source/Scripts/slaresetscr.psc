@@ -5,7 +5,7 @@ Int Property Dummy  Auto
 
 Event OnEffectStart(Actor akTarget, Actor akCaster)
 
-	Debug.Notification("SLAX - attempting reset - please wait...")
+	Debug.Notification("SLOANG - attempting reset - please wait...")
 
 	Spell slaCloakSpell = Game.GetFormFromFile(0x0204DE5E, "SexLabAroused.esm") As Spell
 	Spell slaDesireSpell = Game.GetFormFromFile(0x02038059, "SexLabAroused.esm") As Spell
@@ -18,7 +18,7 @@ Event OnEffectStart(Actor akTarget, Actor akCaster)
 	
 	Utility.Wait(15.0)
 	
-	Debug.Notification("SLAX - resetting quests")
+	Debug.Notification("SLOANG - resetting quests")
 	
 	slaConfigScr slaConfig = Quest.GetQuest("sla_Config") As slaConfigScr
 	slaMainScr slaMain = Quest.GetQuest("sla_Main") As slaMainScr
@@ -41,6 +41,6 @@ Event OnEffectStart(Actor akTarget, Actor akCaster)
 
    	Utility.Wait(5.0)
 
-	Debug.Notification("SLAX - reset complete")
+	Debug.Notification("SLOANG - reset complete")
     
 EndEvent

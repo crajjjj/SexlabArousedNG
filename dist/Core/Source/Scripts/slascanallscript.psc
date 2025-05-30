@@ -42,15 +42,14 @@ Int Function GetArousedActors()
     
     Int ii = 0
     While ii < 25
-        
-        Actor aroused = arousedAliases[ii].GetActorRef()
-        If aroused
-            arousedActors[actorCount] = aroused
-            actorCount += 1
-        EndIf
-        
+        if arousedAliases[ii]
+		Actor aroused = arousedAliases[ii].GetActorRef()
+       		If aroused
+           		arousedActors[actorCount] = aroused
+           		actorCount += 1
+        	EndIf
+		endif
         ii += 1
-        
     EndWhile
 	
 	Stop()
