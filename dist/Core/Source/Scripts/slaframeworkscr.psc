@@ -86,15 +86,18 @@ Int Function GetGenderPreference(Actor who, Bool forConfig = False)
 		;;; Doombell algorithm - I think this overprivileged bisexuality, so instead of 35 | 30 | 35, I have 40 | 20 | 40
         ; TODO - toggle for bisexuality so it can be disabled altogether for PC or NPCs seperately.
 
-		Int ratio = slaMain.sexlabPlugin.getSexuality(who)
-		if ratio > 60
-			genderPreference =  1 - who.GetLeveledActorBase().GetSex()
-		ElseIf ratio < 30
-			genderPreference =  who.GetLeveledActorBase().GetSex()
-		Else
-			genderPreference =  2
-		EndIf
-	
+		if !slaMain.sexlabPlugin.IsInterfaceActive()
+			genderPreference = 2
+		else
+			Int ratio = slaMain.sexlabPlugin.getSexuality(who)
+			if ratio > 60
+				genderPreference =  1 - who.GetLeveledActorBase().GetSex()
+			ElseIf ratio < 30
+				genderPreference =  who.GetLeveledActorBase().GetSex()
+			Else
+				genderPreference =  2
+			EndIf
+		endif
 	EndIf
 	
 	Return genderPreference

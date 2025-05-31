@@ -328,8 +328,9 @@ Event OnPageReset(String page)
     pageName = page
 	; Load custom logo in DDS format
 	If page == "" && !statusNotSplash
-    
-        LoadCustomContent("sexlabaroused.dds",125 ,35.5)
+       
+        Int xOffset = 376 - (400 / 2)
+		LoadCustomContent("sexlabaroused.dds", xOffset, 0)
 		Return
         
 	Else
@@ -366,7 +367,10 @@ Event OnPageReset(String page)
 
 		AddHeaderOption("$SLA_Arousal")
         
-        MBonUsesSLGenderOID = AddToggleOption("$SLA_MBonUsesSLGender", MBonUsesSLGender)
+        if(slaMain.sexlabplugin.IsInterfaceActive())
+            MBonUsesSLGenderOID = AddToggleOption("$SLA_MBonUsesSLGender", MBonUsesSLGender)
+        endif
+        
         cellScanFreqOID = AddSliderOption("$SLA_CellScanFreq", cellScanFreq, "{0}")
         smallUpdateOID = AddSliderOption("$SLA_SmallUpdateCount", smallUpdatesPerFull, "{0}")
         
@@ -524,10 +528,11 @@ Function DisplayActorStatus(Actor who, bool editable = false)
         int oid = AddTextOption(name, value)
         StorageUtil.SetStringValue(self, "SLAroused.MCM.OID." + oid, description)
 	endWhile
-		
-	Int genderPreference = slaUtil.GetGenderPreference(who)
-	AddTextOption("$SLA_GenderPreference", GenderPreferenceList[genderPreference], OPTION_FLAG_DISABLED)
-    
+	
+    if(slaMain.sexlabplugin.IsInterfaceActive())
+        Int genderPreference = slaUtil.GetGenderPreference(who)
+	    AddTextOption("$SLA_GenderPreference", GenderPreferenceList[genderPreference], OPTION_FLAG_DISABLED)
+    endif
 EndFunction
 
 
