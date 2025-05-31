@@ -79,8 +79,6 @@ function OnUpdateOption(int optionId, float value)
     endif
 endFunction
 
-; ========== ADAPTER ========================
-
 int function registerOstimEventHandlers()
     if (Game.GetModByName("Ostim.esp") == 255)
         return 0

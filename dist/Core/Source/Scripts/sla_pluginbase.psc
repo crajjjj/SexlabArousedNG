@@ -16,17 +16,28 @@ bool function IsInterfaceActive()
 endFunction
 
 event OnInit()
-	RegisterForModEvent("sla_Int_PlayerLoadsGame", "On_sla_Int_PlayerLoadsGame")
+	slax.info("SLOANG - sla_PluginBase onInit: " + name )
+	registerForInternalEvents()
 endEvent
+
+function registerForInternalEvents()
+	slax.info("SLOANG - sla_PluginBase registerLoadGameEvent: " + name )
+	RegisterForModEvent("sla_Int_PlayerLoadsGame", "On_sla_Int_PlayerLoadsGame")
+endfunction
 
 event On_sla_Int_PlayerLoadsGame(string eventName, string strArg, float numArg, Form sender)
-	PlayerLoadsGame()
+	slax.info("SLOANG - On_sla_Int_PlayerLoadsGame: " + name )
+	UpdatePluginState(false)
 endEvent
 
-function PlayerLoadsGame()
+function UpdatePluginState(bool forced)
+	slax.info("SLOANG - UpdatePluginState: " + name )
 	if CheckDependencies()
-		if GetState() != "Installed"
+		if GetState() != "Installed" 
 			GoToState("Installed")
+			main.RegisterPlugin(self)
+		elseif GetState() == "Installed" && forced
+			main.RegisterPlugin(self)
 		endIf
 	else
 		if GetState() != ""
@@ -231,9 +242,11 @@ bool function RemoveEffectGroup(Actor who, int effIdx)
 endFunction
 
 event OnInstalled()
+	slax.info("SLOANG - OnInstalled: " + name )
 	main.RegisterPlugin(self)
 endEvent
 
 event OnUninstalled()
+	slax.info("SLOANG - OnUninstalled: " + name )
 	main.UnregisterPlugin(self)
 endEvent

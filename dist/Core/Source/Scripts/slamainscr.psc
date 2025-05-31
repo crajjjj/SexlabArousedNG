@@ -66,11 +66,11 @@ Keyword nakedArmorWord
 
 ; FOLDSTART - Plugin system
 
-int Property pluginCount Auto
+int Property pluginCount Auto ;deprecated
 sla_PluginBase[] Property plugins Auto Hidden
-int updatePluginCount
+int updatePluginCount ;deprecated
 sla_PluginBase[] updatePlugins
-int losPluginCount
+int losPluginCount ; deprecated
 sla_PluginBase[] losPlugins
 
 ; FOLDEND - Plugin system
@@ -115,7 +115,7 @@ State initializing
             StorageUtil.ClearFloatValuePrefix("SLAroused.ActorExposure")
             StorageUtil.ClearFloatValuePrefix("SLAroused.ActorExposureDate")
             
-            int i = pluginCount
+            int i = slax.CountNonNullElements(plugins)
             while i > 0
                 i -= 1
                 sla_PluginBase plugin = plugins[i]
@@ -149,18 +149,15 @@ State initializing
 
         UpdateDesireSpell()
 
-
-        
         slax.Info("SLOANG - return to empty state")
         GotoState("")
         RegisterForSingleUpdate(updateFrequency) ;Start scanning in two minutes
-        bWasInitialized = True
 
         if (GameDaysPassed.getValue() >= sla_NextMaintenance.getValue())
             StartCleaning()
         endif
 		
-		if pluginCount == 0
+		if !plugins
 		    plugins = new sla_PluginBase[8]
             losPlugins = new sla_PluginBase[8]
             updatePlugins = new sla_PluginBase[8]
@@ -170,7 +167,7 @@ State initializing
             effectIsVisible = new bool[1]
             effectOwners = new Form[1]
         endIf
-		
+		bWasInitialized = True
 		SendModEvent("sla_Int_PlayerLoadsGame")        
     EndEvent
 
@@ -188,11 +185,17 @@ function RegisterPlugin(sla_PluginBase plugin)
 	; 	plugins = new sla_PluginBase[1]
 	; endIf
 	; LogDebug("RegisterPlugin(" + plugin.name + ")")
-	if plugins.Find(plugin) > -1
+	if !plugin || plugins.Find(plugin) > -1
 		return
 	endIf
-	plugins[pluginCount] = plugin
-    pluginCount += 1
+
+    int pluginPos = slax.FindFirstFreeIndex(plugins)
+    if pluginPos == -1
+		slax.Error("SLOANG - RegisterPlugin - not enough plugin slots" )
+        return
+	endIf
+    slax.info("SLOANG - RegisterPlugin" + plugin.name )
+	plugins[pluginPos] = plugin
     plugin.EnablePlugin()
     plugin.AddOptions()
     plugin.isEnabled = true
@@ -204,39 +207,45 @@ function UnregisterPlugin(sla_PluginBase plugin)
 	if idx == -1
 		return
 	endIf
-	plugins[idx] = plugins[pluginCount - 1]
-	plugins[pluginCount - 1] = none
-	pluginCount -= 1
+	plugins[idx] = none
 endFunction
 
 function SetPluginLOSEvents(sla_PluginBase plugin, bool listenToLOS)
-    int idx = losPlugins.Find(plugin)
     if listenToLOS
-        if idx == -1
-            losPlugins[losPluginCount] = plugin
-            losPluginCount += 1
-        endIf
+        ; Add plugin to first available None slot, if not present
+        if losPlugins.Find(plugin) == -1
+            int freeind = slax.FindFirstFreeIndex(losPlugins)
+            if freeind == -1
+                 slax.Error("SLOANG SetPluginLOSEvents - No empty slot to add plugin!")
+            else
+                losPlugins[freeind] = plugin
+            endif
+        endif
     else
-        if idx != -1
-            losPlugins[idx] = losPlugins[losPluginCount - 1]
-            losPluginCount -= 1
-        endIf
-    endIf
+        ; Remove plugin by setting to None
+        int i = losPlugins.Find(plugin)
+        if i != -1
+            losPlugins[i] = None
+        endif
+    endif
 endFunction
 
 function SetPluginUpdateEvents(sla_PluginBase plugin, bool listenToUpdate)
-    int idx = updatePlugins.Find(plugin)
     if listenToUpdate
-        if idx == -1
-            updatePlugins[updatePluginCount] = plugin
-            updatePluginCount += 1
-        endIf
+         if updatePlugins.Find(plugin) == -1
+            int freeind = slax.FindFirstFreeIndex(updatePlugins)
+            if freeind == -1
+                 slax.Error("SLOANG SetPluginUPDEvents - No empty slot to add plugin!")
+            else
+                updatePlugins[freeind] = plugin
+            endif
+        endif
     else
-        if idx != -1
-            updatePlugins[idx] = updatePlugins[updatePluginCount - 1]
-            updatePluginCount -= 1
-        endIf
-    endIf
+        int i = updatePlugins.Find(plugin)
+        if i != -1
+            updatePlugins[i] = None
+        endif
+    endif
 endFunction
 
 string[] effectIds
@@ -256,6 +265,7 @@ int function RegisterEffect(string id, string title, string description, sla_Plu
         Utility.WaitMenuMode(1.0)
     endWhile
     int idx = slaInternalModules.RegisterStaticEffect(id)
+    slax.info("SLOANG - RegisterEffect.Title:"+ title + ".Internal idx:" + idx + ".Id:" + id)
     if idx >= effectIds.length
         effectIds = PapyrusUtil.ResizeStringArray(effectIds, idx + 1)
         effectTitles = PapyrusUtil.ResizeStringArray(effectTitles, idx + 1)
@@ -276,6 +286,7 @@ function UnregisterEffect(string id)
     while !slaInternalModules.TryLock(1)
         Utility.WaitMenuMode(1.0)
     endWhile
+    slax.info("SLOANG - UnregisterEffect.Id:" + id)
     int result = effectIds.Find(id)
 	if result > -1
         effectIds[result] = ""
@@ -312,15 +323,30 @@ int function GetEffectCount()
 endFunction
 
 bool Function IsEffectVisible(int effectIdx)
-    return effectIsVisible[effectIdx]
+      if effectIsVisible && effectIdx >= 0 && effectIdx < effectIsVisible.length
+        return effectIsVisible[effectIdx]
+    else
+        slax.Info("SLOANG - IsEffectVisible(" + effectIdx + ") not found")
+        return false
+    endif
 EndFunction
 
 string function GetEffectTitle(int effectIdx)
-	return effectTitles[effectIdx]
+    if effectTitles && effectIdx >= 0 && effectIdx < effectTitles.length
+        return effectTitles[effectIdx]
+    else
+        slax.Info("SLOANG - GetEffectTitle(" + effectIdx + ") not found")
+        return ""
+    endif
 endFunction
 
 string function GetEffectDescription(int effectIdx)
-	return effectDescriptions[effectIdx]
+    if effectDescriptions != None && effectIdx >= 0 && effectDescriptions.length > effectIdx
+        return effectDescriptions[effectIdx]
+    else
+        slax.Info("SLOANG - GetEffectDescription(" + effectIdx + ") not found")
+        return ""
+    endif
 endFunction
 
 bool function IsEffectActive(Actor who, int effectIdx)
@@ -410,6 +436,24 @@ event OnPlayerLoadGame()
     if bWasInitialized
         SendModEvent("sla_Int_PlayerLoadsGame")
     endIf
+    slax.info("SLOANG - OnPlayerLoadGame()")
+    if effectIds != None
+        slax.Info("SLOANG effectIds length: " + effectIds.length)
+    else
+        slax.Info("SLOANG effectIds length: 0")
+    endif
+
+    if effectTitles != None
+        slax.Info("SLOANG effectTitles length: " + effectTitles.length)
+    else
+        slax.Info("SLOANG effectTitles length: 0")
+    endif
+
+    if effectDescriptions != None
+        slax.Info("SLOANG effectDescriptions length: " + effectDescriptions.length)
+    else
+        slax.Info("SLOANG effectDescriptions length: 0")
+    endif
 endEvent
 
 Int Function IsAnimatingFemales()
@@ -482,6 +526,25 @@ EndFunction
 Function Maintenance()
 
     UnregisterForUpdate()
+    defaultPlugin.registerForInternalEvents()
+    defaultPlugin.ddPlugin.registerForInternalEvents()
+    sexlabPlugin.registerForInternalEvents()
+    ostimPlugin.registerForInternalEvents()
+    
+    ;refresh plugins
+    if bWasInitialized
+        slax.Info("SLOANG Maintenance- refresh plugins")
+        UnregisterPlugin(defaultPlugin.ddPlugin)
+        UnregisterPlugin(defaultPlugin)
+        UnregisterPlugin(ostimPlugin)
+        UnregisterPlugin(sexlabPlugin)
+
+        defaultPlugin.UpdatePluginState(true)
+        defaultPlugin.ddPlugin.UpdatePluginState(true)
+        sexlabPlugin.UpdatePluginState(true)
+        ostimPlugin.UpdatePluginState(true)
+    endif
+
     GotoState("initializing")
     
     bWasInitialized = False
@@ -495,7 +558,7 @@ Function Maintenance()
     lastActorScanTime = 0
     bUseLOS = GetUseLOS() As Bool
     
-    slax.Info("SLOANG - trigger maintenance OnUpdate in 10.0 seconds")
+    slax.Info("SLOANG Maintenance - trigger OnUpdate in 10.0 seconds")
     
     RegisterForSingleUpdate(10.0)
 
@@ -564,7 +627,7 @@ Actor[] function GetNearbyActors()
 endFunction
 
 Event OnUpdate()
-    
+    slax.Info("SLOANG - OnUpdate")
     If bDisabled
         RegisterForSingleUpdate(updateFrequency)
         Return
@@ -616,13 +679,14 @@ function UpdateActorArousals(bool fullUpdate)
         endIf
 
     endWhile
-
+    int updPluginsAmount = slax.CountNonNullElements(updatePlugins)
+    int losPluginsAmount = slax.CountNonNullElements(losPlugins)
     i = actorCount
     while i > 0
         i -= 1
         Actor observer = updateActors[i]
-        
-		int j = updatePluginCount
+       
+		int j = updPluginsAmount
 		while j > 0
 			j -= 1
 			sla_PluginBase plugin = updatePlugins[j]
@@ -634,10 +698,9 @@ function UpdateActorArousals(bool fullUpdate)
             while j > 0
                 j -= 1
                 Actor observed = updateActors[j]
-                
                 if observer != observed
                     if !GetUseLOS() || observer.HasLOS(observed)
-                        int k = losPluginCount
+                        int k = losPluginsAmount
                         while k > 0
                             k -= 1
                             sla_PluginBase plugin = losPlugins[k]
@@ -649,7 +712,7 @@ function UpdateActorArousals(bool fullUpdate)
         endIf
     endWhile
 	
-	i = updatePluginCount
+	i = updPluginsAmount
 	while i > 0
 		i -= 1
 		sla_PluginBase plugin = updatePlugins[i]

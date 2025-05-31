@@ -164,6 +164,7 @@ float function GetOptionValue(int optionId)
 	elseIf optionId == 8
 		return sexPerStage
 	endIf
+	return 0.0
 endFunction
 
 function OnUpdateOption(int optionId, float value)

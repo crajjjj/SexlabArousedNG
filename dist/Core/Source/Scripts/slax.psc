@@ -266,3 +266,31 @@ String Function FormatHex(Int value) Global
     
 EndFunction
 
+int function CountNonNullElements(sla_PluginBase[] arr) Global
+    if !arr
+        return 0
+    endif
+    int count = 0
+    int i = 0
+    while i < arr.length
+        if arr[i]
+            count += 1
+        endif
+        i += 1
+    endwhile
+    return count
+endFunction
+
+int function FindFirstFreeIndex(sla_PluginBase[] arr) Global
+    if !arr
+        return -1
+    endif
+    int i = 0
+    while i < arr.length
+        if !arr[i]
+            return i ;
+        endif
+        i += 1
+    endwhile
+    return -1 ; no free slot found
+endFunction

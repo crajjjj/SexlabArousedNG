@@ -211,7 +211,8 @@ Event OnGameReload()
     
 	slaMain = Quest.GetQuest("sla_Main") As slaMainScr
 	slaMain.Maintenance()
-    
+   
+    slaMain.OnPlayerLoadGame()
     parent.OnGameReload() ; Don't forget to call the parent!
 
 EndEvent
@@ -328,8 +329,7 @@ Event OnPageReset(String page)
 	; Load custom logo in DDS format
 	If page == "" && !statusNotSplash
     
-		Int xOffset = 376 - (284 / 2)
-		LoadCustomContent("sexlabaroused.dds", xOffset, 0)
+        LoadCustomContent("sexlabaroused.dds",125 ,35.5)
 		Return
         
 	Else
@@ -375,11 +375,12 @@ Event OnPageReset(String page)
         
         AddHeaderOption("$SLA_PluginList")
         
-        int i = slaMain.pluginCount
+        int i = slax.CountNonNullElements(slaMain.plugins)
+        slax.Info("SLOANG - OnPageReset - pluginCount:" + i)
         while i > 0
             i -= 1
             sla_PluginBase plugin = slaMain.plugins[i]
-            int oid = AddToggleOption(plugin.name, plugin.isEnabled)
+            int oid = AddToggleOption(plugin.name, plugin.isEnabled, OPTION_FLAG_DISABLED)
             StorageUtil.SetIntValue(self, "SLAroused.MCM.OID." + oid, i)
         endWhile
         
@@ -494,7 +495,7 @@ Function DisplayActorStatus(Actor who, bool editable = false)
 	while i > 0
         i -= 1
         string title = slaMain.GetEffectTitle(i)
-        Debug.Trace("SLA: Static Effect = " + title)
+        Debug.Trace("SLOANG: Static Effect = " + title)
         if slaMain.IsEffectVisible(i)
             if (title == "")
                 AddTextOption("$SLA_UnusedEffect", "-", OPTION_FLAG_DISABLED)
@@ -517,7 +518,7 @@ Function DisplayActorStatus(Actor who, bool editable = false)
         i -= 1
         string effect = slaMain.GetDynamicEffect(who, i)
         string name = StorageUtil.GetStringValue(slaMain, "SLAroused.DynamicEffect." + effect + ".Title", effect)
-        Debug.Trace("SLA: Dynamic Effect = " + name)
+        Debug.Trace("SLOANG: Dynamic Effect = " + name)
         string description = StorageUtil.GetStringValue(slaMain, "SLAroused.DynamicEffect." + effect + ".Description")
         float value = slaMain.GetDynamicEffectValue(who, i)
         int oid = AddTextOption(name, value)
@@ -693,7 +694,7 @@ Function GetBikiniArmorsForTargetActor(Actor who)
     bikiniSliderValues = Utility.CreateIntArray(bikiniArmors.Length)
     
     ii = bikiniArmors.Length
-    Debug.Trace("SLA: Got " + ii + " bikini items ")
+    Debug.Trace("SLOANG: Got " + ii + " bikini items ")
     While ii
         ii -= 1
         bikiniSliderValues[ii] = StorageUtil.GetIntValue(bikiniArmors[ii], keyBikiniArmor)
@@ -836,10 +837,10 @@ Event OnOptionInputAccept(int option, string value)
     
     if i >= 0
         float numeric = value as float
-        Debug.Trace("SLA: New static arousal value" + value + " numeric = " + numeric)
+        Debug.Trace("SLOANG: New static arousal value" + value + " numeric = " + numeric)
         if numeric != 0.0 || value == "0" || value == "0.0"
             slaInternalModules.SetStaticArousalValue(puppetActor, i, numeric)
-            Debug.Trace("SLA: Setting static arousal value" + slaMain.GetEffectValue(puppetActor, i))
+            Debug.Trace("SLOANG: Setting static arousal value" + slaMain.GetEffectValue(puppetActor, i))
             SetInputOptionValue(option, slaMain.GetEffectValue(puppetActor, i))
             setTextOptionValue(OID_TotalArousal, slaUtil.GetActorArousal(puppetActor))
         endIf

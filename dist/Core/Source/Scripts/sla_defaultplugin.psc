@@ -75,7 +75,7 @@ float function GetOptionValue(int optionId)
 	elseIf optionId == 12
 		return femaleOrgasmFactor
 	endIf
-	return 0
+	return 0.0
 endFunction
 
 function OnUpdateOption(int optionId, float value)

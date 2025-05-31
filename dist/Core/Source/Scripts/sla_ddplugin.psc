@@ -196,6 +196,7 @@ float function GetOptionValue(int optionId)
 	elseIf optionId == 3
 		return devicePerDevice as float
 	endIf
+	return 0.0
 endFunction
 
 function OnUpdateOption(int optionId, float value)
