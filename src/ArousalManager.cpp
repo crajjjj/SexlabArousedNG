@@ -39,7 +39,7 @@ namespace SLA {
     uint32_t ArousalManager::RegisterStaticEffect(std::string name) {
         if (cleanupLock.test(std::memory_order_relaxed)) {
             SKSE::log::warn("RegisterStaticEffect called during cleanup, skipping.");
-            return 0;
+            return -2;
         }
         auto itr = staticEffectIds.find(name);
         if (itr != staticEffectIds.end()) return itr->second;
@@ -375,6 +375,7 @@ namespace SLA {
 
     bool ArousalManager::TryLock(int32_t lock) {
         if (lock < 0 || lock >= locks.size()) return false;
+        if (cleanupLock.test(std::memory_order_relaxed)) return false;
         if (locks[lock].test_and_set()) return false;
         return true;
     }

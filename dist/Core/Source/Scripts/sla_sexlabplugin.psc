@@ -226,6 +226,7 @@ state Installed
 	endFunction
 	
 	function AddOptions()
+		slax.info("SLOANG - SL.AddOptions()")
 		AddOption("$SLA_Effect_SexCat", "$SLA_Effect_SexMax", "$SLA_Effect_SexMaxDesc", 50.0)
 		AddOptionEx("$SLA_Effect_SexCat", "$SLA_Effect_SexHalfTime", "$SLA_Effect_SexHalfTimeDesc", 1.0 / 24.0, 0.1, 24.0, 0.1, "{1} hours")
 		AddToggleOption("$SLA_Effect_SexCat", "$SLA_AlwaysCheckOrgasm", "$SLA_AlwaysCheckOrgasmDesc", false)

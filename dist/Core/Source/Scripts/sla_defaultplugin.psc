@@ -170,6 +170,7 @@ state Installed
 	endFunction
 
 	function AddOptions()
+		slax.info("SLOANG - Default.AddOptions()")
 		AddOption("$SLA_Effect_NakedCat", "$SLA_Effect_NakedMax", "$SLA_Effect_NakedMaxDesc", 50.0)
 		AddOption("$SLA_Effect_NakedCat", "$SLA_Effect_NakedMaxNonPref", "$SLA_Effect_NakedMaxNonPrefDesc", 15.0)
 		AddOption("$SLA_Effect_NakedCat", "$SLA_Effect_NakedRate", "$SLA_Effect_NakedRateDesc", 25.0)

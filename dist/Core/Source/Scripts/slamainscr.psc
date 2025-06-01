@@ -175,12 +175,11 @@ EndState
 
 
 ; State - EMPTY
-
 function LogDebug(string msg)
 	Debug.Notification(msg)
 endFunction
 
-function RegisterPlugin(sla_PluginBase plugin)
+function RegisterPlugin(sla_PluginBase plugin, bool addMCMOptions = true)
 	; if plugins == None
 	; 	plugins = new sla_PluginBase[1]
 	; endIf
@@ -197,7 +196,9 @@ function RegisterPlugin(sla_PluginBase plugin)
     slax.info("SLOANG - RegisterPlugin" + plugin.name )
 	plugins[pluginPos] = plugin
     plugin.EnablePlugin()
-    plugin.AddOptions()
+    if (addMCMOptions)
+        plugin.AddOptions()
+    endif
     plugin.isEnabled = true
 endFunction
 
@@ -265,6 +266,11 @@ int function RegisterEffect(string id, string title, string description, sla_Plu
         Utility.WaitMenuMode(1.0)
     endWhile
     int idx = slaInternalModules.RegisterStaticEffect(id)
+    if (idx == -2)
+        slax.error("SLOANG - RegisterEffect called during cleanup. Title:"+ title + ".Internal idx:" + idx + ".Id:" + id)
+        slaInternalModules.Unlock(1)
+        return idx
+    endif
     slax.info("SLOANG - RegisterEffect.Title:"+ title + ".Internal idx:" + idx + ".Id:" + id)
     if idx >= effectIds.length
         effectIds = PapyrusUtil.ResizeStringArray(effectIds, idx + 1)
@@ -323,7 +329,7 @@ int function GetEffectCount()
 endFunction
 
 bool Function IsEffectVisible(int effectIdx)
-      if effectIsVisible && effectIdx >= 0 && effectIdx < effectIsVisible.length
+      if effectIsVisible && effectIdx >= 0 && effectIdx < effectIsVisible.length && effectIsVisible[effectIdx]
         return effectIsVisible[effectIdx]
     else
         slax.Info("SLOANG - IsEffectVisible(" + effectIdx + ") not found")
@@ -332,7 +338,7 @@ bool Function IsEffectVisible(int effectIdx)
 EndFunction
 
 string function GetEffectTitle(int effectIdx)
-    if effectTitles && effectIdx >= 0 && effectIdx < effectTitles.length
+    if effectTitles && effectIdx >= 0 && effectIdx < effectTitles.length && effectTitles[effectIdx]
         return effectTitles[effectIdx]
     else
         slax.Info("SLOANG - GetEffectTitle(" + effectIdx + ") not found")
@@ -341,7 +347,7 @@ string function GetEffectTitle(int effectIdx)
 endFunction
 
 string function GetEffectDescription(int effectIdx)
-    if effectDescriptions != None && effectIdx >= 0 && effectDescriptions.length > effectIdx
+    if !effectDescriptions && effectIdx >= 0 && effectIdx < effectDescriptions.length && effectDescriptions[effectIdx]
         return effectDescriptions[effectIdx]
     else
         slax.Info("SLOANG - GetEffectDescription(" + effectIdx + ") not found")
@@ -532,18 +538,18 @@ Function Maintenance()
     ostimPlugin.registerForInternalEvents()
     
     ;refresh plugins
-    if bWasInitialized
-        slax.Info("SLOANG Maintenance- refresh plugins")
-        UnregisterPlugin(defaultPlugin.ddPlugin)
-        UnregisterPlugin(defaultPlugin)
-        UnregisterPlugin(ostimPlugin)
-        UnregisterPlugin(sexlabPlugin)
+    ; if bWasInitialized
+    ;     slax.Info("SLOANG Maintenance- refresh plugins")
+    ;     UnregisterPlugin(defaultPlugin.ddPlugin)
+    ;     UnregisterPlugin(defaultPlugin)
+    ;     UnregisterPlugin(ostimPlugin)
+    ;     UnregisterPlugin(sexlabPlugin)
 
-        defaultPlugin.UpdatePluginState(true)
-        defaultPlugin.ddPlugin.UpdatePluginState(true)
-        sexlabPlugin.UpdatePluginState(true)
-        ostimPlugin.UpdatePluginState(true)
-    endif
+    ;     defaultPlugin.UpdatePluginState(true)
+    ;     defaultPlugin.ddPlugin.UpdatePluginState(true)
+    ;     sexlabPlugin.UpdatePluginState(true)
+    ;     ostimPlugin.UpdatePluginState(true)
+    ; endif
 
     GotoState("initializing")
     

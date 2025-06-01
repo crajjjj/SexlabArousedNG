@@ -37,7 +37,7 @@ function UpdatePluginState(bool forced)
 			GoToState("Installed")
 			main.RegisterPlugin(self)
 		elseif GetState() == "Installed" && forced
-			main.RegisterPlugin(self)
+			main.RegisterPlugin(self, false)
 		endIf
 	else
 		if GetState() != ""

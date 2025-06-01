@@ -160,7 +160,7 @@ Armor[] emptyArmorArray
 
 
 Int Function GetVersion() 
-    Return       30000000
+    Return       30000001
 	;	0.00.00000
     ; 1.0.0   -> 10000000
     ; 1.1.0   -> 10100000
@@ -170,7 +170,7 @@ Int Function GetVersion()
 EndFunction
 
 String Function GetVersionString() 
-    Return "3.0.0"
+    Return "3.0.1"
 EndFunction
 
 Event OnVersionUpdate(int newVersion)
@@ -190,6 +190,33 @@ Event OnVersionUpdate(int newVersion)
 		helper.ResetAllQuests()
         
 	Endif
+
+    If ((newVersion >= 30000001) && (CurrentVersion == 30000000))
+		Debug.Trace(self + ": Updating MCM menus to version " + newVersion)
+        slax.Info("SLOANG cleaning options for pre 3.0.1 versions")
+       
+        If (slaMain.defaultPlugin.ddPlugin.IsInterfaceActive())
+            slaMain.UnregisterPlugin(slaMain.defaultPlugin.ddPlugin)
+            slaMain.defaultPlugin.ddPlugin.ClearOptions()
+            slaMain.RegisterPlugin(slaMain.defaultPlugin.ddPlugin)
+        EndIf
+        If (slaMain.defaultPlugin.IsInterfaceActive())
+            slaMain.UnregisterPlugin(slaMain.defaultPlugin)
+            slaMain.defaultPlugin.ClearOptions()
+            slaMain.RegisterPlugin(slaMain.defaultPlugin)
+        EndIf
+        If (slaMain.ostimPlugin.IsInterfaceActive())
+             slaMain.UnregisterPlugin(slaMain.ostimPlugin)
+             slaMain.ostimPlugin.ClearOptions()
+             slaMain.RegisterPlugin(slaMain.ostimPlugin)
+        EndIf
+        If (slaMain.sexlabPlugin.IsInterfaceActive())
+            slaMain.UnregisterPlugin(slaMain.sexlabPlugin)
+            slaMain.sexlabPlugin.ClearOptions()
+            slaMain.RegisterPlugin(slaMain.sexlabPlugin)
+        EndIf
+		
+	EndIf
     
 EndEvent
 
@@ -499,7 +526,7 @@ Function DisplayActorStatus(Actor who, bool editable = false)
 	while i > 0
         i -= 1
         string title = slaMain.GetEffectTitle(i)
-        Debug.Trace("SLOANG: Static Effect = " + title)
+        ;Debug.Trace("SLOANG: Static Effect = " + title)
         if slaMain.IsEffectVisible(i)
             if (title == "")
                 AddTextOption("$SLA_UnusedEffect", "-", OPTION_FLAG_DISABLED)
@@ -1728,7 +1755,8 @@ function ExportSettings()
     if !ShowMessage("Are you sure you want to overwrite the settings saved in the json file with your current settings?")
         return
     endIf
-    string fileName = "SLAX/Settings.json"
+    string fileName = "..\\SLAX\\Settings"
+    ;SLAX/Settings.json"
     SetTextOptionValue(exportSettingsOID, "$SLA_Working")
     JsonUtil.SetIntValue(fileName, "enableDesireSpell", IsDesireSpell as int)
     JsonUtil.SetIntValue(fileName, "wantsPurging", wantsPurging as int)
@@ -1743,6 +1771,8 @@ function ExportSettings()
     JsonUtil.SetIntValue(fileName, "statusNotSplash", statusNotSplash as int)
     JsonUtil.SetFloatValue(fileName, "cellScanFreq", cellScanFreq)
     JsonUtil.SetIntValue(fileName, "smallUpdatesPerFull", smallUpdatesPerFull)
+    JsonUtil.SetIntValue(fileName, "notificationKey", notificationKey)
+    
     
     JsonUtil.FormListClear(fileName, "PluginOption")
     JsonUtil.IntListClear(fileName, "PluginOptionId")
@@ -1760,13 +1790,18 @@ function ExportSettings()
             JsonUtil.FloatListAdd(fileName, "PluginOptionValue", plugin.GetOptionValue(optionId))
         endIf
     endWhile
-    JsonUtil.Save(fileName)
-    SetTextOptionValue(exportSettingsOID, "$SLA_Done")
+    if !jsonutil.Save(fileName, false)
+        SetTextOptionValue(exportSettingsOID, "Error")
+		slax.Error("SLOANG export failed: " + jsonutil.GetErrors(fileName))
+    Else
+        SetTextOptionValue(exportSettingsOID, "$SLA_Done")
+	endIf
+   
 endFunction
 
 function ImportSettings()
     if !ShowMessage("Are you sure you want to overwrite your current settings with the settings save in the json file?")
-        return 
+        return
     endIf
     string fileName = "SLAX/Settings.json"
     SetTextOptionValue(exportSettingsOID, "SLA_Working")
@@ -1783,6 +1818,7 @@ function ImportSettings()
     statusNotSplash = JsonUtil.GetIntValue(fileName, "statusNotSplash") as bool
     cellScanFreq = JsonUtil.GetFloatValue(fileName, "cellScanFreq")
     smallUpdatesPerFull = JsonUtil.GetIntValue(fileName, "smallUpdatesPerFull")
+    notificationKey = JsonUtil.GetIntValue(fileName, "notificationKey")
 
     int i = JsonUtil.FormListCount(fileName, "PluginOption")
     while i > 0
