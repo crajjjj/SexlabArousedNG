@@ -160,7 +160,7 @@ Armor[] emptyArmorArray
 
 
 Int Function GetVersion() 
-    Return       30000002
+    Return       30000003
 	;	0.00.00000
     ; 1.0.0   -> 10000000
     ; 1.1.0   -> 10100000
@@ -170,7 +170,7 @@ Int Function GetVersion()
 EndFunction
 
 String Function GetVersionString() 
-    Return "3.0.2"
+    Return "3.0.3"
 EndFunction
 
 Event OnVersionUpdate(int newVersion)
@@ -191,9 +191,9 @@ Event OnVersionUpdate(int newVersion)
         
 	Endif
 
-    If ((newVersion >= 30000001) && (CurrentVersion == 30000000))
+    If ((newVersion >= 30000003) && (CurrentVersion < 30000003))
 		Debug.Trace(self + ": Updating MCM menus to version " + newVersion)
-        slax.Info("SLOANG cleaning options for pre 3.0.1 versions")
+        slax.Info("SLOANG cleaning options for pre 3.0.0 versions")
        
         If (slaMain.defaultPlugin.ddPlugin.IsInterfaceActive())
             slaMain.UnregisterPlugin(slaMain.defaultPlugin.ddPlugin)
@@ -1748,7 +1748,32 @@ function ClearAllData()
     if !ShowMessage("Do you really want to delete all actor data from the current save?")
         return
     endIf
+
+    slax.Error("SLOANG MCM CleanUpActors")
     slaInternalModules.CleanUpActors(Utility.GetCurrentGameTime())
+    Utility.WaitMenuMode(5.0)
+    slax.Error("SLOANG MCM Refresh PLugins")
+
+    If (slaMain.defaultPlugin.ddPlugin.IsInterfaceActive())
+            slaMain.UnregisterPlugin(slaMain.defaultPlugin.ddPlugin)
+            slaMain.defaultPlugin.ddPlugin.ClearOptions()
+            slaMain.RegisterPlugin(slaMain.defaultPlugin.ddPlugin)
+        EndIf
+     If (slaMain.defaultPlugin.IsInterfaceActive())
+            slaMain.UnregisterPlugin(slaMain.defaultPlugin)
+            slaMain.defaultPlugin.ClearOptions()
+            slaMain.RegisterPlugin(slaMain.defaultPlugin)
+        EndIf
+    If (slaMain.ostimPlugin.IsInterfaceActive())
+             slaMain.UnregisterPlugin(slaMain.ostimPlugin)
+             slaMain.ostimPlugin.ClearOptions()
+             slaMain.RegisterPlugin(slaMain.ostimPlugin)
+        EndIf
+    If (slaMain.sexlabPlugin.IsInterfaceActive())
+            slaMain.UnregisterPlugin(slaMain.sexlabPlugin)
+            slaMain.sexlabPlugin.ClearOptions()
+            slaMain.RegisterPlugin(slaMain.sexlabPlugin)
+        EndIf
 endFunction
 
 function ExportSettings()
