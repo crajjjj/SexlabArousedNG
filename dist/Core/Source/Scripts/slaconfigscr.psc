@@ -356,8 +356,7 @@ Event OnPageReset(String page)
 	; Load custom logo in DDS format
 	If page == "" && !statusNotSplash
        
-        Int xOffset = 376 - (400 / 2)
-		LoadCustomContent("sexlabaroused.dds", xOffset, 0)
+        LoadCustomContent("sexlabaroused.dds", 0, 0)
 		Return
         
 	Else
