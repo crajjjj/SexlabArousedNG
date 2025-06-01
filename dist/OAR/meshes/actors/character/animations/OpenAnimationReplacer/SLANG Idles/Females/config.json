@@ -44,6 +44,15 @@
             "Numeric value": {
                 "value": 50.0
             }
+        },
+        {
+            "condition": "IsInFaction",
+            "requiredVersion": "1.0.0.0",
+            "Faction": {
+                "pluginName": "OStim.esp",
+                "formID": "00D93"
+            },
+            "negated": true
         }
     ]
 }

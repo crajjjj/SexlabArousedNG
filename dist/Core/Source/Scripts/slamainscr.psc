@@ -328,11 +328,54 @@ int function GetEffectCount()
     return slaInternalModules.GetStaticEffectCount()
 endFunction
 
+String Function sArrayToString(String[] values) Global
+    if !values
+        return "Empty Array"
+    endif
+    String result = ""
+    Int i = 0
+    While i < values.Length
+        If values[i]
+            result = result + "["+ i + "]:" + values[i]
+        else
+            result = result + "["+ i + "]: !None!"
+        EndIf
+        If i < values.Length - 1
+            result = result + ","
+        EndIf
+        i=i+1
+    EndWhile
+    Return result
+EndFunction
+String Function bArrayToString(bool[] values) Global
+    if !values
+        return "Empty Array"
+    endif
+    String result = ""
+    Int i = 0
+    While i < values.Length
+        result = result + "["+ i + "]:" + values[i]
+        If i < values.Length - 1
+           result = result + ","
+        EndIf
+        i=i+1
+    EndWhile
+    Return result
+EndFunction
+
+Function debugArrays()
+    slax.Info("SLOANG - effectIds:"+ effectIds.length + "--" + sArrayToString(effectIds))
+    slax.Info("SLOANG - effectTitles:"+ effectTitles.length + "--" + sArrayToString(effectTitles))
+    slax.Info("SLOANG - effectDescriptions:"+ effectDescriptions.length + "--" + sArrayToString(effectDescriptions))
+    slax.Info("SLOANG - effectIsVisible:"+ effectIsVisible.length + "--" + bArrayToString(effectIsVisible))
+endfunction
+
 bool Function IsEffectVisible(int effectIdx)
-      if effectIsVisible && effectIdx >= 0 && effectIdx < effectIsVisible.length && effectIsVisible[effectIdx]
+    if effectIsVisible && effectIdx >= 0 && effectIdx < effectIsVisible.length
         return effectIsVisible[effectIdx]
     else
-        slax.Info("SLOANG - IsEffectVisible(" + effectIdx + ") not found")
+        slax.warning("SLOANG - IsEffectVisible(" + effectIdx + ") not found." )
+        debugArrays()
         return false
     endif
 EndFunction
@@ -341,16 +384,18 @@ string function GetEffectTitle(int effectIdx)
     if effectTitles && effectIdx >= 0 && effectIdx < effectTitles.length && effectTitles[effectIdx]
         return effectTitles[effectIdx]
     else
-        slax.Info("SLOANG - GetEffectTitle(" + effectIdx + ") not found")
+        slax.warning("SLOANG - GetEffectTitle(" + effectIdx + ") not found")
+        debugArrays()
         return ""
     endif
 endFunction
 
 string function GetEffectDescription(int effectIdx)
-    if !effectDescriptions && effectIdx >= 0 && effectIdx < effectDescriptions.length && effectDescriptions[effectIdx]
+    if effectDescriptions && effectIdx >= 0 && effectIdx < effectDescriptions.length && effectDescriptions[effectIdx]
         return effectDescriptions[effectIdx]
     else
-        slax.Info("SLOANG - GetEffectDescription(" + effectIdx + ") not found")
+        slax.warning("SLOANG - GetEffectDescription(" + effectIdx + ") not found")
+        debugArrays()
         return ""
     endif
 endFunction
@@ -564,7 +609,7 @@ Function Maintenance()
     lastActorScanTime = 0
     bUseLOS = GetUseLOS() As Bool
     
-    slax.Info("SLOANG Maintenance - trigger OnUpdate in 10.0 seconds")
+    ;slax.Info("SLOANG Maintenance - trigger OnUpdate in 10.0 seconds")
     
     RegisterForSingleUpdate(10.0)
 
