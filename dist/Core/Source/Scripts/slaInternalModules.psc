@@ -2,6 +2,7 @@ Scriptname slaInternalModules Hidden
 
 int function GetStaticEffectCount() global native
 int function RegisterStaticEffect(string id) global native
+int function GetStaticEffectId(string effectId) global native
 bool function UnregisterStaticEffect(string id) global native
 bool function IsStaticEffectActive(Actor who, int effectIdx) global native
 int function GetDynamicEffectCount(Actor who) global native

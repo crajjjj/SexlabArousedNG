@@ -160,7 +160,7 @@ Armor[] emptyArmorArray
 
 
 Int Function GetVersion() 
-    Return       30000003
+    Return       30000004
 	;	0.00.00000
     ; 1.0.0   -> 10000000
     ; 1.1.0   -> 10100000
@@ -170,8 +170,9 @@ Int Function GetVersion()
 EndFunction
 
 String Function GetVersionString() 
-    Return "3.0.3"
+    Return "3.0.4"
 EndFunction
+
 
 Event OnVersionUpdate(int newVersion)
 
@@ -1862,3 +1863,7 @@ endFunction
 ; obsolete - keep for backward compatibility
 float Property defaultExposureRate = 2.0 Auto Hidden
 float Property TimeRateHalfLife = 2.0 Auto Hidden
+
+Keyword Function GetEroticKeyword() 
+    Return wordNakedArmor
+EndFunction

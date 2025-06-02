@@ -63,7 +63,16 @@ namespace SLA {
         staticEffectCount++;
         return result;
     }
-
+    uint32_t ArousalManager::GetStaticEffectId(std::string name) {
+        if (cleanupLock.test(std::memory_order_relaxed)) {
+            SKSE::log::warn("GetStaticEffectId called during cleanup, skipping.");
+            return -2;
+        }
+        auto itr = staticEffectIds.find(name);
+        if (itr != staticEffectIds.end()) return itr->second;
+        return -1;  // Not found, return -1 to indicate error
+    }
+    
     std::string ArousalManager::GetUnusedEffectId(int32_t id) { return "Unused" + std::to_string(id); }
 
     int32_t ArousalManager::GetHighestUnusedEffectId() {

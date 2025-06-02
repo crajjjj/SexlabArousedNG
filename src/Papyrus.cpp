@@ -24,6 +24,10 @@ namespace {
         return ArousalManager::GetSingleton().RegisterStaticEffect(name);
     }
 
+    uint32_t GetStaticEffectId(StaticFunctionTag*, std::string name) {
+        return ArousalManager::GetSingleton().GetStaticEffectId(name);
+    }
+
     bool UnregisterStaticEffect(StaticFunctionTag*, std::string name) {
         return ArousalManager::GetSingleton().UnregisterStaticEffect(name);
     }
@@ -188,6 +192,7 @@ bool SLA::RegisterFunctions(IVirtualMachine* vm) {
 
     vm->RegisterFunction("GetStaticEffectCount", PapyrusClass, GetStaticEffectCount);
     vm->RegisterFunction("RegisterStaticEffect", PapyrusClass, RegisterStaticEffect);
+    vm->RegisterFunction("GetStaticEffectId", PapyrusClass, GetStaticEffectId);
     vm->RegisterFunction("UnregisterStaticEffect", PapyrusClass, UnregisterStaticEffect);
     vm->RegisterFunction("IsStaticEffectActive", PapyrusClass, IsStaticEffectActive);
     vm->RegisterFunction("GetDynamicEffectCount", PapyrusClass, GetDynamicEffectCount);
