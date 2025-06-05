@@ -394,9 +394,11 @@ Event OnPageReset(String page)
 
 		AddHeaderOption("$SLA_Arousal")
         
-        if(slaMain.sexlabplugin.IsInterfaceActive())
-            MBonUsesSLGenderOID = AddToggleOption("$SLA_MBonUsesSLGender", MBonUsesSLGender)
+        if(!slaMain.sexlabplugin.IsInterfaceActive())
+           MBonUsesSLGender = false
         endif
+        MBonUsesSLGenderOID = AddToggleOption("$SLA_MBonUsesSLGender", MBonUsesSLGender, _getFlag(slaMain.sexlabplugin.IsInterfaceActive()))
+        
         
         cellScanFreqOID = AddSliderOption("$SLA_CellScanFreq", cellScanFreq, "{0}")
         smallUpdateOID = AddSliderOption("$SLA_SmallUpdateCount", smallUpdatesPerFull, "{0}")
@@ -556,10 +558,9 @@ Function DisplayActorStatus(Actor who, bool editable = false)
         StorageUtil.SetStringValue(self, "SLAroused.MCM.OID." + oid, description)
 	endWhile
 	
-    if(slaMain.sexlabplugin.IsInterfaceActive())
-        Int genderPreference = slaUtil.GetGenderPreference(who)
-	    AddTextOption("$SLA_GenderPreference", GenderPreferenceList[genderPreference], OPTION_FLAG_DISABLED)
-    endif
+    Int genderPreference = slaUtil.GetGenderPreference(who)
+	AddTextOption("$SLA_GenderPreference", GenderPreferenceList[genderPreference], OPTION_FLAG_DISABLED)
+    
 EndFunction
 
 
@@ -1878,4 +1879,12 @@ float Property TimeRateHalfLife = 2.0 Auto Hidden
 
 Keyword Function GetEroticKeyword() 
     Return wordNakedArmor
+EndFunction
+
+int Function _getFlag(Bool cond = true)
+	If  !cond 	
+   		return OPTION_FLAG_DISABLED  
+	Else
+   		return OPTION_FLAG_NONE
+	EndIf  
 EndFunction
