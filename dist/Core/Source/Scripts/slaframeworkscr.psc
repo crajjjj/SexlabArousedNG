@@ -171,15 +171,26 @@ EndFunction
 
 Int Function GetActorExposure(Actor who)
 	{Deprecated}
-	return slaMain.defaultPlugin.GetExposureLegacy(who) as Int
+	float currentTeasing = 0
+	if slaMain.defaultPlugin.ddPlugin.IsInterfaceActive()
+		currentTeasing = slaMain.GetDynamicEffectValueByName(who, sla_ddplugin.getDDTeasingEffectName()) 
+	endif
+	float currentTotal = currentTeasing + slaMain.defaultPlugin.GetExposureLegacy(who) 
+	return currentTotal as Int
 EndFunction
 
 
 Int Function SetActorExposure(Actor who, Int newActorExposure)
-	{Deprecated}
-	int diff = newActorExposure - GetActorExposure(who)
+	float currentTeasing = 0
+    if slaMain.defaultPlugin.ddPlugin.IsInterfaceActive()
+        currentTeasing = slaMain.GetDynamicEffectValueByName(who, sla_ddplugin.getDDTeasingEffectName())
+    endif
+    float currentTotal =  currentTeasing + slaMain.defaultPlugin.GetExposureLegacy(who)
+    float diff = newActorExposure - currentTotal
+	
+    ; apply the diff to the legacy exposure, leaving teasing unchanged
     slaMain.defaultPlugin.ModExposureLegacy(who, diff)
-	Return GetActorExposure(who)
+    return GetActorExposure(who)
 EndFunction
 
 

@@ -847,18 +847,14 @@ Bool Function IsActorNakedExtended(Actor who)
     ; Can't just use WornHasKeyword, because we're trying to establish nakedness, not simply presence of a flagged armor.
 
     Armor armorToCheck = who.GetWornForm(0x00000004) As Armor ; Slot 32 - body
-    If armorToCheck
-        If armorToCheck.HasKeyword(nakedArmorWord) ; Naked in body slot overrides other armors.
-            Return True
-        EndIf
-        If StorageUtil.GetIntValue(armorToCheck, "SLAroused.IsNakedArmor") > 0
-            Return True
-        EndIf
-        If armorToCheck.HasKeyword(ArmorCuirass) || armorToCheck.HasKeyword(ClothingBody)
-            ;wearing slot 32 that is not naked
-            Return False
-        EndIf
-    EndIf
+      if armorToCheck
+        if armorToCheck.HasKeyword(nakedArmorWord) || StorageUtil.GetIntValue(armorToCheck, "SLAroused.IsNakedArmor") > 0  ; Naked in body slot overrides other armors.
+            return true
+        endif
+        if armorToCheck.HasKeyword(ArmorCuirass) || armorToCheck.HasKeyword(ClothingBody) ;wearing slot 32 that is not naked
+            return false
+        endif
+    endif
     
     ; Old code called GetEquippedArmors, which was a cut+paste of the same code in the MCM...
     ; ... it took several seconds to complete ...
@@ -875,14 +871,22 @@ Bool Function IsActorNakedExtended(Actor who)
     Int[] slotsToTest = StorageUtil.IntListToArray(slaConfig, orderCacheKey)
     
     If !slotsToTest || slotsToTest.Length != 7
-        slotsToTest = new Int[7]
-        slotsToTest[0] = Math.LeftShift(1, 14) ; slot 44
-        slotsToTest[1] = Math.LeftShift(1, 15) ; slot 45
-        slotsToTest[2] = Math.LeftShift(1, 18) ; slot 48
-        slotsToTest[3] = Math.LeftShift(1, 19) ; slot 49
-        slotsToTest[4] = Math.LeftShift(1, 22) ; slot 52
-        slotsToTest[5] = Math.LeftShift(1, 26) ; slot 56
-        slotsToTest[6] = Math.LeftShift(1, 28) ; slot 58
+        ; slotsToTest = new Int[7]
+        ; slotsToTest[0] = Math.LeftShift(1, 14) ; slot 44
+        ; slotsToTest[1] = Math.LeftShift(1, 15) ; slot 45
+        ; slotsToTest[2] = Math.LeftShift(1, 18) ; slot 48
+        ; slotsToTest[3] = Math.LeftShift(1, 19) ; slot 49
+        ; slotsToTest[4] = Math.LeftShift(1, 22) ; slot 52
+        ; slotsToTest[5] = Math.LeftShift(1, 26) ; slot 56
+        ; slotsToTest[6] = Math.LeftShift(1, 28) ; slot 58
+         slotsToTest = new int[7]
+         slotsToTest[0] = 16384 ; slot 44
+         slotsToTest[1] = 32768 ; slot 45
+         slotsToTest[2] = 262144 ; slot 48
+         slotsToTest[3] = 524288 ; slot 49
+         slotsToTest[4] = 4194304 ; slot 52
+         slotsToTest[5] = 67108864 ; slot 56
+         slotsToTest[6] = 268435456 ; slot 58
         StorageUtil.IntListCopy(slaConfig, orderCacheKey, slotsToTest)
     EndIf
 
@@ -891,17 +895,13 @@ Bool Function IsActorNakedExtended(Actor who)
         Armor candidate = who.GetWornForm(slotsToTest[ii]) As Armor
         ; We can early-out if we find a naked armor
         If candidate
-        
             If candidate.HasKeyword(ArmorCuirass) || candidate.HasKeyword(ClothingBody)
                 ; Look for an alternative to body covering armor that would make the character appear non-naked
                 If (StorageUtil.GetIntValue(candidate, "SLAroused.IsNakedArmor") < 1) && !candidate.HasKeyword(nakedArmorWord)
                     Return False
                 EndIf
-                
             EndIf
-        
         EndIf
-        
         ii += 1
     EndWhile
     

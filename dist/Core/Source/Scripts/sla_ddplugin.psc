@@ -116,14 +116,14 @@ function SetTeasingEffectIfNeeded(Actor who)
 	if who && libs.IsVibrating(who) && teasingActors.Find(who) == -1
 		int handle = ModEvent.Create("slaModArousalEffect")
 		ModEvent.PushForm(handle, who)
-		ModEvent.PushString(handle, "DDTeasing")
+		ModEvent.PushString(handle, getDDTeasingEffectName())
 		ModEvent.PushFloat(handle, 5.0) ; +5 arousal
 		ModEvent.PushFloat(handle, 100.0) ; max
 		ModEvent.Send(handle)
 
 		handle = ModEvent.Create("slaSetArousalEffect")
 		ModEvent.PushForm(handle, who)
-		ModEvent.PushString(handle, "DDTeasing")
+		ModEvent.PushString(handle, getDDTeasingEffectName())
 		ModEvent.PushFloat(handle, 0.0)
 		ModEvent.PushInt(handle, 2) ; linear increase
 		ModEvent.PushFloat(handle, 400.0 * 24.0) ; 400 arousal per hour
@@ -157,7 +157,7 @@ event OnVibrationStop(string eventName, string actorName, float argNum, Form sen
 			ForceUpdateArousal(who)
 			int handle = ModEvent.Create("slaSetArousalEffect")
 			ModEvent.PushForm(handle, who)
-			ModEvent.PushString(handle, "DDTeasing")
+			ModEvent.PushString(handle, getDDTeasingEffectName())
 			ModEvent.PushFloat(handle, 0.0)
 			ModEvent.PushInt(handle, 1) ; decay
 			ModEvent.PushFloat(handle, 2.0 / 24.0) ; 50 % every other hour
@@ -306,3 +306,7 @@ state Installed
 		endIf
 	endFunction
 endState
+
+String function getDDTeasingEffectName() global
+	return "DDTeasing"
+endfunction

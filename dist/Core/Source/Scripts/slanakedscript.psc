@@ -15,7 +15,7 @@ Actor [] Property nakedActors Auto Hidden
 
 
 Int Function GetNakedActors()
-    
+    ;slax.Info("SLOANG (slaNakedScript) - GetNakedActors")
 	Start()
 
 	Utility.wait(0.3)

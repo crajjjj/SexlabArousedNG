@@ -160,7 +160,7 @@ Armor[] emptyArmorArray
 
 
 Int Function GetVersion() 
-    Return       30000004
+    Return       30000005
 	;	0.00.00000
     ; 1.0.0   -> 10000000
     ; 1.1.0   -> 10100000
@@ -170,7 +170,7 @@ Int Function GetVersion()
 EndFunction
 
 String Function GetVersionString() 
-    Return "3.0.4"
+    Return "3.0.5"
 EndFunction
 
 
@@ -1776,11 +1776,15 @@ function ClearAllData()
         EndIf
 endFunction
 
+String function getFileName()
+	return "..\\SLAX\\Settings"
+endfunction
+
 function ExportSettings()
     if !ShowMessage("Are you sure you want to overwrite the settings saved in the json file with your current settings?")
         return
     endIf
-    string fileName = "..\\SLAX\\Settings"
+    string fileName = getFileName()
     ;SLAX/Settings.json"
     SetTextOptionValue(exportSettingsOID, "$SLA_Working")
     JsonUtil.SetIntValue(fileName, "enableDesireSpell", IsDesireSpell as int)
@@ -1797,7 +1801,6 @@ function ExportSettings()
     JsonUtil.SetFloatValue(fileName, "cellScanFreq", cellScanFreq)
     JsonUtil.SetIntValue(fileName, "smallUpdatesPerFull", smallUpdatesPerFull)
     JsonUtil.SetIntValue(fileName, "notificationKey", notificationKey)
-    
     
     JsonUtil.FormListClear(fileName, "PluginOption")
     JsonUtil.IntListClear(fileName, "PluginOptionId")
@@ -1825,35 +1828,44 @@ function ExportSettings()
 endFunction
 
 function ImportSettings()
-    if !ShowMessage("Are you sure you want to overwrite your current settings with the settings save in the json file?")
+    if !ShowMessage("Are you sure you want to overwrite your current settings with the settings saved in the json file?")
         return
     endIf
-    string fileName = "SLAX/Settings.json"
+    string fileName = getFileName()
     SetTextOptionValue(exportSettingsOID, "SLA_Working")
-    IsDesireSpell = JsonUtil.GetIntValue(fileName, "enableDesireSpell") as bool
-    wantsPurging = JsonUtil.GetIntValue(fileName, "wantsPurging") as bool
-    maleAnimation = JsonUtil.GetIntValue(fileName, "maleAnimation") as bool
-    femaleAnimation = JsonUtil.GetIntValue(fileName, "femaleAnimation") as bool
-    useLOS = JsonUtil.GetIntValue(fileName, "useLOS") as bool
-    isNakedOnly = JsonUtil.GetIntValue(fileName, "isNakedOnly") as bool
-    enableNotifications = JsonUtil.GetIntValue(fileName, "enableNotifications") as bool
-    bDisabled = JsonUtil.GetIntValue(fileName, "bDisabled") as bool
-    isExtendedNPCNaked = JsonUtil.GetIntValue(fileName, "isExtendedNPCNaked") as bool
-    isUseSOS = JsonUtil.GetIntValue(fileName, "isUseSOS") as bool
-    statusNotSplash = JsonUtil.GetIntValue(fileName, "statusNotSplash") as bool
-    cellScanFreq = JsonUtil.GetFloatValue(fileName, "cellScanFreq")
-    smallUpdatesPerFull = JsonUtil.GetIntValue(fileName, "smallUpdatesPerFull")
-    notificationKey = JsonUtil.GetIntValue(fileName, "notificationKey")
 
+    ; Load main options (add Debug.Trace for troubleshooting)
+    IsDesireSpell         = JsonUtil.GetIntValue(fileName, "enableDesireSpell") as bool
+    wantsPurging          = JsonUtil.GetIntValue(fileName, "wantsPurging") as bool
+    maleAnimation         = JsonUtil.GetIntValue(fileName, "maleAnimation") as bool
+    femaleAnimation       = JsonUtil.GetIntValue(fileName, "femaleAnimation") as bool
+    useLOS                = JsonUtil.GetIntValue(fileName, "useLOS") as bool
+    isNakedOnly           = JsonUtil.GetIntValue(fileName, "isNakedOnly") as bool
+    enableNotifications   = JsonUtil.GetIntValue(fileName, "enableNotifications") as bool
+    bDisabled             = JsonUtil.GetIntValue(fileName, "bDisabled") as bool
+    isExtendedNPCNaked    = JsonUtil.GetIntValue(fileName, "isExtendedNPCNaked") as bool
+    isUseSOS              = JsonUtil.GetIntValue(fileName, "isUseSOS") as bool
+    statusNotSplash       = JsonUtil.GetIntValue(fileName, "statusNotSplash") as bool
+    cellScanFreq          = JsonUtil.GetFloatValue(fileName, "cellScanFreq")
+    smallUpdatesPerFull   = JsonUtil.GetIntValue(fileName, "smallUpdatesPerFull")
+    notificationKey       = JsonUtil.GetIntValue(fileName, "notificationKey")
+
+    ; Debug output for checking import
+    slax.info("SLOANG Import: isDesireSpell=" + IsDesireSpell + ", wantsPurging=" + wantsPurging)
+
+    ; Load plugin options
     int i = JsonUtil.FormListCount(fileName, "PluginOption")
     while i > 0
         i -= 1
-        Form pluginForm = JsonUtil.FormListGet(slaMain, "PluginOption", i)
+        Form pluginForm = JsonUtil.FormListGet(fileName, "PluginOption", i) 
         sla_PluginBase plugin = (pluginForm as sla_PluginBase)
-        if (plugin != none)
-            int optionId = JsonUtil.IntListGet(fileName, "PluginOptionId", i) 
+        if plugin != none
+            int optionId = JsonUtil.IntListGet(fileName, "PluginOptionId", i)
             float value = JsonUtil.FloatListGet(fileName, "PluginOptionValue", i)
             plugin.OnUpdateOption(optionId, value)
+            slax.info("SLOANG Import: Plugin " + plugin + " OptionId=" + optionId + " Value=" + value)
+        else
+            slax.info("SLOANG Import: Plugin form was None at index " + i)
         endIf
     endWhile
 
