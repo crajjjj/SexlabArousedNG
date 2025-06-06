@@ -545,3 +545,4 @@ dist/Core/SkyrimSE.code-workspace
 /dist/Core/.vscode
 .vscode
 SkyrimSE.code-workspace
+dist/Core/Interface/translations/SLOANG_rename.bat
