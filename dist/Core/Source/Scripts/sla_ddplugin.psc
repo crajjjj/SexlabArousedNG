@@ -228,7 +228,7 @@ state Installed
 		RegisterForModEvent("DeviceVibrateEffectStop", "OnVibrationStop")
 		deviceEff = RegisterEffect("Devices", "$SLA_Effect_Devices", "$SLA_Effect_DevicesDesc")
 		int handle = ModEvent.Create("slaRegisterDynamicEffect")
-		ModEvent.PushString(handle, "DDTeasing")
+		ModEvent.PushString(handle, getDDTeasingEffectName())
 		ModEvent.PushString(handle, "$SLA_Effect_DDTeasing")
 		ModEvent.PushString(handle, "$SLA_Effect_DDTeasingDesc")
 		ModEvent.Send(handle)

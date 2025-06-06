@@ -116,7 +116,7 @@ function OnOrgasm(Actor who, float enjoyment)
 	if who.GetLeveledActorBase().GetSex() == 1
 		satisfaction *= femaleOrgasmFactor
 	endIf
-	ModArousalEffectValue(who, satisfactionEff, -orgasmBase - enjoyment * orgasmRate, -1000)
+	ModArousalEffectValue(who, satisfactionEff, satisfaction, -1000)
 	SetArousalDecayEffect(who, satisfactionEff, orgasmHalfTime, 0.0)
 	; remove dd teasing effect
 	int handle = ModEvent.Create("slaModArousalEffect")
