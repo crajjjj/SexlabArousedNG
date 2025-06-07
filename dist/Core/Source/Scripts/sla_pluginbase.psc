@@ -84,8 +84,17 @@ endFunction
 int numberOfOptions = 0
 
 function ClearOptions()
-	StorageUtil.ClearAllPrefix("SLAroused.MCM." + self.name)
-	numberOfOptions = 0
+        string prefix = "SLAroused.MCM." + self.name + "."
+        int i = StorageUtil.StringListCount(main, "SLAroused.MCM.Options") - 1
+        while i >= 0
+                string val = StorageUtil.StringListGet(main, "SLAroused.MCM.Options", i)
+                if val != "" && val.Find(prefix) == 0
+                        StorageUtil.StringListRemoveAt(main, "SLAroused.MCM.Options", i)
+                        StorageUtil.ClearAllPrefix(val)
+                endIf
+                i -= 1
+        endWhile
+        numberOfOptions = 0
 endFunction
 
 int function GetNumberOfOptions()
