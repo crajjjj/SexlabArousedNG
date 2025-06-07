@@ -1,9 +1,12 @@
 #pragma once
 #include "SerializationHelper.h"
 #include <SKSE/SKSE.h>
+#include <random>
 
 namespace SLA {
     extern uint32_t staticEffectCount;
+    extern std::mt19937 randomEngine;
+    void InitializeRandomEngine();
     struct ArousalEffectGroup {
         ArousalEffectGroup() : value(0.f) {}
         std::vector<uint32_t> staticEffectIds;

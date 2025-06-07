@@ -1,6 +1,7 @@
 #include "Papyrus.h"
 #include <stddef.h>
 #include <ArousalManager.h>
+#include <ArousalData.h>
 
 using namespace RE::BSScript;
 using namespace SKSE;
@@ -58,6 +59,7 @@ SKSEPluginLoad(const LoadInterface* skse) {
     log::info("{} {} is loading...", plugin->GetName(), version);
 
     Init(skse);
+    SLA::InitializeRandomEngine();
     InitializeSerialization();
     InitializePapyrus();
 

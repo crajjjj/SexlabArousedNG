@@ -3,6 +3,12 @@
 
 namespace SLA {
     uint32_t staticEffectCount = 0;
+    std::mt19937 randomEngine;
+
+    void InitializeRandomEngine() {
+        std::random_device rd;
+        randomEngine.seed(rd());
+    }
 
     void ArousalData::OnRegisterStaticEffect() {
         staticEffects.emplace_back();
@@ -207,10 +213,8 @@ namespace SLA {
 
     void ArousalData::UpdateSingleActorArousal(RE::Actor* who, float GameDaysPassed) {
         if (!lastUpdate) {
-            std::random_device rd;
-            std::default_random_engine gen{rd()};
             std::normal_distribution<> d{0.5, 2.0};
-            float randomTimeDiff = std::abs(float(d(gen)));
+            float randomTimeDiff = std::abs(float(d(randomEngine)));
             lastUpdate = GameDaysPassed - randomTimeDiff;
         }
 
