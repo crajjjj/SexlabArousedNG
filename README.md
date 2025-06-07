@@ -175,3 +175,8 @@ ModEvent.Send(handle)
 * **Use dynamic effects** for temporary, mod-specific, or rare effects.
 
 See script headers and `sla_pluginbase.psc` for more advanced usage and plugin integration details.
+
+### Randomness
+
+The initial arousal update uses a global `std::mt19937` engine seeded during plugin initialization.  
+With the default seed from `std::random_device` the offset remains nondeterministic, but providing a fixed seed in `InitializeRandomEngine` will make it deterministic across runs.
