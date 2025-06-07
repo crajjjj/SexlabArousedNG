@@ -185,6 +185,7 @@ function RegisterPlugin(sla_PluginBase plugin, bool addMCMOptions = true)
 	; endIf
 	; LogDebug("RegisterPlugin(" + plugin.name + ")")
 	if !plugin || plugins.Find(plugin) > -1
+        slax.Error("SLOANG - RegisterPlugin - empty or registered" )
 		return
 	endIf
 
@@ -193,7 +194,7 @@ function RegisterPlugin(sla_PluginBase plugin, bool addMCMOptions = true)
 		slax.Error("SLOANG - RegisterPlugin - not enough plugin slots" )
         return
 	endIf
-    slax.info("SLOANG - RegisterPlugin" + plugin.name )
+    slax.info("SLOANG - RegisterPlugin " + plugin.name + ".Position:" + pluginPos)
 	plugins[pluginPos] = plugin
     plugin.EnablePlugin()
     if (addMCMOptions)
@@ -263,6 +264,7 @@ endFunction
 int function RegisterEffect(string id, string title, string description, sla_PluginBase effectOwner)
 {Returns the effect index of the (possibly) newly registed effect.}
     while !slaInternalModules.TryLock(1)
+        slax.warning("SLOANG RegisterEffect TryLock failed. Retrying")
         Utility.WaitMenuMode(1.0)
     endWhile
     int idx = slaInternalModules.RegisterStaticEffect(id)
@@ -290,6 +292,7 @@ endFunction
 
 function UnregisterEffect(string id)
     while !slaInternalModules.TryLock(1)
+        slax.warning("SLOANG UnregisterEffect TryLock failed. Retrying")
         Utility.WaitMenuMode(1.0)
     endWhile
     slax.info("SLOANG - UnregisterEffect.Id:" + id)

@@ -1758,22 +1758,22 @@ function ClearAllData()
     If (slaMain.defaultPlugin.ddPlugin.IsInterfaceActive())
             slaMain.UnregisterPlugin(slaMain.defaultPlugin.ddPlugin)
             slaMain.defaultPlugin.ddPlugin.ClearOptions()
-            slaMain.RegisterPlugin(slaMain.defaultPlugin.ddPlugin)
+            slaMain.RegisterPlugin(slaMain.defaultPlugin.ddPlugin, true)
         EndIf
      If (slaMain.defaultPlugin.IsInterfaceActive())
             slaMain.UnregisterPlugin(slaMain.defaultPlugin)
             slaMain.defaultPlugin.ClearOptions()
-            slaMain.RegisterPlugin(slaMain.defaultPlugin)
+            slaMain.RegisterPlugin(slaMain.defaultPlugin, true)
         EndIf
     If (slaMain.ostimPlugin.IsInterfaceActive())
              slaMain.UnregisterPlugin(slaMain.ostimPlugin)
              slaMain.ostimPlugin.ClearOptions()
-             slaMain.RegisterPlugin(slaMain.ostimPlugin)
+             slaMain.RegisterPlugin(slaMain.ostimPlugin, true)
         EndIf
     If (slaMain.sexlabPlugin.IsInterfaceActive())
             slaMain.UnregisterPlugin(slaMain.sexlabPlugin)
             slaMain.sexlabPlugin.ClearOptions()
-            slaMain.RegisterPlugin(slaMain.sexlabPlugin)
+            slaMain.RegisterPlugin(slaMain.sexlabPlugin, true)
         EndIf
 endFunction
 

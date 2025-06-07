@@ -86,9 +86,11 @@ int numberOfOptions = 0
 function ClearOptions()
         String prefix = "SLAroused.MCM." + self.name + "."
         int i = StorageUtil.StringListCount(main, "SLAroused.MCM.Options") - 1
+		slax.info("SLOANG -ClearOptions: " + prefix + ".Count:" + i )
         while i >= 0
                 string val = StorageUtil.StringListGet(main, "SLAroused.MCM.Options", i)
-                if val != "" && StringUtil.Find(val, prefix)
+                if val != "" && StringUtil.Find(val, prefix) == 0
+						slax.info("SLOANG - ClearOptions index:"+ i +".StringListRemove: " + val)
                         StorageUtil.StringListRemoveAt(main, "SLAroused.MCM.Options", i)
                         StorageUtil.ClearAllPrefix(val)
                 endIf
