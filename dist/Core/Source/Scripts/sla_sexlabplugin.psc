@@ -327,6 +327,10 @@ state Installed
 
 		int i = 0
 		while i < actorList.length
+			if main.IsSLPInstalled
+				sexEffectMod = SexlabStatistics.getStatistic(actorList[i], 17) - slaInternalModules.GetArousal(actorList[i]) ;slp enjoyment - current arousal to get the diff
+				slax.Info("SLOANG - OnStageStart - " + actorList[i].GetActorBase().GetName() + " : sexEffeect diff: " + sexEffectMod)
+			endif
 			ModArousalEffectValue(actorList[i], sexEff, sexEffectMod, sexEffMax)
 			i += 1
 		endWhile

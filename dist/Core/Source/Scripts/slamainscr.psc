@@ -16,7 +16,7 @@ Keyword Property armorCuirass Auto
 Keyword Property clothingBody Auto
 Faction Property slaNaked Auto
 Faction Property slaArousal Auto
-GlobalVariable Property sla_NextMaintenance  Auto  
+GlobalVariable Property sla_NextMaintenance  Auto
 GlobalVariable Property sla_AnimateFemales Auto
 GlobalVariable Property sla_AnimateMales Auto
 GlobalVariable Property sla_AnimationThreshhold Auto
@@ -75,12 +75,12 @@ sla_PluginBase[] losPlugins
 
 ; FOLDEND - Plugin system
 ;External
-bool IsANDInstalled = false ; Advnaced Nudity Detection
+Bool Property IsANDInstalled = false auto hidden ; Advanced Nudity Detection
 Faction AND_Nude
 Faction AND_Topless
 Faction AND_Bottomless
 Faction AND_Genitals
-
+Bool Property IsSLPInstalled = false auto hidden ; Sexlab Plus
 
 State cleaning
 
@@ -471,11 +471,16 @@ bool function RemoveEffectGroup(Actor who, int effIdx)
     return slaInternalModules.RemoveEffectGroup(who, effIdx)
 endFunction
 
-function UpdateSingleActorArousal(Actor who) 
+function UpdateSingleActorArousal(Actor who)
     slax.Info("SLOANG - UpdateArousal(" + who.GetLeveledActorBase().GetName() + ")")
     slaInternalModules.UpdateSingleActorArousal(who, GameDaysPassed.GetValue())
 
     int arousal = slaUtil.GetActorArousal(who)
+    
+    if IsSLPInstalled
+        SexlabStatistics.SetStatistic(who, 17, arousal)
+    endif
+
     if who == playerRef
         OnPlayerArousalUpdate(arousal)
     endIf
@@ -598,6 +603,11 @@ Function Maintenance()
          AND_Topless = Game.GetFormFromFile(0x832, "Advanced Nudity Detection.esp") as Faction
          IsANDInstalled = True
     endif
+
+    If (!IsSLPInstalled && SKSE.GetPluginVersion("SexLabUtil") >= 34340864)
+        slax.Info("SLOANG: SLP+ mod found")
+        IsSLPInstalled = true
+    EndIf
 
     GotoState("initializing")
     
@@ -733,20 +743,23 @@ function UpdateActorArousals(bool fullUpdate)
         endIf
 
     endWhile
-    int updPluginsAmount = slax.CountNonNullElements(updatePlugins)
-    int losPluginsAmount = slax.CountNonNullElements(losPlugins)
+    ;int updPluginsAmount = slax.CountNonNullElements(updatePlugins)
+    ;int losPluginsAmount = slax.CountNonNullElements(losPlugins)
     i = actorCount
     while i > 0
         i -= 1
         Actor observer = updateActors[i]
        
-		int j = updPluginsAmount
-		while j > 0
-			j -= 1
-			sla_PluginBase plugin = updatePlugins[j]
-			plugin.UpdateActor(observer, fullUpdate)
-		endWhile
-                
+		;int j = updPluginsAmount
+        int j = updatePlugins.Length
+        while j > 0
+            j -= 1
+            sla_PluginBase plugin = updatePlugins[j]
+            If (plugin)
+                plugin.UpdateActor(observer, fullUpdate)
+            EndIf
+        endWhile
+
         if fullUpdate
             j = actorCount
             while j > 0
@@ -754,11 +767,13 @@ function UpdateActorArousals(bool fullUpdate)
                 Actor observed = updateActors[j]
                 if observer != observed
                     if !GetUseLOS() || observer.HasLOS(observed)
-                        int k = losPluginsAmount
+                        int k = losPlugins.Length
                         while k > 0
                             k -= 1
                             sla_PluginBase plugin = losPlugins[k]
-                            plugin.UpdateObserver(observer, observed)
+                            If (plugin)
+                                 plugin.UpdateObserver(observer, observed)
+                            endif
                         endWhile
                     endIf
                 endIf
@@ -766,11 +781,13 @@ function UpdateActorArousals(bool fullUpdate)
         endIf
     endWhile
 	
-	i = updPluginsAmount
+	i = updatePlugins.Length
 	while i > 0
 		i -= 1
 		sla_PluginBase plugin = updatePlugins[i]
-		plugin.UpdateActor(none, fullUpdate)
+        If (plugin)
+           plugin.UpdateActor(none, fullUpdate)
+        endif
 	endWhile
     
     i = actorCount
