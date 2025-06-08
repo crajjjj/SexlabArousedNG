@@ -787,7 +787,11 @@ function ForceUpdateActor(Actor who)
         return
     endIf
 
-	int i = updatePluginCount
+    int i = 0
+    if updatePlugins
+        i = updatePlugins.Length    
+    endif
+	
 	while i > 0
 		i -= 1
 		sla_PluginBase plugin = updatePlugins[i]
@@ -850,11 +854,11 @@ Bool Function IsActorNakedExtended(Actor who)
     ;Can't just use WornHasKeyword, because we're trying to establish nakedness, not simply presence of a flagged armor.
     ;Check Advanced Nudity first
     If IsANDInstalled == True && AND_Nude
-		If PlayerRef.GetFactionRank(AND_Nude) == 1
+		If who.GetFactionRank(AND_Nude) == 1
 			return True
-		ElseIf PlayerRef.GetFactionRank(AND_Topless) == 1 || PlayerRef.GetFactionRank(AND_Bottomless) == 1
+		ElseIf who.GetFactionRank(AND_Topless) == 1 || who.GetFactionRank(AND_Bottomless) == 1
 			return True
-		ElseIf  PlayerRef.GetFactionRank(AND_Genitals) == 1
+		ElseIf  who.GetFactionRank(AND_Genitals) == 1
 			return True
 		EndIf
 	EndIf
