@@ -92,6 +92,12 @@ event OnDeviceEquipped(Form inventoryDevice, Form deviceKeyword, Form akActor)
 		if libs.GetWornDevice(who, libs.zad_DeviousBlindfold)
 			numberOfDevices += 1
 		endIf
+		if libs.GetWornDevice(who, libs.zad_DeviousPiercingsNipple)
+			numberOfDevices += 1
+		endIf
+		if libs.GetWornDevice(who, libs.zad_DeviousPiercingsVaginal)
+			numberOfDevices += 1
+		endIf
 		if numberOfDevices > 0
 			minimum = minimum * numberOfDevices
 		endIf

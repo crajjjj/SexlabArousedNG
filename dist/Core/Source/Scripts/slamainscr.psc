@@ -74,7 +74,12 @@ int losPluginCount ; deprecated
 sla_PluginBase[] losPlugins
 
 ; FOLDEND - Plugin system
-
+;External
+bool IsANDInstalled = false ; Advnaced Nudity Detection
+Faction AND_Nude
+Faction AND_Topless
+Faction AND_Bottomless
+Faction AND_Genitals
 
 
 State cleaning
@@ -584,20 +589,15 @@ Function Maintenance()
     defaultPlugin.ddPlugin.registerForInternalEvents()
     sexlabPlugin.registerForInternalEvents()
     ostimPlugin.registerForInternalEvents()
-    
-    ;refresh plugins
-    ; if bWasInitialized
-    ;     slax.Info("SLOANG Maintenance- refresh plugins")
-    ;     UnregisterPlugin(defaultPlugin.ddPlugin)
-    ;     UnregisterPlugin(defaultPlugin)
-    ;     UnregisterPlugin(ostimPlugin)
-    ;     UnregisterPlugin(sexlabPlugin)
 
-    ;     defaultPlugin.UpdatePluginState(true)
-    ;     defaultPlugin.ddPlugin.UpdatePluginState(true)
-    ;     sexlabPlugin.UpdatePluginState(true)
-    ;     ostimPlugin.UpdatePluginState(true)
-    ; endif
+    if !IsANDInstalled && Game.GetModByName("Advanced Nudity Detection.esp") != 255
+         slax.Info("SLOANG: Advanced Nudity Detection mod found")
+         AND_Nude = Game.GetFormFromFile(0x831, "Advanced Nudity Detection.esp") as Faction
+         AND_Bottomless = Game.GetFormFromFile(0x833, "Advanced Nudity Detection.esp") as Faction
+         AND_Genitals = Game.GetFormFromFile(0x830, "Advanced Nudity Detection.esp") as Faction
+         AND_Topless = Game.GetFormFromFile(0x832, "Advanced Nudity Detection.esp") as Faction
+         IsANDInstalled = True
+    endif
 
     GotoState("initializing")
     
@@ -847,8 +847,18 @@ EndFunction
 
 
 Bool Function IsActorNakedExtended(Actor who)
-    ; Can't just use WornHasKeyword, because we're trying to establish nakedness, not simply presence of a flagged armor.
-
+    ;Can't just use WornHasKeyword, because we're trying to establish nakedness, not simply presence of a flagged armor.
+    ;Check Advanced Nudity first
+    If IsANDInstalled == True && AND_Nude
+		If PlayerRef.GetFactionRank(AND_Nude) == 1
+			return True
+		ElseIf PlayerRef.GetFactionRank(AND_Topless) == 1 || PlayerRef.GetFactionRank(AND_Bottomless) == 1
+			return True
+		ElseIf  PlayerRef.GetFactionRank(AND_Genitals) == 1
+			return True
+		EndIf
+	EndIf
+    
     Armor armorToCheck = who.GetWornForm(0x00000004) As Armor ; Slot 32 - body
       if armorToCheck
         if armorToCheck.HasKeyword(nakedArmorWord) || StorageUtil.GetIntValue(armorToCheck, "SLAroused.IsNakedArmor") > 0  ; Naked in body slot overrides other armors.
