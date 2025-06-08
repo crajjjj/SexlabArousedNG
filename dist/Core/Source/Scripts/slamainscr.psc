@@ -789,15 +789,17 @@ function ForceUpdateActor(Actor who)
 
     int i = 0
     if updatePlugins
-        i = updatePlugins.Length    
+        i = updatePlugins.Length
     endif
-	
-	while i > 0
-		i -= 1
-		sla_PluginBase plugin = updatePlugins[i]
-		plugin.UpdateActor(who, false)
-		plugin.UpdateActor(none, false)
-	endWhile
+
+    while i > 0
+        i -= 1
+        sla_PluginBase plugin = updatePlugins[i]
+        if plugin
+            plugin.UpdateActor(who, false)
+            plugin.UpdateActor(none, false)
+        endIf
+    endWhile
     UpdateSingleActorArousal(who)
 endFunction
 
