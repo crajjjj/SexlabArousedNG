@@ -11,7 +11,7 @@ bool function CheckDependencies()
 endFunction
 
 bool function HasSLSO()
-    return 255 != Game.GetModByName("SLSO.esp")  
+    return main.IsSLSOInstalled
 endFunction
 
 event OnEndState()
@@ -310,31 +310,34 @@ state Installed
 		endIf
 	endFunction
 
-	event OnStageStart(int tid, bool hasPlayer)
-		slax.Info("SLOANG - OnStageStart - " + tid + " : " + hasPlayer)
-		sslThreadController thisThread = SexLab.GetController(tid)
-		Actor[] actorList = thisThread.Positions
-	
-		if (actorList.Length < 1)
-			return
-		endIf
-		
-		float sexEffectMod = sexPerStage
-
-		if thisThread.animation.HasTag("Foreplay")
-			sexEffectMod *= 2.0
-		endIf
-
-		int i = 0
-		while i < actorList.length
-			if main.IsSLPInstalled
-				sexEffectMod = SexlabStatistics.getStatistic(actorList[i], 17) - slaInternalModules.GetArousal(actorList[i]) ;slp enjoyment - current arousal to get the diff
-				slax.Info("SLOANG - OnStageStart - " + actorList[i].GetActorBase().GetName() + " : sexEffeect diff: " + sexEffectMod)
+    event OnStageStart(int tid, bool hasPlayer)
+        slax.Info("SLOANG - OnStageStart - " + tid + " : " + hasPlayer + ".Stage: " + thisThread.Stage)
+        sslThreadController thisThread = SexLab.GetController(tid)
+        Actor[] actorList = thisThread.Positions
+    
+        if actorList.Length < 1
+            return
+        endIf
+    
+        int i = 0
+        while i < actorList.Length
+            float sexEffectMod = sexPerStage ; Default value
+            if thisThread.animation.HasTag("Foreplay")
+                sexEffectMod *= 2.0
+            endIf
+    
+            if main.IsSLPInstalled
+                sexEffectMod = thisThread.GetEnjoyment(actorList[i])
+                slax.Info("SLOANG - OnStageStart - " + actorList[i].GetActorBase().GetName()+ " : sexEffectMod: " + sexEffectMod)
+           		float result = PapyrusUtil.ClampFloat(sexEffectMod, -sexEffMax, sexEffMax)
+            	SetArousalEffectValue(actorList[i], sexEff, result)
+			else
+				slax.Info("SLOANG - OnStageStart (no SLP) - " + actorList[i].GetActorBase().GetName() + " : sexEffectMod: " + sexEffectMod)
+				ModArousalEffectValue(actorList[i], sexEff, sexEffectMod, sexEffMax)
 			endif
-			ModArousalEffectValue(actorList[i], sexEff, sexEffectMod, sexEffMax)
-			i += 1
-		endWhile
-	endEvent
+            i += 1
+        endWhile
+    endEvent
 	
 	event OnAnimationEnd(int tid, bool hasPlayer)
 		slax.Info("SLOANG - OnAnimationEnd - " + tid + " : " + hasPlayer)

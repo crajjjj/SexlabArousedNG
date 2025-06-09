@@ -81,7 +81,7 @@ Faction AND_Topless
 Faction AND_Bottomless
 Faction AND_Genitals
 Bool Property IsSLPInstalled = false auto hidden ; Sexlab Plus
-
+Bool Property IsSLSOInstalled = false auto hidden ; SLSO
 State cleaning
 
     Event OnUpdate()
@@ -588,7 +588,7 @@ EndFunction
 
 ; This always runs on load
 Function Maintenance()
-
+    slax.Info("SLOANG: Maintenance")
     UnregisterForUpdate()
     defaultPlugin.registerForInternalEvents()
     defaultPlugin.ddPlugin.registerForInternalEvents()
@@ -604,9 +604,14 @@ Function Maintenance()
          IsANDInstalled = True
     endif
 
-    If (!IsSLPInstalled && SKSE.GetPluginVersion("SexLabUtil") >= 34340864)
+    If !IsSLPInstalled && SKSE.GetPluginVersion("SexLabUtil") >= 34275456 ;> V2.12.0 - 1.6.1170.zip
         slax.Info("SLOANG: SLP+ mod found")
         IsSLPInstalled = true
+    EndIf
+
+    If !IsSLSOInstalled && 255 != Game.GetModByName("SLSO.esp")
+        slax.Info("SLOANG: SLSO mod found")
+        IsSLSOInstalled = true
     EndIf
 
     GotoState("initializing")

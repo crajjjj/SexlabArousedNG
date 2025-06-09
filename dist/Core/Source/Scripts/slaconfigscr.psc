@@ -238,7 +238,7 @@ Event OnGameReload()
     RestoreKeywords(keyKillerHeels,  wordKillerHeels)
     
 	slaMain = Quest.GetQuest("sla_Main") As slaMainScr
-	slaMain.Maintenance()
+	;slaMain.Maintenance()
    
     slaMain.OnPlayerLoadGame()
     parent.OnGameReload() ; Don't forget to call the parent!
