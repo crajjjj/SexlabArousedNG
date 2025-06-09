@@ -5,38 +5,42 @@ Event OnInit()
 	;debug.notification(ReturnSlaQuest())
 EndEvent
 
-bool Function IsIntegraged ()
+bool Function IsIntegraged()
 	Return True
 EndFunction
 
 int Function GetActorArousal(Actor akActor)
-	slaFrameWorkScr sla = Quest.GetQuest("sla_Framework") as slaFrameWorkScr
+	slaFrameworkScr sla = Quest.GetQuest("sla_Framework") as slaFrameworkScr
 	return sla.GetActorArousal(akActor)
 EndFunction
 
 float Function GetActorExposure(Actor akActor)
-	slaFrameWorkScr sla = Quest.GetQuest("sla_Framework") as slaFrameWorkScr
+	slaFrameworkScr sla = Quest.GetQuest("sla_Framework") as slaFrameworkScr
 	return sla.GetDynamicEffectValue(akActor, "MME")
 EndFunction
 
 float Function GetActorExposureRate(Actor akActor)
-	slaFrameWorkScr sla = Quest.GetQuest("sla_Framework") as slaFrameWorkScr
+	slaFrameworkScr sla = Quest.GetQuest("sla_Framework") as slaFrameworkScr
 	return sla.GetActorExposureRate(akActor)
 EndFunction
 
 Function UpdateActorExposure(Actor akActor, Int value)
-	slaFrameWorkScr sla = Quest.GetQuest("sla_Framework") as slaFrameWorkScr
-	sla.ModDynamicArousalEffect(akActor, "MME", value as float, 100.0)
+	slaFrameworkScr sla = Quest.GetQuest("sla_Framework") as slaFrameworkScr
+	if sla.GetDynamicEffectValue(akActor,"MME") > 0
+		sla.ModDynamicArousalEffect(akActor, "MME", value as float, 30.0)
+		return
+	endif
 	sla.SetDynamicArousalEffect(akActor, "MME", 0.0, sla.DecayFunction, 0.5, 0.0)
 EndFunction
 
 Function UpdateActorExposureRate(Actor akActor, Float value)
-	slaFrameWorkScr sla = Quest.GetQuest("sla_Framework") as slaFrameWorkScr
+	slaFrameworkScr sla = Quest.GetQuest("sla_Framework") as slaFrameworkScr
 	sla.UpdateActorExposureRate(akActor, value)
 EndFunction
 
 Function UpdateActorOrgasmDate(Actor akActor)
-	slaFrameWorkScr sla = Quest.GetQuest("sla_Framework") as slaFrameWorkScr
+	;deprecated
+	slaFrameworkScr sla = Quest.GetQuest("sla_Framework") as slaFrameworkScr
 	sla.UpdateActorOrgasmDate(akActor)
 EndFunction
 

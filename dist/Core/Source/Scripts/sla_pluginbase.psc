@@ -168,7 +168,7 @@ function HideEffectInUI(int effectId)
 endFunction
 
 function ShowEffectInUI(int effectId)
-	main.SetEffectVisible(effectId, false)
+	main.SetEffectVisible(effectId, true)
 endFunction
 
 int function RegisterEffect(string id, string title, string description)
