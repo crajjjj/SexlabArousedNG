@@ -322,16 +322,25 @@ state Installed
         int i = 0
         while i < actorList.Length
             float sexEffectMod = sexPerStage ; Default value
-            if thisThread.animation.HasTag("Foreplay")
-                sexEffectMod *= 2.0
-            endIf
-    
+
             if main.IsSLPInstalled
                 sexEffectMod = thisThread.GetEnjoyment(actorList[i])
                 slax.Info("SLOANG - OnStageStart - " + actorList[i].GetActorBase().GetName()+ " : sexEffectMod: " + sexEffectMod)
            		float result = PapyrusUtil.ClampFloat(sexEffectMod, -sexEffMax, sexEffMax)
             	SetArousalEffectValue(actorList[i], sexEff, result)
 			else
+				if thisThread.animation.HasTag("Foreplay")
+             	   sexEffectMod *= 2.0
+          		endIf
+    			if thisThread.IsAggressive
+				   sexEffectMod *= 2.0
+				endif
+				if SexLab.IsVictim(tid, actorList[i])
+					float delta = traumaLewdRate * GetLewd(actorList[i]) - sexEffectMod
+					if delta < 0
+						sexEffectMod = 0
+					endif
+				endif
 				slax.Info("SLOANG - OnStageStart (no SLP) - " + actorList[i].GetActorBase().GetName() + " : sexEffectMod: " + sexEffectMod)
 				ModArousalEffectValue(actorList[i], sexEff, sexEffectMod, sexEffMax)
 			endif

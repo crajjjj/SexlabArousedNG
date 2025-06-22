@@ -160,7 +160,13 @@ Function HandleStartScene(int threadId, Actor[] threadActors)
     slax.Info("SLOANG - Ostim HandleStartScene - threadId " + threadId)
     int i = 0
     while i < threadActors.Length
-        ModArousalEffectValue(threadActors[i], sexEff, sexPerStage, sexEffMax)
+        float sexEffectMod = sexPerStage
+        if OStim.IsSceneAggressiveThemed()
+            sexEffectMod *= 2.0
+        endif
+        if !OStim.IsVictim(threadActors[i])
+            ModArousalEffectValue(threadActors[i], sexEff, sexEffectMod, sexEffMax)
+        endif
         i += 1
     endwhile
 EndFunction
@@ -227,22 +233,22 @@ state Installed
         RegisterForPerodicUpdates()
         ;RegisterForLOSUpdates()
         registerOstimEventHandlers()
-        sexEff = RegisterEffect("OSex", "$SLA_Effect_Sex", "$SLA_Effect_SexDesc")
-        fatigueEff = RegisterEffect("OFatigue", "$SLA_Effect_Fatigue", "$SLA_Effect_FatigueDesc")
-        traumaEff = RegisterEffect("OTrauma", "$SLA_Effect_Trauma", "$SLA_Effect_TraumaDesc")
+        sexEff = RegisterEffect("OSex", "$SLA_Effect_OSex", "$SLA_Effect_OSexDesc")
+        fatigueEff = RegisterEffect("OFatigue", "$SLA_Effect_OFatigue", "$SLA_Effect_OFatigueDesc")
+        traumaEff = RegisterEffect("OTrauma", "$SLA_Effect_OTrauma", "$SLA_Effect_OTraumaDesc")
     endFunction
 
     function AddOptions()
         slax.info("SLOANG - Ostim.AddOptions()")
-        AddOption("$SLA_Effect_SexCat", "$SLA_Effect_SexMax", "$SLA_Effect_SexMaxDesc", 50.0)
-        AddOptionEx("$SLA_Effect_SexCat", "$SLA_Effect_SexHalfTime", "$SLA_Effect_SexHalfTimeDesc", 1.0 / 24.0, 0.1, 24.0, 0.1, "{1} hours")
-        AddToggleOption("$SLA_Effect_SexCat", "$SLA_AlwaysCheckOrgasm", "$SLA_AlwaysCheckOrgasmDesc", false)
-        AddOptionEx("$SLA_Effect_TraumaCat", "$SLA_Effect_TraumaHalfTime", "$SLA_Effect_TraumaHalfTimeDesc", 0.5, 0.0, 7.0, 0.1, "{1} days")
-        AddOption("$SLA_Effect_TraumaCat", "$SLA_Effect_TraumaBase", "$SLA_Effect_TraumaBaseDesc", 10.0)
-        AddOptionEx("$SLA_Effect_TraumaCat", "$SLA_Effect_TraumaLewd", "$SLA_Effect_TraumaLewdDesc", 1.0, 0.0, 10.0, 0.1, "{1}")
-        AddOption("$SLA_Effect_FatigueCat", "$SLA_Effect_FatigueBase", "$SLA_Effect_FatigueBaseDesc", 5.0)
-        AddOptionEx("$SLA_Effect_FatigueCat", "$SLA_Effect_FatigueHalfTime", "$SLA_Effect_FatigueHalfTimeDesc", 0.5, 0.0, 7.0, 0.1, "{1} days")
-        AddOption("$SLA_Effect_SexCat", "$SLA_Effect_SexPerStage", "$SLA_Effect_SexPerStageDesc", 5.0)
+        AddOption("$SLA_Effect_SexCat", "$SLA_Effect_OSexMax", "$SLA_Effect_OSexMaxDesc", 50.0)
+        AddOptionEx("$SLA_Effect_SexCat", "$SLA_Effect_OSexHalfTime", "$SLA_Effect_OSexHalfTimeDesc", 1.0 / 24.0, 0.1, 24.0, 0.1, "{1} hours")
+        AddToggleOption("$SLA_Effect_SexCat", "$SLA_OAlwaysCheckOrgasm", "$SLA_OAlwaysCheckOrgasmDesc", false)
+        AddOptionEx("$SLA_Effect_TraumaCat", "$SLA_Effect_OTraumaHalfTime", "$SLA_Effect_OTraumaHalfTimeDesc", 0.5, 0.0, 7.0, 0.1, "{1} days")
+        AddOption("$SLA_Effect_TraumaCat", "$SLA_Effect_OTraumaBase", "$SLA_Effect_OTraumaBaseDesc", 10.0)
+        AddOptionEx("$SLA_Effect_TraumaCat", "$SLA_Effect_OTraumaLewd", "$SLA_Effect_OTraumaLewdDesc", 1.0, 0.0, 10.0, 0.1, "{1}")
+        AddOption("$SLA_Effect_FatigueCat", "$SLA_Effect_OFatigueBase", "$SLA_Effect_OFatigueBaseDesc", 5.0)
+        AddOptionEx("$SLA_Effect_FatigueCat", "$SLA_Effect_OFatigueHalfTime", "$SLA_Effect_OFatigueHalfTimeDesc", 0.5, 0.0, 7.0, 0.1, "{1} days")
+        AddOption("$SLA_Effect_SexCat", "$SLA_Effect_OSexPerStage", "$SLA_Effect_OSexPerStageDesc", 5.0)
     endFunction
 
     function DisablePlugin()

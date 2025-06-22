@@ -160,7 +160,7 @@ Armor[] emptyArmorArray
 
 
 Int Function GetVersion() 
-    Return       30100000
+    Return       30100001
 	;	0.00.00000
     ; 1.0.0   -> 10000000
     ; 1.1.0   -> 10100000
@@ -170,7 +170,7 @@ Int Function GetVersion()
 EndFunction
 
 String Function GetVersionString() 
-    Return "3.1.0"
+    Return "3.1.1"
 EndFunction
 
 
@@ -192,9 +192,9 @@ Event OnVersionUpdate(int newVersion)
         
 	Endif
 
-    If ((newVersion >= 30000003) && (CurrentVersion < 30000003))
+    If ((newVersion >= 30000003) && (CurrentVersion < 30100001))
 		Debug.Trace(self + ": Updating MCM menus to version " + newVersion)
-        slax.Info("SLOANG cleaning options for pre 3.0.0 versions")
+        slax.Info("SLOANG cleaning options for pre 3.1.1 versions")
        
         If (slaMain.defaultPlugin.ddPlugin.IsInterfaceActive())
             slaMain.UnregisterPlugin(slaMain.defaultPlugin.ddPlugin)
