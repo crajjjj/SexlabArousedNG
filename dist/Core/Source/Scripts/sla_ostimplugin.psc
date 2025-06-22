@@ -234,7 +234,7 @@ state Installed
         ;RegisterForLOSUpdates()
         registerOstimEventHandlers()
         sexEff = RegisterEffect("OSex", "$SLA_Effect_OSex", "$SLA_Effect_OSexDesc")
-        fatigueEff = RegisterEffect("OFatigue", "$SLA_Effect_OFatigue", "$SLA_Effect_OFatigueDesc")
+        fatigueEff = RegisterEffect("OFatigue", "$SLA_Effect_OFatigueBase", "$SLA_Effect_FatigueDesc")
         traumaEff = RegisterEffect("OTrauma", "$SLA_Effect_OTrauma", "$SLA_Effect_OTraumaDesc")
     endFunction
 
