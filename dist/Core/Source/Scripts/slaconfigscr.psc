@@ -160,7 +160,7 @@ Armor[] emptyArmorArray
 
 
 Int Function GetVersion() 
-    Return       30100001
+    Return       30100002
 	;	0.00.00000
     ; 1.0.0   -> 10000000
     ; 1.1.0   -> 10100000
@@ -170,7 +170,7 @@ Int Function GetVersion()
 EndFunction
 
 String Function GetVersionString() 
-    Return "3.1.1"
+    Return "3.1.2"
 EndFunction
 
 
@@ -680,16 +680,47 @@ Function UpdateWornItemStates(Actor who)
     bodyItem = who.GetWornForm(slaSlotMaskValues[2]) As Armor ; 32 - 30
     If bodyItem
         nakedArmorValue   = StorageUtil.GetIntValue(bodyItem, keyNakedArmor)
+        If nakedArmorValue <= 0 && bodyItem.HasKeyword(wordNakedArmor)
+            nakedArmorValue = 51
+        EndIf
+
         bikiniArmorValue  = StorageUtil.GetIntValue(bodyItem, keyBikiniArmor)
+        If bikiniArmorValue <= 0 && bodyItem.HasKeyword(wordBikiniArmor)
+            bikiniArmorValue = 51
+        EndIf
+
         sexyArmorValue    = StorageUtil.GetIntValue(bodyItem, keySexyArmor)
+        If sexyArmorValue <= 0 && bodyItem.HasKeyword(wordSexyArmor)
+            sexyArmorValue = 51
+        EndIf
+
         slootyArmorValue  = StorageUtil.GetIntValue(bodyItem, keySlootyArmor)
+        If slootyArmorValue <= 0 && bodyItem.HasKeyword(wordSlootyArmor)
+            slootyArmorValue = 51
+        EndIf
+
         illegalArmorValue = StorageUtil.GetIntValue(bodyItem, keyIllegalArmor)
+        If illegalArmorValue <= 0 && bodyItem.HasKeyword(wordIllegalArmor)
+            illegalArmorValue = 51
+        EndIf
+
+        poshArmorValue  = StorageUtil.GetIntValue(bodyItem, keyPoshArmor)
+        If poshArmorValue <= 0 && bodyItem.HasKeyword(wordPoshArmor)
+            poshArmorValue = 51
+        EndIf
+
         raggedArmorValue  = StorageUtil.GetIntValue(bodyItem, keyRaggedArmor)
+        If raggedArmorValue <= 0 && bodyItem.HasKeyword(wordRaggedArmor)
+            raggedArmorValue = 51
+        EndIf
     EndIf
 
     footItem  = who.GetWornForm(slaSlotMaskValues[7]) As Armor ; 37 - 30
     If footItem
         killerHeelsValue = StorageUtil.GetIntValue(footItem, keyKillerHeels)
+        If killerHeelsValue <= 0 && footItem.HasKeyword(wordKillerHeels)
+            killerHeelsValue = 75
+        EndIf
     EndIf
     
     GetBikiniArmorsForTargetActor(who)
@@ -731,6 +762,9 @@ Function GetBikiniArmorsForTargetActor(Actor who)
     While ii
         ii -= 1
         bikiniSliderValues[ii] = StorageUtil.GetIntValue(bikiniArmors[ii], keyBikiniArmor)
+        If bikiniSliderValues[ii] <= 0 && bikiniArmors[ii].HasKeyword(wordBikiniArmor)
+            bikiniSliderValues[ii] = 51
+        EndIf
     EndWhile
 
 
