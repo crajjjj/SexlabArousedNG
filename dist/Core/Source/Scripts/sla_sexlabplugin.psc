@@ -437,21 +437,29 @@ state Installed
 	Function StartPCMasturbation()
     	slax.Info("SLOANG (SexLab) - StartPCMasturbation")
     	; TODO - hook into SLD masturbation if present
+		if main.IsSLPInstalled
+			If 0 == playerRef.GetLeveledActorBase().GetSex()
+				SexLab.QuickStart(playerRef,none,none,none,none,none,"","Masturbation,M")
+			else
+				SexLab.QuickStart(playerRef,none,none,none,none,none,"","Masturbation,F")
+			endif
+		else
+			sslBaseAnimation[] animations
+    		Actor[] sexActors = new Actor[1]
+    		sexActors[0] = playerRef
+			
+    		If 0 == playerRef.GetLeveledActorBase().GetSex()
+    		    animations = SexLab.GetAnimationsByTag(1, "Masturbation", "M")
+    		Else
+    		    animations = SexLab.GetAnimationsByTag(1, "Masturbation", "F")
+    		EndIf
 		
-    	sslBaseAnimation[] animations
-    	Actor[] sexActors = new Actor[1]
-    	sexActors[0] = playerRef
-		
-    	If 0 == playerRef.GetLeveledActorBase().GetSex()
-    	    animations = SexLab.GetAnimationsByTag(1, "Masturbation", "M")
-    	Else
-    	    animations = SexLab.GetAnimationsByTag(1, "Masturbation", "F")
-    	EndIf
-	
-    	Int id = SexLab.StartSex(sexActors, animations)
-    	If id < 0
-    	    Debug.Notification("SexLab animation failed to start [" + id + "]")
-    	EndIf
+    		Int id = SexLab.StartSex(sexActors, animations)
+    		If id < 0
+    		    Debug.Notification("SexLab animation failed to start [" + id + "]")
+    		EndIf
+		endif
+    	
     EndFunction
 
 	int Function getSexuality(Actor who)
