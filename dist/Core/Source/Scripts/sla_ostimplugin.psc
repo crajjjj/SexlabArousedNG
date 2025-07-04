@@ -429,15 +429,9 @@ state Installed
     EndFunction
     
     bool function isInScene(Actor act)
-        if ActiveSceneActors && ActiveSceneActors.Length > 0
-            int i = 0
-            while i < ActiveSceneActors.Length
-                if act == ActiveSceneActors[i]
-                    return true
-                endif
-            i += 1
-            endwhile
+        if OStim.AnimationRunning()
+            return OStim.IsActorInvolved(act)
         endif
-    return false
+        return false
     EndFunction
 endState

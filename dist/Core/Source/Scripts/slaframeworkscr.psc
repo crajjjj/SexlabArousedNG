@@ -312,9 +312,7 @@ int Function GetActorArousal(Actor who)
 EndFunction
 
 Actor Function GetMostArousedActorInLocation()
-
 	Return slaConfig.slaMostArousedActorInLocation
-    
 EndFunction
 
 
