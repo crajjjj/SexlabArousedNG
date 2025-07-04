@@ -322,13 +322,12 @@ Function UpdateSOSPosition(Actor who, Int actorArousal)
 	Faction animFaction = slaMain.sexlabPlugin.getSLAnimatingFaction()
 	If !who || !slaConfig.IsUseSOS
 		Return
-	ElseIf animFaction && who.IsInFaction(animFaction)
+	ElseIf (animFaction && who.IsInFaction(animFaction)) || slaMain.ostimPlugin.isInScene(who)
 		Return
 	EndIf
 	
 	Int erectionPosition = (actorArousal / 4) - 14;
 	HandleErection(who,  erectionPosition)
-    
 EndFunction
 
 

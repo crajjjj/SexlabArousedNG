@@ -6,6 +6,17 @@ sla_DefaultPlugin Property defaultPlugin Auto
 OSexIntegrationMain OStim
 actor[] ActiveSceneActors
 
+float[] previousModifiersThread0
+float[] previousModifiersThread1
+float[] previousModifiersThread2
+float[] previousModifiersThread3
+float[] previousModifiersThread4
+float[] previousModifiersThread5
+float[] previousModifiersThread6
+float[] previousModifiersThread7
+float[] previousModifiersThread8
+float[] previousModifiersThread9
+
 int sexEff = -1
 int fatigueEff = -1
 int traumaEff = -1
@@ -158,15 +169,18 @@ EndEvent
 
 Function HandleStartScene(int threadId, Actor[] threadActors)
     slax.Info("SLOANG - Ostim HandleStartScene - threadId " + threadId)
+    CreatePreviousModifiers(ThreadID)
+    bool bIsAggressive = OStim.IsSceneAggressiveThemed()
     int i = 0
     while i < threadActors.Length
         float sexEffectMod = sexPerStage
-        if OStim.IsSceneAggressiveThemed()
+        if bIsAggressive
             sexEffectMod *= 2.0
         endif
         if !OStim.IsVictim(threadActors[i])
             ModArousalEffectValue(threadActors[i], sexEff, sexEffectMod, sexEffMax)
         endif
+        CalculateStimMultiplier(ThreadID, threadActors[i], bIsAggressive, i)
         i += 1
     endwhile
 EndFunction
@@ -219,6 +233,104 @@ Function HandleActorOrgasm(int threadId, Actor targetActor)
     ForceUpdateArousal(targetActor)
 EndFunction
 
+Function CalculateStimMultiplier(int threadId, Actor act, bool isAggressive, int index)
+	float[]  Modifiers = GetPreviousModifiers(threadId)
+	float arousal = slaInternalModules.GetArousal(act)
+	float modifyBy
+       If (isAggressive && OStim.IsVictim(act))
+           modifyBy= 0.0
+       else
+           if arousal >= 95
+		    modifyBy = 1.25
+	    elseif arousal <= 5
+		    modifyBy = -0.35
+	    elseif arousal <= 40 
+		    modifyBy = 0.0
+	    else 
+		    arousal -= 40.0
+		    modifyBy = (arousal/100.0)
+	    endif 
+       EndIf
+	OUtils.GetOStim().ModifyStimMult(act, modifyBy - Modifiers[index])
+	ModifyPreviousModifiers(threadId, index, modifyBy)
+EndFunction
+
+float[] Function GetPreviousModifiers(int ThreadID)
+	if ThreadID == 0
+		return previousModifiersThread0
+	elseif ThreadID == 1
+		return previousModifiersThread1
+	elseif ThreadID == 2
+		return previousModifiersThread2
+	elseif ThreadID == 3
+		return previousModifiersThread3
+	elseif ThreadID == 4
+		return previousModifiersThread4
+	elseif ThreadID == 5
+		return previousModifiersThread5
+	elseif ThreadID == 6
+		return previousModifiersThread6
+	elseif ThreadID == 7
+		return previousModifiersThread7
+	elseif ThreadID == 8
+		return previousModifiersThread8
+	elseif ThreadID == 9
+		return previousModifiersThread9
+	endif
+	return Utility.CreateFloatArray(10)
+EndFunction
+
+Function CreatePreviousModifiers(int ThreadID)
+	if ThreadID == 0
+		previousModifiersThread0 = Utility.CreateFloatArray(10)
+	elseif ThreadID == 1
+		previousModifiersThread1 = Utility.CreateFloatArray(10)
+	elseif ThreadID == 2
+		previousModifiersThread2 = Utility.CreateFloatArray(10)
+	elseif ThreadID == 3
+		previousModifiersThread3 = Utility.CreateFloatArray(10)
+	elseif ThreadID == 4
+		previousModifiersThread4 = Utility.CreateFloatArray(10)
+	elseif ThreadID == 5
+		previousModifiersThread5 = Utility.CreateFloatArray(10)
+	elseif ThreadID == 6
+		previousModifiersThread6 = Utility.CreateFloatArray(10)
+	elseif ThreadID == 7
+		previousModifiersThread7 = Utility.CreateFloatArray(10)
+	elseif ThreadID == 8
+		previousModifiersThread8 = Utility.CreateFloatArray(10)
+	elseif ThreadID == 9
+		previousModifiersThread9 = Utility.CreateFloatArray(10)
+	endif
+EndFunction
+
+Function ModifyPreviousModifiers(int ThreadID, int index, float modify)
+	if ThreadID == 0
+		previousModifiersThread0[index] = modify
+	elseif ThreadID == 1
+		previousModifiersThread1[index] = modify
+	elseif ThreadID == 2
+		previousModifiersThread2[index] = modify
+	elseif ThreadID == 3
+		previousModifiersThread3[index] = modify
+	elseif ThreadID == 4
+		previousModifiersThread4[index] = modify
+	elseif ThreadID == 5
+		previousModifiersThread5[index] = modify
+	elseif ThreadID == 6
+		previousModifiersThread6[index] = modify
+	elseif ThreadID == 7
+		previousModifiersThread7[index] = modify
+	elseif ThreadID == 8
+		previousModifiersThread8[index] = modify
+	elseif ThreadID == 9
+		previousModifiersThread9[index] = modify
+	endif
+EndFunction
+
+bool function isInScene(Actor act)
+    return false
+EndFunction  
 
 state Installed
     event OnBeginState()
@@ -314,5 +426,18 @@ state Installed
         ; ModEvent.PushString(handle, genderTag)
         ; bool ok = ModEvent.Send(handle)
 
+    EndFunction
+    
+    bool function isInScene(Actor act)
+        if ActiveSceneActors && ActiveSceneActors.Length > 0
+            int i = 0
+            while i < ActiveSceneActors.Length
+                if act == ActiveSceneActors[i]
+                    return true
+                endif
+            i += 1
+            endwhile
+        endif
+    return false
     EndFunction
 endState
