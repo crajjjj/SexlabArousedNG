@@ -31,19 +31,19 @@ event On_sla_Int_PlayerLoadsGame(string eventName, string strArg, float numArg, 
 endEvent
 
 function UpdatePluginState(bool forced)
-	slax.info("sla_PluginBase - UpdatePluginState: " + name )
+	String toState = "No change"
 	if CheckDependencies()
-		if GetState() != "Installed" 
+		if GetState() != "Installed"
+			toState = "Installed"
 			GoToState("Installed")
-			main.RegisterPlugin(self)
-		elseif GetState() == "Installed" && forced
-			main.RegisterPlugin(self, false)
 		endIf
 	else
 		if GetState() != ""
+			toState = "Not Installed"
 			GoToState("")
 		endIf
 	endIf
+	slax.info("sla_PluginBase - UpdatePluginState: " + name +" .Target state: " + toState)
 endFunction
 
 bool function CheckDependencies()

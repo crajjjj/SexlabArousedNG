@@ -156,7 +156,7 @@ State initializing
 
         UpdateDesireSpell()
 
-        slax.Info("slaMainScr - return to empty state")
+        slax.Info("slaMainScr - returning to normal state")
         GotoState("")
         RegisterForSingleUpdate(updateFrequency) ;Start scanning in two minutes
 
@@ -1073,7 +1073,7 @@ EndFunction
 
 Function CleanActorStorage()
 
-    Debug.Notification("SLAX cleaning actor storage")
+    Debug.Notification("SLOANG cleaning actor storage")
     
     setCleaningTime()
     float days

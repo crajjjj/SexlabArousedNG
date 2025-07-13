@@ -10,6 +10,6 @@ Function Maintenance()
 EndFunction
 
 Event OnUpdate()
-	slax.Info("slaInternalScr OnUpdate")
+	slax.Info("slaInternalScr OnUpdate: calling Maintenance()")
 	Maintenance()
 EndEvent
