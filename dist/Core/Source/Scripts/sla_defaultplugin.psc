@@ -109,7 +109,7 @@ function OnUpdateOption(int optionId, float value)
 endFunction
 
 function OnOrgasm(Actor who, float enjoyment)
-	slax.Info("SLOANG - OnOrgasm(" + who + ", "+ enjoyment + ")")
+	slax.Info("sla_DefaultPlugin - OnOrgasm(" + who + ", "+ enjoyment + ")")
 	StorageUtil.SetFloatValue(who, "SLAroused.LastOrgasmDate", Utility.GetCurrentGameTime()) ;Added by Bane for Radiant Prostitution Orgasm Detection in V0.1.2 28/06/2023
 	SetArousalEffectValue(who, timedEff, 0.0)
 	float satisfaction = -orgasmBase - enjoyment * orgasmRate
@@ -170,7 +170,7 @@ state Installed
 	endFunction
 
 	function AddOptions()
-		slax.info("SLOANG - Default.AddOptions()")
+		slax.info("sla_DefaultPlugin - Default.AddOptions()")
 		AddOption("$SLA_Effect_NakedCat", "$SLA_Effect_NakedMax", "$SLA_Effect_NakedMaxDesc", 50.0)
 		AddOption("$SLA_Effect_NakedCat", "$SLA_Effect_NakedMaxNonPref", "$SLA_Effect_NakedMaxNonPrefDesc", 15.0)
 		AddOption("$SLA_Effect_NakedCat", "$SLA_Effect_NakedRate", "$SLA_Effect_NakedRateDesc", 25.0)

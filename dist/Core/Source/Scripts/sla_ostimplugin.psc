@@ -168,7 +168,7 @@ EndEvent
 ; ========== SHARED HANDLERS ================
 
 Function HandleStartScene(int threadId, Actor[] threadActors)
-    slax.Info("SLOANG - Ostim HandleStartScene - threadId " + threadId)
+    slax.Info("sla_OStimPlugin - Ostim HandleStartScene - threadId " + threadId)
     CreatePreviousModifiers(ThreadID)
     bool bIsAggressive = OStim.IsSceneAggressiveThemed()
     int i = 0
@@ -186,7 +186,7 @@ Function HandleStartScene(int threadId, Actor[] threadActors)
 EndFunction
 
 Function HandleEndScene(int threadId, Actor[] threadActors)
-    slax.Info("SLOANG - Ostim HandleEndScene - threadId " + threadId)
+    slax.Info("sla_OStimPlugin - Ostim HandleEndScene - threadId " + threadId)
 	Actor[] actorList = threadActors
 	
 	If (actorList.Length < 1)
@@ -228,7 +228,7 @@ Function HandleEndScene(int threadId, Actor[] threadActors)
 EndFunction
 
 Function HandleActorOrgasm(int threadId, Actor targetActor)
-    slax.Info("SLOANG - Ostim HandleActorOrgasm - threadId " + threadId)
+    slax.Info("sla_OStimPlugin - Ostim HandleActorOrgasm - threadId " + threadId)
     defaultPlugin.OnOrgasm(targetActor, 0)
     ForceUpdateArousal(targetActor)
 EndFunction
@@ -351,7 +351,7 @@ state Installed
     endFunction
 
     function AddOptions()
-        slax.info("SLOANG - Ostim.AddOptions()")
+        slax.info("sla_OStimPlugin - Ostim.AddOptions()")
         AddOption("$SLA_Effect_SexCat", "$SLA_Effect_OSexMax", "$SLA_Effect_OSexMaxDesc", 50.0)
         AddOptionEx("$SLA_Effect_SexCat", "$SLA_Effect_OSexHalfTime", "$SLA_Effect_OSexHalfTimeDesc", 1.0 / 24.0, 0.1, 24.0, 0.1, "{1} hours")
         AddToggleOption("$SLA_Effect_SexCat", "$SLA_OAlwaysCheckOrgasm", "$SLA_OAlwaysCheckOrgasmDesc", false)
@@ -372,7 +372,7 @@ state Installed
     endFunction
 
     Function StartPCMasturbation()
-        slax.Info("SLOANG (Ostim) - StartPCMasturbation")
+        slax.Info("sla_OStimPlugin - StartPCMasturbation")
         objectreference currentFurniture
 	    String id
 	    String animationX

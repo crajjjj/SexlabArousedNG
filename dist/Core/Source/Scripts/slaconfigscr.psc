@@ -160,7 +160,7 @@ Armor[] emptyArmorArray
 
 
 Int Function GetVersion() 
-    Return       30100003
+    Return       30100004
 	;	0.00.00000
     ; 1.0.0   -> 10000000
     ; 1.1.0   -> 10100000
@@ -170,32 +170,36 @@ Int Function GetVersion()
 EndFunction
 
 String Function GetVersionString() 
-    Return "3.1.3"
+    Return "3.1.4"
 EndFunction
 
 
+Event OnConfigInit()
+	ModName="SLO Aroused NG"
+	ResetConstants()
+    Debug.Notification("SLO Aroused NG: MCM menu initialized")
+EndEvent
+
 Event OnVersionUpdate(int newVersion)
-
     ResetConstants()
-    
-	If (((newVersion >= 7) && (CurrentVersion < 7)) || (Pages.length < 4))
-		Debug.Trace(self + ": Updating MCM menus to version " + newVersion)
 
+	If (((newVersion >= 7) && (CurrentVersion < 7)) || (Pages.length < 4))
+		slax.info(self + ": Updating MCM menus to version " + newVersion)
 		InitSlotMaskValues()
 	EndIf
-    
+
 	If((CurrentVersion > 0) && (CurrentVersion < 28))
-    
 		Debug.Notification("Updating Aroused Redux to version " + GetVersion() + "...")
 		sla_ConfigHelper helper = Quest.getQuest("sla_ConfigHelper") As sla_ConfigHelper
 		helper.ResetAllQuests()
-        
 	Endif
+    
+    if !slaMain
+        slaMain = Quest.GetQuest("sla_Main") as slaMainScr
+    endif
 
-    If ((newVersion >= 30000003) && (CurrentVersion < 30100001))
-		Debug.Trace(self + ": Updating MCM menus to version " + newVersion)
-        slax.Info("SLOANG cleaning options for pre 3.1.1 versions")
-       
+    If (slaMain && (newVersion >= 30000003) && (CurrentVersion < 30100001) && (CurrentVersion > 30000000))
+        slax.Info("Updating MCM. Cleaning options for pre 3.1.1 versions. Previous version:" + CurrentVersion + ".New version:" + newVersion)
         If (slaMain.defaultPlugin.ddPlugin.IsInterfaceActive())
             slaMain.UnregisterPlugin(slaMain.defaultPlugin.ddPlugin)
             slaMain.defaultPlugin.ddPlugin.ClearOptions()
@@ -216,18 +220,13 @@ Event OnVersionUpdate(int newVersion)
             slaMain.sexlabPlugin.ClearOptions()
             slaMain.RegisterPlugin(slaMain.sexlabPlugin)
         EndIf
-		
 	EndIf
-    
 EndEvent
 
 
 Event OnGameReload()
-
-    slax.Info("SLOANG - OnGameReload")
-    
+    slax.Info("slaConfigScr - OnGameReload")
     ResetConstants()
-
     RestoreKeywords(keyNakedArmor,   wordNakedArmor)
     RestoreKeywords(keyBikiniArmor,  wordBikiniArmor)
     RestoreKeywords(keySexyArmor,    wordSexyArmor)
@@ -236,13 +235,11 @@ Event OnGameReload()
     RestoreKeywords(keyPoshArmor,    wordPoshArmor)
     RestoreKeywords(keyRaggedArmor,  wordRaggedArmor)
     RestoreKeywords(keyKillerHeels,  wordKillerHeels)
-    
-	slaMain = Quest.GetQuest("sla_Main") As slaMainScr
-	;slaMain.Maintenance()
-   
-    slaMain.OnPlayerLoadGame()
-    parent.OnGameReload() ; Don't forget to call the parent!
 
+    if !slaMain
+        slaMain = Quest.GetQuest("sla_Main") as slaMainScr
+    endif
+    parent.OnGameReload() ; Don't forget to call the parent!
 EndEvent
 
 
@@ -271,8 +268,10 @@ EndFunction
 
 
 Event OnConfigOpen()
+    if !slaMain
+        slaMain = Quest.GetQuest("sla_Main") as slaMainScr
+    endif
     
-    slaMain = Quest.GetQuest("sla_Main") As slaMainScr
     cellScanFreq = slaMain.updateFrequency
     If(cellScanFreq < 10)
         cellScanFreq = 30
@@ -336,7 +335,7 @@ EndEvent
 
 Event OnConfigClose()
 
-    slax.Info("SLOANG - OnConfigClose - update spells and key registry")
+    slax.Info("slaConfigScr - OnConfigClose - update spells and key registry")
     
 	slaMain.UpdateDesireSpell()
 	slaMain.UpdateKeyRegistery()
@@ -350,7 +349,9 @@ EndEvent
 
 
 Event OnPageReset(String page)
-    
+    if !slaMain
+        slaMain = Quest.GetQuest("sla_Main") as slaMainScr
+    endif
     StorageUtil.ClearObjIntValuePrefix(none, "SLAroused.MCM.OID.")
 
     pageName = page
@@ -409,7 +410,7 @@ Event OnPageReset(String page)
         AddHeaderOption("$SLA_PluginList")
         
         int i = slax.CountNonNullElements(slaMain.plugins)
-        slax.Info("SLOANG - OnPageReset - pluginCount:" + i)
+        slax.Info("slaConfigScr - OnPageReset - pluginCount:" + i)
         while i > 0
             i -= 1
             sla_PluginBase plugin = slaMain.plugins[i]
@@ -473,7 +474,7 @@ function AddOptionHelper(sla_PluginBase plugin, int option)
     string optionType = StorageUtil.GetStringValue(slaMain, prefix + ".Type")
     string format = StorageUtil.GetStringValue(slaMain, prefix + ".Format", "{0}")
     int oid
-    ; Debug.Trace("SLOANG - Option Type = " + optionType, 2)
+    ; slax.info("slaConfigScr - Option Type = " + optionType, 2)
     if optionType == "toggle"
         oid = AddToggleOption(title, plugin.GetOptionValue(option) != 0.0)
     else
@@ -528,7 +529,7 @@ Function DisplayActorStatus(Actor who, bool editable = false)
 	while i > 0
         i -= 1
         string title = slaMain.GetEffectTitle(i)
-        ;Debug.Trace("SLOANG: Static Effect = " + title)
+        ;slax.info("slaConfigScr: Static Effect = " + title)
         if slaMain.IsEffectVisible(i)
             if (title == "")
                 AddTextOption("$SLA_UnusedEffect", "-", OPTION_FLAG_DISABLED)
@@ -551,7 +552,7 @@ Function DisplayActorStatus(Actor who, bool editable = false)
         i -= 1
         string effect = slaMain.GetDynamicEffect(who, i)
         string name = StorageUtil.GetStringValue(slaMain, "SLAroused.DynamicEffect." + effect + ".Title", effect)
-        Debug.Trace("SLOANG: Dynamic Effect = " + name)
+        slax.info("slaConfigScr: Dynamic Effect = " + name)
         string description = StorageUtil.GetStringValue(slaMain, "SLAroused.DynamicEffect." + effect + ".Description")
         float value = slaMain.GetDynamicEffectValue(who, i)
         int oid = AddTextOption(name, value)
@@ -758,7 +759,7 @@ Function GetBikiniArmorsForTargetActor(Actor who)
     bikiniSliderValues = Utility.CreateIntArray(bikiniArmors.Length)
     
     ii = bikiniArmors.Length
-    Debug.Trace("SLOANG: Got " + ii + " bikini items ")
+    slax.info("slaConfigScr: Got " + ii + " bikini items ")
     While ii
         ii -= 1
         bikiniSliderValues[ii] = StorageUtil.GetIntValue(bikiniArmors[ii], keyBikiniArmor)
@@ -766,7 +767,6 @@ Function GetBikiniArmorsForTargetActor(Actor who)
             bikiniSliderValues[ii] = 51
         EndIf
     EndWhile
-
 
 EndFunction
 
@@ -904,10 +904,10 @@ Event OnOptionInputAccept(int option, string value)
     
     if i >= 0
         float numeric = value as float
-        Debug.Trace("SLOANG: New static arousal value" + value + " numeric = " + numeric)
+        slax.info("slaConfigScr: New static arousal value" + value + " numeric = " + numeric)
         if numeric != 0.0 || value == "0" || value == "0.0"
             slaInternalModules.SetStaticArousalValue(puppetActor, i, numeric)
-            Debug.Trace("SLOANG: Setting static arousal value" + slaMain.GetEffectValue(puppetActor, i))
+            slax.info("slaConfigScr: Setting static arousal value" + slaMain.GetEffectValue(puppetActor, i))
             SetInputOptionValue(option, slaMain.GetEffectValue(puppetActor, i))
             setTextOptionValue(OID_TotalArousal, slaUtil.GetActorArousal(puppetActor))
         endIf
@@ -1322,7 +1322,7 @@ Event OnOptionHighlight(int option)
 
         int effId = StorageUtil.GetIntValue(self, "SLAroused.MCM.OID." + option, -1)
         if effId != -1
-            infoText = slaUtil.slaMain.GetEffectDescription(effId)
+            infoText = slaMain.GetEffectDescription(effId)
         else
             infoText = StorageUtil.SetStringValue(self, "SLAroused.MCM.OID." + option, "")
         endIf
@@ -1509,36 +1509,36 @@ EndEvent
 
 
 Function UpdateNakedKeywords(Armor item, Int value)
-    Debug.Trace("BEFORE AddNakedKeywords - value " + value + " : keyword present " + item.HasKeyword(wordNakedArmor))
+    slax.info("BEFORE AddNakedKeywords - value " + value + " : keyword present " + item.HasKeyword(wordNakedArmor))
     UpdateWearableState(item, keyNakedArmor, value)
     If value > 0
         KeywordUtil.AddKeywordToForm(item, wordNakedArmor)
     Else
         KeywordUtil.RemoveKeywordFromForm(item, wordNakedArmor)
     EndIf
-    Debug.Trace("AFTER AddNakedKeywords - value " + value + " : keyword present " + item.HasKeyword(wordNakedArmor))
+    slax.info("AFTER AddNakedKeywords - value " + value + " : keyword present " + item.HasKeyword(wordNakedArmor))
 EndFunction
 
 Function UpdateBikiniKeywords(Form item, Int value)
-    Debug.Trace("BEFORE AddBikiniKeywords - value " + value + " : keyword present " + item.HasKeyword(wordBikiniArmor))
+    slax.info("BEFORE AddBikiniKeywords - value " + value + " : keyword present " + item.HasKeyword(wordBikiniArmor))
     UpdateWearableState(item, keyBikiniArmor, value)
     If value > 0
         KeywordUtil.AddKeywordToForm(item, wordBikiniArmor)
     Else
         KeywordUtil.RemoveKeywordFromForm(item, wordBikiniArmor)
     EndIf
-    Debug.Trace("AFTER AddBikiniKeywords - value " + value + " : keyword present " + item.HasKeyword(wordBikiniArmor))
+    slax.info("AFTER AddBikiniKeywords - value " + value + " : keyword present " + item.HasKeyword(wordBikiniArmor))
 EndFunction
 
 Function UpdateSexyKeywords(Armor item, Int value)
-    Debug.Trace("BEFORE AddSexyKeywords - value " + value + " : keyword present " + item.HasKeyword(wordSexyArmor))
+    slax.info("BEFORE AddSexyKeywords - value " + value + " : keyword present " + item.HasKeyword(wordSexyArmor))
     UpdateWearableState(item, keySexyArmor, value)
     If value > 0
         KeywordUtil.AddKeywordToForm(item, wordSexyArmor)
     Else
         KeywordUtil.RemoveKeywordFromForm(item, wordSexyArmor)
     EndIf
-    Debug.Trace("AFTER AddSexyKeywords - value " + value + " : keyword present " + item.HasKeyword(wordSexyArmor))
+    slax.info("AFTER AddSexyKeywords - value " + value + " : keyword present " + item.HasKeyword(wordSexyArmor))
 EndFunction
 
 Function UpdateSlootyKeywords(Armor item, Int value)
@@ -1743,15 +1743,15 @@ Function ResetGenderPreferenceList()
 
 EndFunction
 
-
 Function ResetConstants()
-
-    player = Game.GetPlayer()
+    if !player
+        player = Game.GetPlayer()
+    endif
     ResetPageNames()
     ResetGenderPreferenceList()
     ResetKeys()
     ResetKeywords()
-    
+
 EndFunction
 
 function ClearActorData()
@@ -1784,10 +1784,10 @@ function ClearAllData()
         return
     endIf
 
-    slax.Error("SLOANG MCM CleanUpActors")
+    slax.Error("slaConfigScr MCM CleanUpActors")
     slaInternalModules.CleanUpActors(Utility.GetCurrentGameTime())
     Utility.WaitMenuMode(5.0)
-    slax.Error("SLOANG MCM Refresh PLugins")
+    slax.Error("slaConfigScr MCM Refresh PLugins")
 
     If (slaMain.defaultPlugin.ddPlugin.IsInterfaceActive())
             slaMain.UnregisterPlugin(slaMain.defaultPlugin.ddPlugin)
@@ -1855,7 +1855,7 @@ function ExportSettings()
     endWhile
     if !jsonutil.Save(fileName, false)
         SetTextOptionValue(exportSettingsOID, "Error")
-		slax.Error("SLOANG export failed: " + jsonutil.GetErrors(fileName))
+		slax.Error("slaConfigScr export failed: " + jsonutil.GetErrors(fileName))
     Else
         SetTextOptionValue(exportSettingsOID, "$SLA_Done")
 	endIf
@@ -1869,7 +1869,7 @@ function ImportSettings()
     string fileName = getFileName()
     SetTextOptionValue(exportSettingsOID, "SLA_Working")
 
-    ; Load main options (add Debug.Trace for troubleshooting)
+    ; Load main options (add slax.info for troubleshooting)
     IsDesireSpell         = JsonUtil.GetIntValue(fileName, "enableDesireSpell") as bool
     wantsPurging          = JsonUtil.GetIntValue(fileName, "wantsPurging") as bool
     maleAnimation         = JsonUtil.GetIntValue(fileName, "maleAnimation") as bool
@@ -1886,7 +1886,7 @@ function ImportSettings()
     notificationKey       = JsonUtil.GetIntValue(fileName, "notificationKey")
 
     ; Debug output for checking import
-    slax.info("SLOANG Import: isDesireSpell=" + IsDesireSpell + ", wantsPurging=" + wantsPurging)
+    slax.info("slaConfigScr Import: isDesireSpell=" + IsDesireSpell + ", wantsPurging=" + wantsPurging)
 
     ; Load plugin options
     int i = JsonUtil.FormListCount(fileName, "PluginOption")
@@ -1898,9 +1898,9 @@ function ImportSettings()
             int optionId = JsonUtil.IntListGet(fileName, "PluginOptionId", i)
             float value = JsonUtil.FloatListGet(fileName, "PluginOptionValue", i)
             plugin.OnUpdateOption(optionId, value)
-            slax.info("SLOANG Import: Plugin " + plugin + " OptionId=" + optionId + " Value=" + value)
+            slax.info("slaConfigScr Import: Plugin " + plugin + " OptionId=" + optionId + " Value=" + value)
         else
-            slax.info("SLOANG Import: Plugin form was None at index " + i)
+            slax.info("slaConfigScr Import: Plugin form was None at index " + i)
         endIf
     endWhile
 

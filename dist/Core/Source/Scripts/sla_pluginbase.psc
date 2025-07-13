@@ -16,22 +16,22 @@ bool function IsInterfaceActive()
 endFunction
 
 event OnInit()
-	slax.info("SLOANG - sla_PluginBase onInit: " + name )
+	slax.info("sla_PluginBase - onInit: " + name )
 	registerForInternalEvents()
 endEvent
 
 function registerForInternalEvents()
-	slax.info("SLOANG - sla_PluginBase registerLoadGameEvent: " + name )
+	slax.info("sla_PluginBase - sla_PluginBase registerLoadGameEvent: " + name )
 	RegisterForModEvent("sla_Int_PlayerLoadsGame", "On_sla_Int_PlayerLoadsGame")
 endfunction
 
 event On_sla_Int_PlayerLoadsGame(string eventName, string strArg, float numArg, Form sender)
-	slax.info("SLOANG - On_sla_Int_PlayerLoadsGame: " + name )
+	slax.info("sla_PluginBase - On_sla_Int_PlayerLoadsGame: " + name )
 	UpdatePluginState(false)
 endEvent
 
 function UpdatePluginState(bool forced)
-	slax.info("SLOANG - UpdatePluginState: " + name )
+	slax.info("sla_PluginBase - UpdatePluginState: " + name )
 	if CheckDependencies()
 		if GetState() != "Installed" 
 			GoToState("Installed")
@@ -86,11 +86,11 @@ int numberOfOptions = 0
 function ClearOptions()
         String prefix = "SLAroused.MCM." + self.name + "."
         int i = StorageUtil.StringListCount(main, "SLAroused.MCM.Options") - 1
-		slax.info("SLOANG -ClearOptions: " + prefix + ".Count:" + i )
+		slax.info("sla_PluginBase -ClearOptions: " + prefix + ".Count:" + i )
         while i >= 0
                 string val = StorageUtil.StringListGet(main, "SLAroused.MCM.Options", i)
                 if val != "" && StringUtil.Find(val, prefix) == 0
-						;slax.info("SLOANG - ClearOptions index:"+ i +".StringListRemove: " + val)
+						;slax.info("sla_PluginBase - ClearOptions index:"+ i +".StringListRemove: " + val)
                         StorageUtil.StringListRemoveAt(main, "SLAroused.MCM.Options", i)
                         StorageUtil.ClearAllPrefix(val)
                 endIf
@@ -253,11 +253,11 @@ bool function RemoveEffectGroup(Actor who, int effIdx)
 endFunction
 
 event OnInstalled()
-	slax.info("SLOANG - OnInstalled: " + name )
+	slax.info("sla_PluginBase - OnInstalled: " + name )
 	main.RegisterPlugin(self)
 endEvent
 
 event OnUninstalled()
-	slax.info("SLOANG - OnUninstalled: " + name )
+	slax.info("sla_PluginBase - OnUninstalled: " + name )
 	main.UnregisterPlugin(self)
 endEvent

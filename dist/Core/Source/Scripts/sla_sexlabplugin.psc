@@ -47,7 +47,7 @@ bool function CanOtherActorGiveOrgasm(Actor[] actorList, Actor except, bool anal
 endFunction
 
 bool[] Function FindActorWillOrgasm(sslThreadController thisThread, sslBaseAnimation animation, Actor[] actorList)
-	slax.Info("SLOANG - FindCanOrgasm - animation has tags " + animation.GetTags())
+	slax.Info("sla_SexlabPlugin - FindCanOrgasm - animation has tags " + animation.GetTags())
     
     Bool hasOral         = animation.HasTag("Oral")
     Bool hasAnal         = animation.HasTag("Anal")
@@ -63,13 +63,13 @@ bool[] Function FindActorWillOrgasm(sslThreadController thisThread, sslBaseAnima
     Bool hasLesbian      = animation.HasTag("Lesbian")
     
     bool canMaleOrgasm = hasAnal || hasVaginal || hasMasturbation || has69 || hasBlowjob || hasBoobjob || hasHandjob || hasFootjob || hasOral
-    slax.Info("SLOANG - FindCanOrgasm - MALE " + canMaleOrgasm)
+    slax.Info("sla_SexlabPlugin - FindCanOrgasm - MALE " + canMaleOrgasm)
     
     bool canFemaleOrgasm = hasAnal || hasVaginal || hasMasturbation || has69 || hasFisting || hasCunnilingus || hasLesbian
-    slax.Info("SLOANG - FindCanOrgasm - FEMALE " + canFemaleOrgasm)
+    slax.Info("sla_SexlabPlugin - FindCanOrgasm - FEMALE " + canFemaleOrgasm)
     
     bool canCreatureOrgasm = canMaleOrgasm
-    slax.Info("SLOANG - FindCanOrgasm - CREATURE " + canMaleOrgasm)
+    slax.Info("sla_SexlabPlugin - FindCanOrgasm - CREATURE " + canMaleOrgasm)
     	
 	bool[] willOrgasm = PapyrusUtil.BoolArray(actorList.length)
     	
@@ -79,10 +79,10 @@ bool[] Function FindActorWillOrgasm(sslThreadController thisThread, sslBaseAnima
 	    int animationGender = animation.GetGender(i)
 		actor who = actorList[i]
     	string actorName = who.GetLeveledActorBase().GetName()
-		slax.Info("SLOANG - FindActorWillOrgasm - " + who.GetLeveledActorBase().GetName() + " in a position with gender #" + animationGender)
+		slax.Info("sla_SexlabPlugin - FindActorWillOrgasm - " + who.GetLeveledActorBase().GetName() + " in a position with gender #" + animationGender)
 
 		if !ddPlugin.CanRecieveOrgasm(who, hasAnal)
-			slax.Info("SLOANG - FindActorWillOrgasm - " + actorName + " cannot orgasm due to chastity")
+			slax.Info("sla_SexlabPlugin - FindActorWillOrgasm - " + actorName + " cannot orgasm due to chastity")
 		else
 			bool isVictim = thisThread.IsVictim(who)
 			bool canOrgasm = true
@@ -92,7 +92,7 @@ bool[] Function FindActorWillOrgasm(sslThreadController thisThread, sslBaseAnima
 				if chance < Utility.RandomInt(0, 100)
 					canOrgasm = false
 					willOrgasm[i] = false
-					slax.Info("SLOANG - FindActorWillOrgasm - " + actorName + " in victim in anal and did not passed skill check - can orgasm " + willOrgasm[i])
+					slax.Info("sla_SexlabPlugin - FindActorWillOrgasm - " + actorName + " in victim in anal and did not passed skill check - can orgasm " + willOrgasm[i])
 				endIf
 			endIf
 
@@ -103,21 +103,21 @@ bool[] Function FindActorWillOrgasm(sslThreadController thisThread, sslBaseAnima
 					else
 						willOrgasm[i] = false
 					endIf
-					slax.Info("SLOANG - FindActorWillOrgasm - " + actorName + " in a male position - can orgasm " + willOrgasm[i])
+					slax.Info("sla_SexlabPlugin - FindActorWillOrgasm - " + actorName + " in a male position - can orgasm " + willOrgasm[i])
 				elseIf 1 == animationGender; Female animation slot
 					if canFemaleOrgasm && (CanOtherActorGiveOrgasm(actorList, who, false, hasCunnilingus, false)  || hasMasturbation)
 						willOrgasm[i] = true
 					else
 						willOrgasm[i] = false
 					endIf
-					slax.Info("SLOANG - FindActorWillOrgasm - " + actorName + " in a female position - can orgasm " + willOrgasm[i])
+					slax.Info("sla_SexlabPlugin - FindActorWillOrgasm - " + actorName + " in a female position - can orgasm " + willOrgasm[i])
 				else ; Creature animation slot
 					if canCreatureOrgasm && (CanOtherActorGiveOrgasm(actorList, who, hasAnal, hasBlowjob, hasBoobjob) || hasMasturbation)
 						willOrgasm[i] = true
 					else
 						willOrgasm[i] = false
 					endIf
-					slax.Info("SLOANG - FindActorWillOrgasm - " + actorName + " is in a creature position - can orgasm " + willOrgasm[i])
+					slax.Info("sla_SexlabPlugin - FindActorWillOrgasm - " + actorName + " is in a creature position - can orgasm " + willOrgasm[i])
 				endIf
 			endIf
 		endIf
@@ -190,7 +190,7 @@ function OnUpdateOption(int optionId, float value)
 endFunction
 
 Function StartPCMasturbation()
-	slax.Info("SLOANG (StartPCMasturbation) - Sexlab not installed. Skipping")
+	slax.Info("sla_SexlabPlugin (StartPCMasturbation) - Sexlab not installed. Skipping")
 endfunction
 int Function GetSexuality(Actor who)
 	return 0
@@ -226,7 +226,7 @@ state Installed
 	endFunction
 	
 	function AddOptions()
-		slax.info("SLOANG - SL.AddOptions()")
+		slax.info("sla_SexlabPlugin - SL.AddOptions()")
 		AddOption("$SLA_Effect_SexCat", "$SLA_Effect_SexMax", "$SLA_Effect_SexMaxDesc", 50.0)
 		AddOptionEx("$SLA_Effect_SexCat", "$SLA_Effect_SexHalfTime", "$SLA_Effect_SexHalfTimeDesc", 1.0 / 24.0, 0.1, 24.0, 0.1, "{1} hours")
 		AddToggleOption("$SLA_Effect_SexCat", "$SLA_AlwaysCheckOrgasm", "$SLA_AlwaysCheckOrgasmDesc", false)
@@ -311,7 +311,7 @@ state Installed
 	endFunction
 
     event OnStageStart(int tid, bool hasPlayer)
-        slax.Info("SLOANG - OnStageStart - " + tid + " : " + hasPlayer + ".Stage: " + thisThread.Stage)
+        slax.Info("sla_SexlabPlugin - OnStageStart - " + tid + " : " + hasPlayer + ".Stage: " + thisThread.Stage)
         sslThreadController thisThread = SexLab.GetController(tid)
         Actor[] actorList = thisThread.Positions
     
@@ -325,7 +325,7 @@ state Installed
 
             if main.IsSLPInstalled
                 sexEffectMod = thisThread.GetEnjoyment(actorList[i])
-                slax.Info("SLOANG - OnStageStart - " + actorList[i].GetActorBase().GetName()+ " : sexEffectMod: " + sexEffectMod)
+                slax.Info("sla_SexlabPlugin - OnStageStart - " + actorList[i].GetActorBase().GetName()+ " : sexEffectMod: " + sexEffectMod)
            		float result = PapyrusUtil.ClampFloat(sexEffectMod, -sexEffMax, sexEffMax)
             	SetArousalEffectValue(actorList[i], sexEff, result)
 			else
@@ -341,7 +341,7 @@ state Installed
 						sexEffectMod = 0
 					endif
 				endif
-				slax.Info("SLOANG - OnStageStart (no SLP) - " + actorList[i].GetActorBase().GetName() + " : sexEffectMod: " + sexEffectMod)
+				slax.Info("sla_SexlabPlugin - OnStageStart (no SLP) - " + actorList[i].GetActorBase().GetName() + " : sexEffectMod: " + sexEffectMod)
 				ModArousalEffectValue(actorList[i], sexEff, sexEffectMod, sexEffMax)
 			endif
             i += 1
@@ -349,7 +349,7 @@ state Installed
     endEvent
 	
 	event OnAnimationEnd(int tid, bool hasPlayer)
-		slax.Info("SLOANG - OnAnimationEnd - " + tid + " : " + hasPlayer)
+		slax.Info("sla_SexlabPlugin - OnAnimationEnd - " + tid + " : " + hasPlayer)
 		
 		sslThreadController thisThread = SexLab.GetController(tid)
 		Actor[] actorList = thisThread.Positions
@@ -380,7 +380,7 @@ state Installed
 		
 		float animationDuration = GetAnimationDuration(thisThread)
 		float timeFactor = thisThread.TotalTime / animationDuration
-		slax.Info("SLOANG - OnAnimationEnd - animationDuration " + animationDuration + ", totalTime " + thisThread.TotalTime + ", timeFactor " + timeFactor)
+		slax.Info("sla_SexlabPlugin - OnAnimationEnd - animationDuration " + animationDuration + ", totalTime " + thisThread.TotalTime + ", timeFactor " + timeFactor)
 
 		bool[] willOrgasm
 		
@@ -435,7 +435,7 @@ state Installed
 	endEvent
 
 	Function StartPCMasturbation()
-    	slax.Info("SLOANG (SexLab) - StartPCMasturbation")
+    	slax.Info("sla_SexlabPlugin (SexLab) - StartPCMasturbation")
     	; TODO - hook into SLD masturbation if present
 		if main.IsSLPInstalled
 			If 0 == playerRef.GetLeveledActorBase().GetSex()

@@ -24,10 +24,18 @@ float Function GetArousal(Actor act)
 EndFunction
 
 float Function ModifyArousal(Actor act, float by)
+    if !act
+        return 0.0
+    endif
+    slax.info("OArousedScript ModifyArousal.Act: " + act.GetLeveledActorBase().GetName() + ".Value"+ by)
     return slaMain.defaultPlugin.ModExposureLegacy(act,by)
 EndFunction
 
 float Function SetArousal(Actor act, float value, bool updateAccessTime = true)
+    if !act
+        return 0.0
+    endif
+    slax.info("OArousedScript SetArousal.Act: " + act.GetLeveledActorBase().GetName() + ".Value"+ value)
     if value == 0.0
        return slaMain.defaultPlugin.ModExposureLegacy(act,-100)
     endif

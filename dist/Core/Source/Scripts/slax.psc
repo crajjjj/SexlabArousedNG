@@ -1,4 +1,26 @@
 Scriptname slax
+import Debug
+
+Function WriteLog(String asMessage, Int aiPriority = 0) Global
+	String asModName = "SLOANG"
+	Utility.SetINIBool("bEnableTrace:Papyrus", true)
+	if OpenUserLog(asModName)
+		Debug.Trace(asModName + " Debugging Started.")
+		Debug.TraceUser(asModName,"[---"+ asModName +" DEBUG LOG STARTED---]")
+	endif
+	String sPrefix
+	if aiPriority == 2
+		sPrefix = "(!ERROR!) "
+	elseif aiPriority == 1
+		sPrefix = "(!) "
+	else
+		sPrefix = "(i) "
+	endif
+
+	asMessage = sPrefix + asMessage
+	
+	Debug.TraceUser(asModName, asMessage, aiPriority)
+EndFunction
 
 Bool Function DebugSpam_IsEnabled() Global
     Int enabled = StorageUtil.GetIntValue(None, "slax_EnableDebugSpam")
@@ -72,61 +94,66 @@ EndFunction
 
 Function Trace(Int severity, String txtMsg) Global
 	If severity >= StorageUtil.GetIntValue(None, "slax_TraceSpamSeverity", 127)
-        Debug.Trace(txtMsg, 2)
+        WriteLog(txtMsg)
     EndIf
 EndFunction
 
 ; Yes, I know these messages are severity filtered twice as implemented. (tdt?)
 ; This allows Debug.Trace to be swapped for direct file logging, or a text buffer, or anything you like without changing the callers.
 Function Info(String txtMsg) Global
-	If StorageUtil.GetIntValue(None, "slax_TraceSpamSeverity", 127) <= 0
-        Debug.Trace(txtMsg, 2)
-    EndIf
+	; If StorageUtil.GetIntValue(None, "slax_TraceSpamSeverity", 127) <= 0
+    ;     WriteLog(txtMsg)
+    ; EndIf
+    WriteLog(txtMsg)
 EndFunction
 
 Function InfoConditional(String txtMsg, Bool condition) Global
 	If condition && StorageUtil.GetIntValue(None, "slax_TraceSpamSeverity", 127) <= 0
-        Debug.Trace(txtMsg, 2)
+        WriteLog(txtMsg)
     EndIf
 EndFunction
 
 Function Warning(String txtMsg) Global
-	If StorageUtil.GetIntValue(None, "slax_TraceSpamSeverity", 127) <= 1
-        Debug.Trace(txtMsg, 2)
-    EndIf
+	; If StorageUtil.GetIntValue(None, "slax_TraceSpamSeverity", 127) <= 1
+    ;    WriteLog(txtMsg,1)
+    ; EndIf
+    WriteLog(txtMsg,1)
 EndFunction
 
 Function WarningConditional(String txtMsg, Bool condition) Global
 	If condition && StorageUtil.GetIntValue(None, "slax_TraceSpamSeverity", 127) <= 1
-        Debug.Trace(txtMsg, 2)
+       WriteLog(txtMsg,1)
     EndIf
 EndFunction
 
 Function Error(String txtMsg) Global
-	If StorageUtil.GetIntValue(None, "slax_TraceSpamSeverity", 127) <= 2
-        Debug.Trace(txtMsg, 2)
-    EndIf
+	; If StorageUtil.GetIntValue(None, "slax_TraceSpamSeverity", 127) <= 2
+    ;     WriteLog(txtMsg,2)
+    ; EndIf
+     WriteLog(txtMsg,2)
 EndFunction
 
 Function ErrorConditional(String txtMsg, Bool condition) Global
 	If condition && StorageUtil.GetIntValue(None, "slax_TraceSpamSeverity", 127) <= 2
-        Debug.Trace(txtMsg, 2)
+        WriteLog(txtMsg,2)
     EndIf
 EndFunction
 
 Function Spam(String txtMsg) Global
-    Debug.Trace(txtMsg, 2)
+    WriteLog(txtMsg)
 EndFunction
 
 Function Alert(String txtMsg) Global
     If StorageUtil.GetIntValue(None, "slax_TraceSpamSeverity", 127) <= 3
-        Debug.TraceAndBox(txtMsg, 2)
+        WriteLog(txtMsg,2)
+        Debug.MessageBox(txtMsg)
     EndIf
 EndFunction
 
 Function AlertConditional(String txtMsg, Bool condition) Global
     If condition && StorageUtil.GetIntValue(None, "slax_TraceSpamSeverity", 127) <= 3
-        Debug.TraceAndBox(txtMsg, 2)
+        WriteLog(txtMsg,2)
+        Debug.MessageBox(txtMsg)
     EndIf
 EndFunction
 

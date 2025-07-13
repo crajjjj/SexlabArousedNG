@@ -241,7 +241,7 @@ state Installed
 	endFunction
 	
 	function AddOptions()
-		slax.info("SLOANG - Devices.AddOptions()")
+		slax.info("sla_DDPlugin - Devices.AddOptions()")
 		AddOptionEx("$SLA_Effect_DeviceCat", "$SLA_Effect_DevicesHalfTime", "$SLA_Effect_DevicesHalfTimeDesc", 1.0, 0.0, 24.0, 0.1, "{1}/hour")
 		AddOptionEx("$SLA_Effect_DeviceCat", "$SLA_Effect_DevicesArousalOnEquip", "$SLA_Effect_DevicesArousalOnEquipDesc", 5.0, 0.0, 25.0, 0.1, "{1}")
 		AddOption("$SLA_Effect_DeviceCat", "$SLA_Effect_DevicesMin", "$SLA_Effect_DevicesMinDesc", 0.0)

@@ -1,9 +1,15 @@
 Scriptname slaInternalScr extends slaFrameworkScr  
 
 Event OnInit()
-	Maintenance()
+	slax.Info("slaInternalScr onInit")
+	RegisterForSingleUpdate(5)
 EndEvent
 
 Function Maintenance()
 	slaMain.Maintenance()
 EndFunction
+
+Event OnUpdate()
+	slax.Info("slaInternalScr OnUpdate")
+	Maintenance()
+EndEvent

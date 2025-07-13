@@ -88,7 +88,7 @@ State cleaning
     
         GotoState("")
         
-        slax.Info("SLOANG - cleaning state - OnUpdate")
+        slax.Info("slaMainScr - cleaning state - OnUpdate")
         CleanActorStorage()
         RegisterForSingleUpdate(updateFrequency)
         
@@ -101,10 +101,10 @@ State initializing
 
     Event OnUpdate()
         
-        slax.Info("SLOANG - initialize state - OnUpdate")
+        slax.Info("slaMainScr - initialize state - OnUpdate")
 
         If modVersion < GetCurrentVersion()
-            slax.Info("SLOANG - Updating to version " + GetCurrentVersion() + " from version " + modVersion)
+            slax.Info("slaMainScr - Updating to version " + GetCurrentVersion() + " from version " + modVersion)
     
             slaConfig.IsUseSOS = False
             slaConfig.slaPuppetActor = playerRef
@@ -120,12 +120,14 @@ State initializing
             StorageUtil.ClearFloatValuePrefix("SLAroused.ActorExposure")
             StorageUtil.ClearFloatValuePrefix("SLAroused.ActorExposureDate")
             
-            int i = slax.CountNonNullElements(plugins)
+            int i = plugins.Length
             while i > 0
                 i -= 1
-                sla_PluginBase plugin = plugins[i]
-                plugin.ClearOptions()
-                plugin.AddOptions()
+                if plugins[i]
+                    sla_PluginBase plugin = plugins[i]
+                    plugin.ClearOptions()
+                    plugin.AddOptions()
+                endif
             endWhile
             ;"SLAroused.LastOrgasmDate"
             ;"SLAroused.LastRapeDate"
@@ -148,13 +150,13 @@ State initializing
         
         nakedArmorWord = Keyword.GetKeyword("EroticArmor")
         
-        slax.Info("SLOANG - Initialize state - set up key handling")
+        slax.Info("slaMainScr - Initialize state - set up key handling")
         UnregisterForAllKeys()
         UpdateKeyRegistery()
 
         UpdateDesireSpell()
 
-        slax.Info("SLOANG - return to empty state")
+        slax.Info("slaMainScr - return to empty state")
         GotoState("")
         RegisterForSingleUpdate(updateFrequency) ;Start scanning in two minutes
 
@@ -190,16 +192,20 @@ function RegisterPlugin(sla_PluginBase plugin, bool addMCMOptions = true)
 	; endIf
 	; LogDebug("RegisterPlugin(" + plugin.name + ")")
 	if !plugin || plugins.Find(plugin) > -1
-        slax.Error("SLOANG - RegisterPlugin - empty or registered" )
+        String pluginName = "None"
+        if plugin
+            pluginName = plugin.name
+        endif
+        slax.Warning("slaMainScr - RegisterPlugin - empty or registered.Name: " + pluginName)
 		return
 	endIf
 
     int pluginPos = slax.FindFirstFreeIndex(plugins)
     if pluginPos == -1
-		slax.Error("SLOANG - RegisterPlugin - not enough plugin slots" )
+		slax.Error("slaMainScr - RegisterPlugin - not enough plugin slots" )
         return
 	endIf
-    slax.info("SLOANG - RegisterPlugin " + plugin.name + ".Position:" + pluginPos)
+    slax.info("slaMainScr - RegisterPlugin " + plugin.name + ".Position:" + pluginPos)
 	plugins[pluginPos] = plugin
     plugin.EnablePlugin()
     if (addMCMOptions)
@@ -223,7 +229,7 @@ function SetPluginLOSEvents(sla_PluginBase plugin, bool listenToLOS)
         if losPlugins.Find(plugin) == -1
             int freeind = slax.FindFirstFreeIndex(losPlugins)
             if freeind == -1
-                 slax.Error("SLOANG SetPluginLOSEvents - No empty slot to add plugin!")
+                 slax.Error("slaMainScr SetPluginLOSEvents - No empty slot to add plugin!")
             else
                 losPlugins[freeind] = plugin
             endif
@@ -242,7 +248,7 @@ function SetPluginUpdateEvents(sla_PluginBase plugin, bool listenToUpdate)
          if updatePlugins.Find(plugin) == -1
             int freeind = slax.FindFirstFreeIndex(updatePlugins)
             if freeind == -1
-                 slax.Error("SLOANG SetPluginUPDEvents - No empty slot to add plugin!")
+                 slax.Error("slaMainScr SetPluginUPDEvents - No empty slot to add plugin!")
             else
                 updatePlugins[freeind] = plugin
             endif
@@ -269,16 +275,16 @@ endFunction
 int function RegisterEffect(string id, string title, string description, sla_PluginBase effectOwner)
 {Returns the effect index of the (possibly) newly registed effect.}
     while !slaInternalModules.TryLock(1)
-        slax.warning("SLOANG RegisterEffect TryLock failed. Retrying")
+        slax.warning("slaMainScr RegisterEffect TryLock failed. Retrying")
         Utility.WaitMenuMode(1.0)
     endWhile
     int idx = slaInternalModules.RegisterStaticEffect(id)
     if (idx == -2)
-        slax.error("SLOANG - RegisterEffect called during cleanup. Title:"+ title + ".Internal idx:" + idx + ".Id:" + id)
+        slax.error("slaMainScr - RegisterEffect called during cleanup. Title:"+ title + ".Internal idx:" + idx + ".Id:" + id)
         slaInternalModules.Unlock(1)
         return idx
     endif
-    slax.info("SLOANG - RegisterEffect.Title:"+ title + ".Internal idx:" + idx + ".Id:" + id)
+    slax.info("slaMainScr - RegisterEffect.Title:"+ title + ".Internal idx:" + idx + ".Id:" + id)
     if idx >= effectIds.length
         effectIds = PapyrusUtil.ResizeStringArray(effectIds, idx + 1)
         effectTitles = PapyrusUtil.ResizeStringArray(effectTitles, idx + 1)
@@ -297,10 +303,10 @@ endFunction
 
 function UnregisterEffect(string id)
     while !slaInternalModules.TryLock(1)
-        slax.warning("SLOANG UnregisterEffect TryLock failed. Retrying")
+        slax.warning("slaMainScr UnregisterEffect TryLock failed. Retrying")
         Utility.WaitMenuMode(1.0)
     endWhile
-    slax.info("SLOANG - UnregisterEffect.Id:" + id)
+    slax.info("slaMainScr - UnregisterEffect.Id:" + id)
     int result = effectIds.Find(id)
 	if result > -1
         effectIds[result] = ""
@@ -372,17 +378,17 @@ String Function bArrayToString(bool[] values) Global
 EndFunction
 
 Function debugArrays()
-    slax.Info("SLOANG - effectIds:"+ effectIds.length + "--" + sArrayToString(effectIds))
-    slax.Info("SLOANG - effectTitles:"+ effectTitles.length + "--" + sArrayToString(effectTitles))
-    slax.Info("SLOANG - effectDescriptions:"+ effectDescriptions.length + "--" + sArrayToString(effectDescriptions))
-    slax.Info("SLOANG - effectIsVisible:"+ effectIsVisible.length + "--" + bArrayToString(effectIsVisible))
+    slax.Info("slaMainScr - effectIds:"+ effectIds.length + "--" + sArrayToString(effectIds))
+    slax.Info("slaMainScr - effectTitles:"+ effectTitles.length + "--" + sArrayToString(effectTitles))
+    slax.Info("slaMainScr - effectDescriptions:"+ effectDescriptions.length + "--" + sArrayToString(effectDescriptions))
+    slax.Info("slaMainScr - effectIsVisible:"+ effectIsVisible.length + "--" + bArrayToString(effectIsVisible))
 endfunction
 
 bool Function IsEffectVisible(int effectIdx)
     if effectIsVisible && effectIdx >= 0 && effectIdx < effectIsVisible.length
         return effectIsVisible[effectIdx]
     else
-        slax.warning("SLOANG - IsEffectVisible(" + effectIdx + ") not found." )
+        slax.warning("slaMainScr - IsEffectVisible(" + effectIdx + ") not found." )
         debugArrays()
         return false
     endif
@@ -392,7 +398,7 @@ string function GetEffectTitle(int effectIdx)
     if effectTitles && effectIdx >= 0 && effectIdx < effectTitles.length && effectTitles[effectIdx]
         return effectTitles[effectIdx]
     else
-        slax.warning("SLOANG - GetEffectTitle(" + effectIdx + ") not found")
+        slax.warning("slaMainScr - GetEffectTitle(" + effectIdx + ") not found")
         debugArrays()
         return ""
     endif
@@ -402,7 +408,7 @@ string function GetEffectDescription(int effectIdx)
     if effectDescriptions && effectIdx >= 0 && effectIdx < effectDescriptions.length && effectDescriptions[effectIdx]
         return effectDescriptions[effectIdx]
     else
-        slax.warning("SLOANG - GetEffectDescription(" + effectIdx + ") not found")
+        slax.warning("slaMainScr - GetEffectDescription(" + effectIdx + ") not found")
         debugArrays()
         return ""
     endif
@@ -433,7 +439,7 @@ function SetDynamicArousalEffect(Form whoF, string effectId, float initialValue,
     if who == none
         return
     endIf
-    slax.Info("SLOANG - SetDynamicArousalEffect(" + who.GetLeveledActorBase().GetName() + ", " + effectId + ", " + initialValue + ", " + functionId + ", "+ param+ "," + limit + ")")
+    slax.Info("slaMainScr - SetDynamicArousalEffect(" + who.GetLeveledActorBase().GetName() + ", " + effectId + ", " + initialValue + ", " + functionId + ", "+ param+ "," + limit + ")")
     slaInternalModules.SetDynamicArousalEffect(who, effectId, initialValue, functionId, param, limit)
 endFunction
 
@@ -442,37 +448,37 @@ function ModDynamicArousalEffect(Form whoF, string effectId, float modifier, flo
     if who == none
         return
     endIf
-    slax.Info("SLOANG - ModDynamicArousalEffect(" + who.GetLeveledActorBase().GetName() + ", " + effectId + ", " + modifier + "," + limit + ")")
+    slax.Info("slaMainScr - ModDynamicArousalEffect(" + who.GetLeveledActorBase().GetName() + ", " + effectId + ", " + modifier + "," + limit + ")")
     slaInternalModules.ModDynamicArousalEffect(who, effectId, modifier, limit)
 endFunction
 
 float function ModEffectValue(Actor who, int effectIdx, float diff, float limit) 
-    slax.Info("SLOANG - ModEffectValue(" + who.GetLeveledActorBase().GetName() + ", " + GetEffectTitle(effectIdx) + ", " + diff + ", " + limit + ")")
+    slax.Info("slaMainScr - ModEffectValue(" + who.GetLeveledActorBase().GetName() + ", " + GetEffectTitle(effectIdx) + ", " + diff + ", " + limit + ")")
     return slaInternalModules.ModStaticArousalValue(who, effectIdx, diff, limit)
 endFunction
 
 function SetEffectValue(Actor who, int effectIdx, float value) 
-    slax.Info("SLOANG - SetEffectValue(" + who.GetLeveledActorBase().GetName() + ", " + GetEffectTitle(effectIdx) + ", " + value + ")")
+    slax.Info("slaMainScr - SetEffectValue(" + who.GetLeveledActorBase().GetName() + ", " + GetEffectTitle(effectIdx) + ", " + value + ")")
     slaInternalModules.SetStaticArousalValue(who, effectIdx, value)
 endFunction
 
 function SetTimedEffectFunction(Actor who, int effectIdx, int functionId, float param, float limit, int auxilliary) 
-    slax.Info("SLOANG - SetTimedEffect(" + who.GetLeveledActorBase().GetName() + ", " + GetEffectTitle(effectIdx) + ", " + functionId + ", " + param + ")")
+    slax.Info("slaMainScr - SetTimedEffect(" + who.GetLeveledActorBase().GetName() + ", " + GetEffectTitle(effectIdx) + ", " + functionId + ", " + param + ")")
     slaInternalModules.SetStaticArousalEffect(who, effectIdx, functionId, param, limit, auxilliary)
 endFunction
 
 bool function GroupEffects(Actor who, int effIdx1, int effIdx2)
-    slax.Info("SLOANG - GroupEffects(" + who.GetLeveledActorBase().GetName() + ", " + GetEffectTitle(effIdx1) + ", " + GetEffectTitle(effIdx2) + ")")
+    slax.Info("slaMainScr - GroupEffects(" + who.GetLeveledActorBase().GetName() + ", " + GetEffectTitle(effIdx1) + ", " + GetEffectTitle(effIdx2) + ")")
     return slaInternalModules.GroupEffects(who, effIdx1, effIdx2)
 endFunction
 
 bool function RemoveEffectGroup(Actor who, int effIdx)
-    slax.Info("SLOANG - RemoveEffectGroup(" + who.GetLeveledActorBase().GetName() + ", " + GetEffectTitle(effIdx) + ")")
+    slax.Info("slaMainScr - RemoveEffectGroup(" + who.GetLeveledActorBase().GetName() + ", " + GetEffectTitle(effIdx) + ")")
     return slaInternalModules.RemoveEffectGroup(who, effIdx)
 endFunction
 
 function UpdateSingleActorArousal(Actor who)
-    slax.Info("SLOANG - UpdateArousal(" + who.GetLeveledActorBase().GetName() + ")")
+    slax.Info("slaMainScr - UpdateArousal(" + who.GetLeveledActorBase().GetName() + ")")
     slaInternalModules.UpdateSingleActorArousal(who, GameDaysPassed.GetValue())
 
     int arousal = slaUtil.GetActorArousal(who)
@@ -500,23 +506,23 @@ event OnPlayerLoadGame()
     if bWasInitialized
         SendModEvent("sla_Int_PlayerLoadsGame")
     endIf
-    slax.info("SLOANG - OnPlayerLoadGame()")
+    slax.info("slaMainScr - OnPlayerLoadGame()")
     if effectIds != None
-        slax.Info("SLOANG effectIds length: " + effectIds.length)
+        slax.Info("slaMainScr effectIds length: " + effectIds.length)
     else
-        slax.Info("SLOANG effectIds length: 0")
+        slax.Info("slaMainScr effectIds length: 0")
     endif
 
     if effectTitles != None
-        slax.Info("SLOANG effectTitles length: " + effectTitles.length)
+        slax.Info("slaMainScr effectTitles length: " + effectTitles.length)
     else
-        slax.Info("SLOANG effectTitles length: 0")
+        slax.Info("slaMainScr effectTitles length: 0")
     endif
 
     if effectDescriptions != None
-        slax.Info("SLOANG effectDescriptions length: " + effectDescriptions.length)
+        slax.Info("slaMainScr effectDescriptions length: " + effectDescriptions.length)
     else
-        slax.Info("SLOANG effectDescriptions length: 0")
+        slax.Info("slaMainScr effectDescriptions length: 0")
     endif
 endEvent
 
@@ -588,7 +594,7 @@ EndFunction
 
 ; This always runs on load
 Function Maintenance()
-    slax.Info("SLOANG: Maintenance")
+    slax.Info("slaMainScr: Maintenance")
     UnregisterForUpdate()
     defaultPlugin.registerForInternalEvents()
     defaultPlugin.ddPlugin.registerForInternalEvents()
@@ -596,7 +602,7 @@ Function Maintenance()
     ostimPlugin.registerForInternalEvents()
 
     if !IsANDInstalled && Game.GetModByName("Advanced Nudity Detection.esp") != 255
-         slax.Info("SLOANG: Advanced Nudity Detection mod found")
+         slax.Info("slaMainScr: Advanced Nudity Detection mod found")
          AND_Nude = Game.GetFormFromFile(0x831, "Advanced Nudity Detection.esp") as Faction
          AND_Bottomless = Game.GetFormFromFile(0x833, "Advanced Nudity Detection.esp") as Faction
          AND_Genitals = Game.GetFormFromFile(0x830, "Advanced Nudity Detection.esp") as Faction
@@ -605,12 +611,12 @@ Function Maintenance()
     endif
 
     If !IsSLPInstalled && SKSE.GetPluginVersion("SexLabUtil") >= 34275456 ;> V2.12.0 - 1.6.1170.zip
-        slax.Info("SLOANG: SLP+ mod found")
+        slax.Info("slaMainScr: SLP+ mod found")
         IsSLPInstalled = true
     EndIf
 
     If !IsSLSOInstalled && 255 != Game.GetModByName("SLSO.esp")
-        slax.Info("SLOANG: SLSO mod found")
+        slax.Info("slaMainScr: SLSO mod found")
         IsSLSOInstalled = true
     EndIf
 
@@ -627,7 +633,7 @@ Function Maintenance()
     lastActorScanTime = 0
     bUseLOS = GetUseLOS() As Bool
     
-    ;slax.Info("SLOANG Maintenance - trigger OnUpdate in 10.0 seconds")
+    ;slax.Info("slaMainScr Maintenance - trigger OnUpdate in 10.0 seconds")
     
     RegisterForSingleUpdate(10.0)
 
@@ -645,11 +651,11 @@ EndFunction
 Int Function GetAllActors(Int lockID)
     slax.EnableDebugSpam(True)
     slax.DebugSpam_SetInfo()
-    slax.Info("SLOANG - GetAllActors(" + lockID + ")")
+    slax.Info("slaMainScr - GetAllActors(" + lockID + ")")
     
     ; Fails if ANY lock already taken
     If(!slaInternalModules.TryLock(lockID))
-        slax.Info("SLOANG - GetAllActors(" + lockID + ") - LOCK NOT TAKEN")
+        slax.Info("slaMainScr - GetAllActors(" + lockID + ") - LOCK NOT TAKEN")
         ;Debug.Trace("Was locked, returning lock failed indicator")
         Return -1 ; Lock not taken
     EndIf
@@ -658,12 +664,12 @@ Int Function GetAllActors(Int lockID)
     slaScanAllScript scanner = slaScanAll As slaScanAllScript
     Float now = Utility.GetCurrentRealTime()    ; In seconds
     
-    slax.Info("SLOANG - GetAllActors(" + lockID + ") - start scan at " + now)
+    slax.Info("slaMainScr - GetAllActors(" + lockID + ") - start scan at " + now)
     
     If now - lastActorScanTime > 10.0           ; Don't rescan actors if not enough time passed
     
         _Internal_actorCount = scanner.GetArousedActors()
-        slax.Info("SLOANG - GetAllActors - scanned " + _Internal_actorCount + " local actors")
+        slax.Info("slaMainScr - GetAllActors - scanned " + _Internal_actorCount + " local actors")
 
         lastActorScanTime = now
         
@@ -676,8 +682,8 @@ Int Function GetAllActors(Int lockID)
     slaInternalModules.Unlock(lockID)
 
     Float final = Utility.GetCurrentRealTime()
-    slax.Info("SLOANG - GetAllActors(" + lockID + ") - end scan at " + now + " = " + (final - now) + " seconds")
-    slax.Info("SLOANG - got " + theActors.Length + " actors")
+    slax.Info("slaMainScr - GetAllActors(" + lockID + ") - end scan at " + now + " = " + (final - now) + " seconds")
+    slax.Info("slaMainScr - got " + theActors.Length + " actors")
     
     Return theActors.Length
 
@@ -696,7 +702,7 @@ Actor[] function GetNearbyActors()
 endFunction
 
 Event OnUpdate()
-    slax.Info("SLOANG - OnUpdate")
+    slax.Info("slaMainScr - OnUpdate")
     If bDisabled
         RegisterForSingleUpdate(updateFrequency)
         Return
@@ -958,7 +964,7 @@ EndFunction
 
 Function UpdateKeyRegistery() ; Wish I could fix the spelling of this.
 
-    slax.Info("SLOANG - UpdateKeyRegistry - key " + slaConfig.NotificationKey)
+    slax.Info("slaMainScr - UpdateKeyRegistry - key " + slaConfig.NotificationKey)
     RegisterForKey(slaConfig.NotificationKey)
     
 EndFunction
@@ -989,10 +995,10 @@ EndFunction
 
 Event OnKeyDown(Int keyCode)    
 
-    slax.Info("SLOANG - Key DOWN - key code " + keyCode + " expecting " + slaConfig.NotificationKey)
+    slax.Info("slaMainScr - Key DOWN - key code " + keyCode + " expecting " + slaConfig.NotificationKey)
     If !Utility.IsInMenuMode() && slaConfig.NotificationKey == keyCode
 
-        slax.Info("SLOANG - performing key action")
+        slax.Info("slaMainScr - performing key action")
         Debug.Notification(playerRef.GetLeveledActorBase().GetName() + " arousal level " + slaUtil.GetActorArousal(playerRef))
         
         If crosshairRef
@@ -1018,13 +1024,13 @@ EndEvent
 
 
 Function StartPCMasturbation()
- slax.Info("SLOANG - StartPCMasturbation")
+ slax.Info("slaMainScr - StartPCMasturbation")
  if sexlabplugin.isEnabled
     sexlabplugin.StartPCMasturbation()
  elseif ostimPlugin.isEnabled
     ostimPlugin.StartPCMasturbation()
  else
-    Debug.Notification("SLOANG (StartPCMasturbation) - Sexlab or ostim plugins are not enabled")
+    Debug.Notification("slaMainScr (StartPCMasturbation) - Sexlab or ostim plugins are not enabled")
  endif
 
 EndFunction
