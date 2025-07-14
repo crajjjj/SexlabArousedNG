@@ -183,7 +183,7 @@ EndState
 
 ; State - EMPTY
 function LogDebug(string msg)
-	Debug.Notification(msg)
+	slax.info(msg)
 endFunction
 
 function RegisterPlugin(sla_PluginBase plugin, bool addMCMOptions = true)
@@ -1072,9 +1072,8 @@ EndFunction
 
 
 Function CleanActorStorage()
+    slax.info("slaMainScr: Cleaning actor storage")
 
-    Debug.Notification("SLOANG cleaning actor storage")
-    
     setCleaningTime()
     float days
     if slaConfig.wantsPurging
@@ -1085,8 +1084,9 @@ Function CleanActorStorage()
     int removedCount = slaInternalModules.CleanUpActors(gameDaysPassed.GetValue() - days)
 
     Debug.Trace("Removed " + removedCount + " unused settings.  Finished at " + Utility.GetCurrentRealTime());
-    Debug.Notification("Actor cleaning complete removed: " + removedCount)
-    
+
+    slax.info("slaMainScr: Actor cleaning complete. Removed: " + removedCount)
+
 EndFunction
 
 
