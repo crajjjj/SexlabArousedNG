@@ -1083,7 +1083,7 @@ Function CleanActorStorage()
     endif
     int removedCount = slaInternalModules.CleanUpActors(gameDaysPassed.GetValue() - days)
 
-    Debug.Trace("Removed " + removedCount + " unused settings.  Finished at " + Utility.GetCurrentRealTime());
+    ;Debug.Trace("Removed " + removedCount + " unused settings.  Finished at " + Utility.GetCurrentRealTime());
 
     slax.info("slaMainScr: Actor cleaning complete. Removed: " + removedCount)
 

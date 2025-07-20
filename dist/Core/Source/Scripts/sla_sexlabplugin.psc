@@ -313,101 +313,104 @@ state Installed
     event OnStageStart(int tid, bool hasPlayer)
         slax.Info("sla_SexlabPlugin - OnStageStart - " + tid + " : " + hasPlayer + ".Stage: " + thisThread.Stage)
         sslThreadController thisThread = SexLab.GetController(tid)
-        Actor[] actorList = thisThread.Positions
-    
-        if actorList.Length < 1
-            return
-        endIf
-    
-        int i = 0
-        while i < actorList.Length
-            float sexEffectMod = sexPerStage ; Default value
+		If (thisThread)
+			Actor[] actorList = thisThread.Positions
+        	if actorList.Length < 1
+        	    return
+        	endIf
+		
+        	int i = 0
+        	while i < actorList.Length
+        	    float sexEffectMod = sexPerStage ; Default value
 
-            if main.IsSLPInstalled
-                sexEffectMod = thisThread.GetEnjoyment(actorList[i])
-                slax.Info("sla_SexlabPlugin - OnStageStart - " + actorList[i].GetActorBase().GetName()+ " : sexEffectMod: " + sexEffectMod)
-           		float result = PapyrusUtil.ClampFloat(sexEffectMod, -sexEffMax, sexEffMax)
-            	SetArousalEffectValue(actorList[i], sexEff, result)
-			else
-				if thisThread.animation.HasTag("Foreplay")
-             	   sexEffectMod *= 2.0
-          		endIf
-    			if thisThread.IsAggressive
-				   sexEffectMod *= 2.0
-				endif
-				if SexLab.IsVictim(tid, actorList[i])
-					float delta = traumaLewdRate * GetLewd(actorList[i]) - sexEffectMod
-					if delta < 0
-						sexEffectMod = 0
+        	    if main.IsSLPInstalled
+        	        sexEffectMod = thisThread.GetEnjoyment(actorList[i])
+        	        slax.Info("sla_SexlabPlugin - OnStageStart - " + actorList[i].GetActorBase().GetName()+ " : sexEffectMod: " + sexEffectMod)
+        	   		float result = PapyrusUtil.ClampFloat(sexEffectMod, -sexEffMax, sexEffMax)
+        	    	SetArousalEffectValue(actorList[i], sexEff, result)
+				else
+					if thisThread.animation.HasTag("Foreplay")
+        	     	   sexEffectMod *= 2.0
+        	  		endIf
+    				if thisThread.IsAggressive
+					   sexEffectMod *= 2.0
 					endif
+					if SexLab.IsVictim(tid, actorList[i])
+						float delta = traumaLewdRate * GetLewd(actorList[i]) - sexEffectMod
+						if delta < 0
+							sexEffectMod = 0
+						endif
+					endif
+					slax.Info("sla_SexlabPlugin - OnStageStart (no SLP) - " + actorList[i].GetActorBase().GetName() + " : sexEffectMod: " + sexEffectMod)
+					ModArousalEffectValue(actorList[i], sexEff, sexEffectMod, sexEffMax)
 				endif
-				slax.Info("sla_SexlabPlugin - OnStageStart (no SLP) - " + actorList[i].GetActorBase().GetName() + " : sexEffectMod: " + sexEffectMod)
-				ModArousalEffectValue(actorList[i], sexEff, sexEffectMod, sexEffMax)
-			endif
-            i += 1
-        endWhile
+        	    i += 1
+        	endWhile
+		EndIf
     endEvent
 	
 	event OnAnimationEnd(int tid, bool hasPlayer)
 		slax.Info("sla_SexlabPlugin - OnAnimationEnd - " + tid + " : " + hasPlayer)
 		
 		sslThreadController thisThread = SexLab.GetController(tid)
-		Actor[] actorList = thisThread.Positions
-	
-		If (actorList.Length < 1)
-			Return
-		EndIf
+		If (thisThread)
+			Actor[] actorList = thisThread.Positions
+			
+			If (actorList.Length < 1)
+				Return
+			EndIf
 
-		Actor[] victims = thisThread.Victims
-		sslBaseAnimation animation = thisThread.animation
-		
-		int i = victims.Length
-		if traumaHalfTime != 0.0
-			while i > 0
+			Actor[] victims = thisThread.Victims
+			sslBaseAnimation animation = thisThread.animation
+
+			int i = victims.Length
+			if traumaHalfTime != 0.0
+				while i > 0
+					i -= 1
+					if victims[i] == PlayerRef
+						self.main.wasPlayerRaped = True
+					endIf
+					float delta = traumaLewdRate * GetLewd(victims[i]) - traumaBase
+					float limit = 50.0
+					if delta < 0.0
+						limit = -50.0
+					endIf
+					ModArousalEffectValue(victims[i], traumaEff, delta, limit)
+					SetArousalDecayEffect(victims[i], traumaEff, traumaHalfTime, 0.0)
+				endWhile
+			endIf
+
+			float animationDuration = GetAnimationDuration(thisThread)
+			float timeFactor = thisThread.TotalTime / animationDuration
+			slax.Info("sla_SexlabPlugin - OnAnimationEnd - animationDuration " + animationDuration + ", totalTime " + thisThread.TotalTime + ", timeFactor " + timeFactor)
+
+			bool[] willOrgasm
+
+			bool applyFatigue = fatigueHalfTime != 0.0 && (thisThread.IsOral || thisThread.IsVaginal || thisThread.IsAnal)
+			bool checkForOrgasm = true
+			; Use SexLabOrgasm event instead
+			if SexLab.Config.SeparateOrgasms || HasSLSO()
+				checkForOrgasm = false
+			else
+				willOrgasm = FindActorWillOrgasm(thisThread, animation, actorList)
+			endIf
+
+			i = actorList.Length
+			while i
 				i -= 1
-				if victims[i] == PlayerRef
-					self.main.wasPlayerRaped = True
+
+				if applyFatigue
+					ModArousalEffectValue(actorList[i], fatigueEff, -fatigueBase, -fatigueBase * 10.0)
+					SetArousalDecayEffect(actorList[i], fatigueEff, fatigueHalfTime, 0)
 				endIf
-				float delta = traumaLewdRate * GetLewd(victims[i]) - traumaBase
-				float limit = 50.0
-				if delta < 0.0
-					limit = -50.0
+
+				if checkForOrgasm && willOrgasm[i]
+					defaultPlugin.OnOrgasm(actorList[i], timeFactor * 20.0)
 				endIf
-				ModArousalEffectValue(victims[i], traumaEff, delta, limit)
-				SetArousalDecayEffect(victims[i], traumaEff, traumaHalfTime, 0.0)
+
+				ForceUpdateArousal(actorList[i])
 			endWhile
-		endIf
-		
-		float animationDuration = GetAnimationDuration(thisThread)
-		float timeFactor = thisThread.TotalTime / animationDuration
-		slax.Info("sla_SexlabPlugin - OnAnimationEnd - animationDuration " + animationDuration + ", totalTime " + thisThread.TotalTime + ", timeFactor " + timeFactor)
-
-		bool[] willOrgasm
-		
-		bool applyFatigue = fatigueHalfTime != 0.0 && (thisThread.IsOral || thisThread.IsVaginal || thisThread.IsAnal)
-		bool checkForOrgasm = true
-		; Use SexLabOrgasm event instead
-		if SexLab.Config.SeparateOrgasms || HasSLSO()
-			checkForOrgasm = false
-		else
-			willOrgasm = FindActorWillOrgasm(thisThread, animation, actorList)
-		endIf
-
-		i = actorList.Length
-		while i
-			i -= 1
-			
-			if applyFatigue
-				ModArousalEffectValue(actorList[i], fatigueEff, -fatigueBase, -fatigueBase * 10.0)
-				SetArousalDecayEffect(actorList[i], fatigueEff, fatigueHalfTime, 0)
-			endIf
-
-			if checkForOrgasm && willOrgasm[i]
-				defaultPlugin.OnOrgasm(actorList[i], timeFactor * 20.0)
-			endIf
-			
-			ForceUpdateArousal(actorList[i])
-		endWhile
+		EndIf
 	endEvent
 
 	event OnSexLabOrgasm(Form who, int enjoyment, int orgasms)
