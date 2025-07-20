@@ -311,9 +311,9 @@ state Installed
 	endFunction
 
     event OnStageStart(int tid, bool hasPlayer)
-        slax.Info("sla_SexlabPlugin - OnStageStart - " + tid + " : " + hasPlayer + ".Stage: " + thisThread.Stage)
-        sslThreadController thisThread = SexLab.GetController(tid)
+		sslThreadController thisThread = SexLab.GetController(tid)
 		If (thisThread)
+			slax.Info("sla_SexlabPlugin - OnStageStart - " + tid + " : " + hasPlayer + ".Stage: " + thisThread.Stage)
 			Actor[] actorList = thisThread.Positions
         	if actorList.Length < 1
         	    return
