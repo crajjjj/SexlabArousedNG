@@ -1784,10 +1784,10 @@ function ClearAllData()
         return
     endIf
 
-    slax.Error("slaConfigScr MCM CleanUpActors")
+    slax.info("slaConfigScr MCM CleanUpActors")
     slaInternalModules.CleanUpActors(Utility.GetCurrentGameTime())
     Utility.WaitMenuMode(5.0)
-    slax.Error("slaConfigScr MCM Refresh PLugins")
+    slax.info("slaConfigScr MCM Refresh PLugins")
 
     If (slaMain.defaultPlugin.ddPlugin.IsInterfaceActive())
             slaMain.UnregisterPlugin(slaMain.defaultPlugin.ddPlugin)

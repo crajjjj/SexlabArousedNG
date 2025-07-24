@@ -25,8 +25,6 @@ GlobalVariable Property sla_NextMaintenance Auto
 
 Int Property slaArousalCap = 100 AutoReadOnly
 
-SexLabFramework Property sexLab auto ;deprecated
-
 Actor Property playerRef Auto
 
 ; FOLDEND - Properties

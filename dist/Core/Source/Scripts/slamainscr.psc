@@ -24,7 +24,6 @@ GlobalVariable Property sla_UseLineOfSight Auto
 Formlist Property sla_NakedArmorList Auto
 Float Property updateFrequency = 30.00 Auto Hidden
 Int[] Property actorTypes Auto Hidden ; [0] = 43/kNPC [1] = 44/kLeveledCharacter [2] = 62/kCharacter
-SexLabFramework Property sexLab Auto ; deprecated
 Actor Property playerRef Auto
 GlobalVariable Property gameDaysPassed Auto
 Quest Property slaScanAllNpcs Auto
