@@ -736,7 +736,7 @@ function UpdateActorArousals(bool fullUpdate)
     endIf
     
     Actor[] updateActors = PapyrusUtil.PushActor(theActors, playerRef)
-    actorCount += 1 
+    actorCount += 1
 
     int i = 0
     while i < actorCount

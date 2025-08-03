@@ -17,6 +17,9 @@ float[] previousModifiersThread7
 float[] previousModifiersThread8
 float[] previousModifiersThread9
 
+Actor currentObserver = none
+bool isSeeingSex = false
+
 int sexEff = -1
 int fatigueEff = -1
 int traumaEff = -1
@@ -427,7 +430,38 @@ state Installed
         ; bool ok = ModEvent.Send(handle)
 
     EndFunction
-    
+
+	function UpdateActor(Actor who, bool fullUpdate)
+		if currentObserver != none
+			; 0 - none 1 - sees sex 2 - participating sex 3 - decay 
+			int oldState = GetArousalEffectFncAux(currentObserver, sexEff)
+			if isInScene(currentObserver)
+				if oldState != 2
+					SetLinearArousalEffect(currentObserver, sexEff, 20.0 * 24.0, sexEffMax, 2)
+				endIf
+			elseIf isSeeingSex
+				if oldState != 1
+					SetLinearArousalEffect(currentObserver, sexEff, 20.0 * 24.0, sexEffMax, 1)
+				endIf
+			elseIf oldState != 0 && oldState != 3
+				SetArousalDecayEffect(currentObserver, sexEff, sexHalfTime, 0.0, 3)
+			endIf
+		endIf
+		
+		currentObserver = who
+		isSeeingSex = false
+		if who == none
+			return
+		endIf
+		
+	endFunction
+
+	function UpdateObserver(Actor observer, Actor observed)
+		if (OStim.IsActorInvolved(observed))
+			isSeeingSex = true
+		endIf
+	endFunction
+
     bool function isInScene(Actor act)
         if OStim.AnimationRunning()
             return OStim.IsActorInvolved(act)
