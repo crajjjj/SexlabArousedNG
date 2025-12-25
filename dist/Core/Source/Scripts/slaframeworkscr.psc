@@ -213,7 +213,7 @@ Float Function UpdateActorTimeRate(Actor who, Float timeRateDelta)
 EndFunction
 
 Function UpdateActorOrgasmDate(Actor who)
-	{deprecated}
+	slaMain.defaultPlugin.OnOrgasm(who, 0.0)
 EndFunction
 
 Float Function GetActorDaysSinceLastOrgasm(Actor who)
