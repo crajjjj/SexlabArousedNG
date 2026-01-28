@@ -19,6 +19,7 @@ int satisfactionEff = -1
 int timedEff = -1
 int timedCycleEff = -1
 int legacyEff = -1
+int sleepEff = -1
 
 float nakedMax = 50.0
 float nakedMaxNonPref = 15.0
@@ -36,6 +37,9 @@ float femaleOrgasmFactor = 0.8
 
 float legacyMultiplier = 1.0
 float legacyDecay = 0.5
+
+float sleepMin = 5.0
+float sleepMax = 15.0
 
 function UpdateDenialModifier(Actor who)
 	float denialInc = timedBaseRate * ddPlugin.GetBeltAndPlugModifier(who)
@@ -74,6 +78,10 @@ float function GetOptionValue(int optionId)
 		return orgasmRate
 	elseIf optionId == 12
 		return femaleOrgasmFactor
+	elseIf optionId == 13
+		return sleepMin
+	elseIf optionId == 14
+		return sleepMax
 	endIf
 	return 0.0
 endFunction
@@ -105,6 +113,10 @@ function OnUpdateOption(int optionId, float value)
 		orgasmRate = value
 	elseIf optionId == 12
 		femaleOrgasmFactor = value
+	elseIf optionId == 13
+		sleepMin = value
+	elseIf optionId == 14
+		sleepMax = value
 	endIf
 endFunction
 
@@ -167,6 +179,8 @@ state Installed
 		timedCycleEff = RegisterEffect("TimedCycle", "Timed Cycle", "[Hidden in UI] Helper for denial effect.")
 		HideEffectInUI(timedCycleEff)
 		legacyEff = RegisterEffect("Legacy", "$SLA_Effect_Legacy", "$SLA_Effect_LegacyDesc")
+		sleepEff = RegisterEffect("Sleep", "$SLA_Effect_Sleep", "$SLA_Effect_SleepDesc")
+		RegisterForSleep()
 	endFunction
 
 	function AddOptions()
@@ -184,6 +198,8 @@ state Installed
 		AddOption("$SLA_Effect_SatisfactionCat", "$SLA_Effect_SatisfactionBase", "$SLA_Effect_SatisfactionBaseDesc", 50.0)
 		AddOptionEx("$SLA_Effect_SatisfactionCat", "$SLA_Effect_SatisfactionRate", "$SLA_Effect_SatisfactionRateDesc", 1.0, 0.0, 10.0, 0.1, "{1} arousal/enjoyment")
 		AddOptionEx("$SLA_Effect_SatisfactionCat", "$SLA_Effect_SatisfactionFemaleRate", "$SLA_Effect_SatisfactionFemaleRateDesc", 0.8, 0.0, 3.0, 0.01, "x{2} Rate")
+		AddOptionEx("$SLA_Effect_SleepCat", "$SLA_Effect_SleepMin", "$SLA_Effect_SleepMinDesc", 5.0, 0.0, 100.0, 1.0, "{1}")
+		AddOptionEx("$SLA_Effect_SleepCat", "$SLA_Effect_SleepMax", "$SLA_Effect_SleepMaxDesc", 15.0, 0.0, 100.0, 1.0, "{1}")
 	endFunction
 
 	function DisablePlugin()
@@ -193,6 +209,8 @@ state Installed
 		UnregisterEffect("Timed")
 		UnregisterEffect("TimedCycle")
 		UnregisterEffect("Legacy")
+		UnregisterEffect("Sleep")
+		UnregisterForSleep()
 	endFunction
 
 	function UpdateActor(Actor who, bool fullUpdate)
@@ -267,3 +285,30 @@ state Installed
 		endIf
 	endFunction
 endState
+
+event OnSleepStop(bool abInterrupted)
+	if !isEnabled || sleepEff < 0
+		return
+	endIf
+
+	Actor who = main.playerRef
+	if who == none
+		return
+	endIf
+
+	float minValue = sleepMin
+	float maxValue = sleepMax
+	if maxValue < minValue
+		float tmp = minValue
+		minValue = maxValue
+		maxValue = tmp
+	endIf
+
+	float amount = Utility.RandomFloat(minValue, maxValue)
+	if amount <= 0.0
+		return
+	endIf
+
+	ModArousalEffectValue(who, sleepEff, amount, 100.0)
+	ForceUpdateArousal(who)
+endEvent
