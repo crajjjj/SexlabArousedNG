@@ -41,6 +41,9 @@ float legacyDecay = 0.5
 float sleepMin = 5.0
 float sleepMax = 15.0
 float sleepHalfTime = 0.04166666 ; 1.0 / 24.0
+float sleepMinHours = 3.0
+
+float sleepStartTime = 0.0
 
 function UpdateDenialModifier(Actor who)
 	float denialInc = timedBaseRate * ddPlugin.GetBeltAndPlugModifier(who)
@@ -85,6 +88,8 @@ float function GetOptionValue(int optionId)
 		return sleepMax
 	elseIf optionId == 15
 		return sleepHalfTime * 24.0
+	elseIf optionId == 16
+		return sleepMinHours
 	endIf
 	return 0.0
 endFunction
@@ -122,6 +127,8 @@ function OnUpdateOption(int optionId, float value)
 		sleepMax = value
 	elseIf optionId == 15
 		sleepHalfTime = value / 24.0
+	elseIf optionId == 16
+		sleepMinHours = value
 	endIf
 endFunction
 
@@ -206,6 +213,7 @@ state Installed
 		AddOptionEx("$SLA_Effect_SleepCat", "$SLA_Effect_SleepMin", "$SLA_Effect_SleepMinDesc", 5.0, 0.0, 100.0, 1.0, "{1}")
 		AddOptionEx("$SLA_Effect_SleepCat", "$SLA_Effect_SleepMax", "$SLA_Effect_SleepMaxDesc", 15.0, 0.0, 100.0, 1.0, "{1}")
 		AddOptionEx("$SLA_Effect_SleepCat", "$SLA_Effect_SleepHalfTime", "$SLA_Effect_SleepHalfTimeDesc", 1.0, 0.1, 24.0, 0.1, "{1} hours")
+		AddOptionEx("$SLA_Effect_SleepCat", "$SLA_Effect_SleepMinTime", "$SLA_Effect_SleepMinTimeDesc", 3.0, 0.0, 24.0, 0.5, "{1} hours")
 	endFunction
 
 	function DisablePlugin()
@@ -292,6 +300,10 @@ state Installed
 	endFunction
 endState
 
+event OnSleepStart(float afSleepStartTime, float afDesiredSleepEndTime)
+	sleepStartTime = Utility.GetCurrentGameTime()
+endEvent
+
 event OnSleepStop(bool abInterrupted)
 	if !isEnabled || sleepEff < 0
 		return
@@ -301,6 +313,15 @@ event OnSleepStop(bool abInterrupted)
 	if who == none
 		return
 	endIf
+
+	if sleepMinHours > 0.0 && sleepStartTime > 0.0
+		float sleptHours = (Utility.GetCurrentGameTime() - sleepStartTime) * 24.0
+		if sleptHours < sleepMinHours
+			sleepStartTime = 0.0
+			return
+		endIf
+	endIf
+	sleepStartTime = 0.0
 
 	float minValue = sleepMin
 	float maxValue = sleepMax
