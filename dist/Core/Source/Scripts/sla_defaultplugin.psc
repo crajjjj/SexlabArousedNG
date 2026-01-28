@@ -40,6 +40,7 @@ float legacyDecay = 0.5
 
 float sleepMin = 5.0
 float sleepMax = 15.0
+float sleepHalfTime = 0.04166666 ; 1.0 / 24.0
 
 function UpdateDenialModifier(Actor who)
 	float denialInc = timedBaseRate * ddPlugin.GetBeltAndPlugModifier(who)
@@ -82,6 +83,8 @@ float function GetOptionValue(int optionId)
 		return sleepMin
 	elseIf optionId == 14
 		return sleepMax
+	elseIf optionId == 15
+		return sleepHalfTime * 24.0
 	endIf
 	return 0.0
 endFunction
@@ -117,6 +120,8 @@ function OnUpdateOption(int optionId, float value)
 		sleepMin = value
 	elseIf optionId == 14
 		sleepMax = value
+	elseIf optionId == 15
+		sleepHalfTime = value / 24.0
 	endIf
 endFunction
 
@@ -200,6 +205,7 @@ state Installed
 		AddOptionEx("$SLA_Effect_SatisfactionCat", "$SLA_Effect_SatisfactionFemaleRate", "$SLA_Effect_SatisfactionFemaleRateDesc", 0.8, 0.0, 3.0, 0.01, "x{2} Rate")
 		AddOptionEx("$SLA_Effect_SleepCat", "$SLA_Effect_SleepMin", "$SLA_Effect_SleepMinDesc", 5.0, 0.0, 100.0, 1.0, "{1}")
 		AddOptionEx("$SLA_Effect_SleepCat", "$SLA_Effect_SleepMax", "$SLA_Effect_SleepMaxDesc", 15.0, 0.0, 100.0, 1.0, "{1}")
+		AddOptionEx("$SLA_Effect_SleepCat", "$SLA_Effect_SleepHalfTime", "$SLA_Effect_SleepHalfTimeDesc", 1.0, 0.1, 24.0, 0.1, "{1} hours")
 	endFunction
 
 	function DisablePlugin()
@@ -310,5 +316,8 @@ event OnSleepStop(bool abInterrupted)
 	endIf
 
 	ModArousalEffectValue(who, sleepEff, amount, 100.0)
+	if sleepHalfTime > 0.0
+		SetArousalDecayEffect(who, sleepEff, sleepHalfTime, 0.0)
+	endIf
 	ForceUpdateArousal(who)
 endEvent
