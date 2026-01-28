@@ -20,11 +20,11 @@ namespace {
 
     uint32_t GetStaticEffectCount(StaticFunctionTag*) { return ArousalManager::GetSingleton().GetStaticEffectCount(); }
 
-    uint32_t RegisterStaticEffect(StaticFunctionTag*, std::string name) {
+    int32_t RegisterStaticEffect(StaticFunctionTag*, std::string name) {
         return ArousalManager::GetSingleton().RegisterStaticEffect(name);
     }
 
-    uint32_t GetStaticEffectId(StaticFunctionTag*, std::string name) {
+    int32_t GetStaticEffectId(StaticFunctionTag*, std::string name) {
         return ArousalManager::GetSingleton().GetStaticEffectId(name);
     }
 

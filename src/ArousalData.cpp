@@ -100,7 +100,7 @@ namespace SLA {
         float actualDiff = modifier;
         if ((modifier < 0 && limit > value) || (modifier > 0 && limit < value)) {
             value = limit;
-            actualDiff = limit - value;
+            actualDiff = limit - effect.value;
         }
         arousal += actualDiff;
         effect.value = value;
@@ -120,7 +120,7 @@ namespace SLA {
         float actualDiff = diff;
         if ((diff < 0 && limit > value) || (diff > 0 && limit < value)) {
             value = limit;
-            actualDiff = limit - value;
+            actualDiff = limit - effect.value;
         }
         effect.value = value;
         if (!staticEffectGroups[effectIdx]) arousal += actualDiff;
@@ -141,6 +141,10 @@ namespace SLA {
     }
 
     void ArousalData::UpdateGroupFactor(ArousalEffectGroup& group, float oldFactor, float newFactor) {
+        if (oldFactor == 0.f) {
+            SKSE::log::warn("UpdateGroupFactor called with oldFactor=0; skipping update.");
+            return;
+        }
         float value = group.value / oldFactor * newFactor;
         float diff = value - group.value;
         arousal += diff;

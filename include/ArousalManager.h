@@ -10,8 +10,8 @@ namespace SLA {
     public:
         [[nodiscard]] static ArousalManager& GetSingleton() noexcept;
         int GetStaticEffectCount();
-        uint32_t RegisterStaticEffect(std::string name);
-        uint32_t GetStaticEffectId(std::string name);
+        int32_t RegisterStaticEffect(std::string name);
+        int32_t GetStaticEffectId(std::string name);
         bool UnregisterStaticEffect(std::string name);
         bool IsStaticEffectActive(RE::Actor* who, int32_t effectIdx);
         int32_t GetDynamicEffectCount(RE::Actor* who);

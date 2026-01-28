@@ -36,7 +36,7 @@ namespace SLA {
         return staticEffectCount;
     }
 
-    uint32_t ArousalManager::RegisterStaticEffect(std::string name) {
+    int32_t ArousalManager::RegisterStaticEffect(std::string name) {
         if (cleanupLock.test(std::memory_order_relaxed)) {
             SKSE::log::warn("RegisterStaticEffect called during cleanup, skipping.");
             return -2;
@@ -51,25 +51,25 @@ namespace SLA {
                 SKSE::log::warn("Unused ID lookup failed in RegisterStaticEffect");
                 return 0;
             }
-            int32_t effectId = itr2->second;
+            int32_t effectId = static_cast<int32_t>(itr2->second);
             staticEffectIds.erase(itr2);
-            staticEffectIds[name] = effectId;
+            staticEffectIds[name] = static_cast<uint32_t>(effectId);
             return effectId;
         }
 
-        staticEffectIds[name] = staticEffectCount;
+        staticEffectIds[name] = static_cast<uint32_t>(staticEffectCount);
         for (auto& data : arousalData) data.second.OnRegisterStaticEffect();
         const auto result = staticEffectCount;
         staticEffectCount++;
         return result;
     }
-    uint32_t ArousalManager::GetStaticEffectId(std::string name) {
+    int32_t ArousalManager::GetStaticEffectId(std::string name) {
         if (cleanupLock.test(std::memory_order_relaxed)) {
             SKSE::log::warn("GetStaticEffectId called during cleanup, skipping.");
             return -2;
         }
         auto itr = staticEffectIds.find(name);
-        if (itr != staticEffectIds.end()) return itr->second;
+        if (itr != staticEffectIds.end()) return static_cast<int32_t>(itr->second);
         return -1;  // Not found, return -1 to indicate error
     }
     
