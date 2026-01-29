@@ -22,17 +22,27 @@ This project uses **CMake** and **vcpkg** for dependency management and building
    ```sh
    git clone https://github.com/microsoft/vcpkg.git
    ./vcpkg/bootstrap-vcpkg.sh    # or .bat on Windows
-   ./vcpkg/vcpkg install         # Will use vcpkg.json if present
+   ./vcpkg/vcpkg install --triplet x64-windows-skse
    ```
-3. **Configure with CMake:**
+3. **Set `VCPKG_ROOT` for CMake presets (Windows):**
+
+   PowerShell:
+   ```powershell
+   $env:VCPKG_ROOT="C:\path\to\vcpkg"
+   ```
+   Command Prompt:
+   ```cmd
+   set VCPKG_ROOT=C:\path\to\vcpkg
+   ```
+4. **Configure with CMake (preset):**
 
    ```sh
-   cmake -B build -S . -DCMAKE_TOOLCHAIN_FILE="$(pwd)/vcpkg/scripts/buildsystems/vcpkg.cmake"
+   cmake --preset build-release-msvc
    ```
-4. **Build the project:**
+5. **Build the project:**
 
    ```sh
-   cmake --build build
+   cmake --build --preset release-msvc
    ```
 ---
 

@@ -221,6 +221,15 @@ Event OnVersionUpdate(int newVersion)
             slaMain.RegisterPlugin(slaMain.sexlabPlugin)
         EndIf
 	EndIf
+	
+	If (slaMain && (CurrentVersion < 30100007))
+		slax.Info("Updating MCM. Refreshing default plugin options. Previous version:" + CurrentVersion + ".New version:" + newVersion)
+		If (slaMain.defaultPlugin.IsInterfaceActive())
+			slaMain.UnregisterPlugin(slaMain.defaultPlugin)
+			slaMain.defaultPlugin.ClearOptions()
+			slaMain.RegisterPlugin(slaMain.defaultPlugin)
+		EndIf
+	EndIf
 EndEvent
 
 

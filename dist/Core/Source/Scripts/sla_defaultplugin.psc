@@ -40,7 +40,7 @@ float legacyDecay = 0.5
 
 float sleepMin = 5.0
 float sleepMax = 15.0
-float sleepHalfTime = 0.04166666 ; 1.0 / 24.0
+float sleepHalfTime = 0.20833333 ; 5.0 / 24.0
 float sleepMinHours = 3.0
 
 float sleepStartTime = 0.0
@@ -212,7 +212,7 @@ state Installed
 		AddOptionEx("$SLA_Effect_SatisfactionCat", "$SLA_Effect_SatisfactionFemaleRate", "$SLA_Effect_SatisfactionFemaleRateDesc", 0.8, 0.0, 3.0, 0.01, "x{2} Rate")
 		AddOptionEx("$SLA_Effect_SleepCat", "$SLA_Effect_SleepMin", "$SLA_Effect_SleepMinDesc", 5.0, 0.0, 100.0, 1.0, "{1}")
 		AddOptionEx("$SLA_Effect_SleepCat", "$SLA_Effect_SleepMax", "$SLA_Effect_SleepMaxDesc", 15.0, 0.0, 100.0, 1.0, "{1}")
-		AddOptionEx("$SLA_Effect_SleepCat", "$SLA_Effect_SleepHalfTime", "$SLA_Effect_SleepHalfTimeDesc", 1.0, 0.1, 24.0, 0.1, "{1} hours")
+		AddOptionEx("$SLA_Effect_SleepCat", "$SLA_Effect_SleepHalfTime", "$SLA_Effect_SleepHalfTimeDesc", 5.0, 0.1, 24.0, 0.1, "{1} hours")
 		AddOptionEx("$SLA_Effect_SleepCat", "$SLA_Effect_SleepMinTime", "$SLA_Effect_SleepMinTimeDesc", 3.0, 0.0, 24.0, 0.5, "{1} hours")
 	endFunction
 
@@ -301,7 +301,11 @@ state Installed
 endState
 
 event OnSleepStart(float afSleepStartTime, float afDesiredSleepEndTime)
-	sleepStartTime = Utility.GetCurrentGameTime()
+	if afSleepStartTime > 0.0
+		sleepStartTime = afSleepStartTime
+	else
+		sleepStartTime = Utility.GetCurrentGameTime()
+	endIf
 endEvent
 
 event OnSleepStop(bool abInterrupted)
@@ -311,10 +315,16 @@ event OnSleepStop(bool abInterrupted)
 
 	Actor who = main.playerRef
 	if who == none
+		sleepStartTime = 0.0
 		return
 	endIf
 
-	if sleepMinHours > 0.0 && sleepStartTime > 0.0
+	if sleepStartTime <= 0.0
+		sleepStartTime = 0.0
+		return
+	endIf
+
+	if sleepMinHours > 0.0
 		float sleptHours = (Utility.GetCurrentGameTime() - sleepStartTime) * 24.0
 		if sleptHours < sleepMinHours
 			sleepStartTime = 0.0
