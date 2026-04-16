@@ -62,14 +62,31 @@ namespace SLA {
                 for (uint32_t k = 0; k < grpEntiryCount; ++k) {
                     uint32_t effIdx = ReadDataHelper<uint32_t>(intfc, length);
                     grp->staticEffectIds.emplace_back(effIdx);
-                    staticEffectGroups[effIdx] = grp;
+                    // Defer staticEffectGroups assignment until after dead-member check below
                 }
                 grp->value = ReadDataHelper<float>(intfc, length);
                 if (std::abs(grp->value) > 10000.f) {
                     SKSE::log::info("Possibly corrupted data reseting to zero");
                     grp->value = 0.f;
                 }
-                groupsToUpdate.emplace_back(std::move(grp));
+                // Discard groups where any member has function==0 (sine stopped in a prior session).
+                // Reset param/intAux so Papyrus detects the actor via cycleParam < 1.0 and calls
+                // UpdateDenialCycle to re-establish the group on the next scan.
+                bool hasDeadMember = false;
+                for (uint32_t effIdx : grp->staticEffectIds) {
+                    if (staticEffects[effIdx].function == 0) {
+                        staticEffects[effIdx].param = 0.f;
+                        staticEffects[effIdx].intAux = 0;
+                        staticEffects[effIdx].value = 0.f;
+                        hasDeadMember = true;
+                    }
+                }
+                if (!hasDeadMember) {
+                    for (uint32_t effIdx : grp->staticEffectIds) {
+                        staticEffectGroups[effIdx] = grp;
+                    }
+                    groupsToUpdate.emplace_back(std::move(grp));
+                }
             }
             count = ReadDataHelper<uint32_t>(intfc, length);
             for (uint32_t j = 0; j < count; ++j) staticEffectsToUpdate.insert(ReadDataHelper<uint32_t>(intfc, length));
