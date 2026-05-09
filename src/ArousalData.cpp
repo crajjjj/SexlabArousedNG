@@ -29,7 +29,7 @@ namespace SLA {
 
     int32_t ArousalData::GetDynamicEffectCount() const { return dynamicEffects.size(); }
     std::string ArousalData::GetDynamicEffect(int32_t number) const {
-        if (number >= dynamicEffects.size()) return "";
+        if (number < 0 || number >= static_cast<int32_t>(dynamicEffects.size())) return "";
         auto itr = dynamicEffects.begin();
         std::advance(itr, number);
         return itr->first.c_str();

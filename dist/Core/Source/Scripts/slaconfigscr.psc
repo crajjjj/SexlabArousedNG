@@ -1333,7 +1333,7 @@ Event OnOptionHighlight(int option)
         if effId != -1
             infoText = slaMain.GetEffectDescription(effId)
         else
-            infoText = StorageUtil.SetStringValue(self, "SLAroused.MCM.OID." + option, "")
+            infoText = StorageUtil.GetStringValue(self, "SLAroused.MCM.OID." + option, "")
         endIf
 
     ElseIf 2 == pageId ; PuppetMaster

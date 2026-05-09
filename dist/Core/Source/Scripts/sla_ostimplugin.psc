@@ -40,6 +40,14 @@ bool function CheckDependencies()
     return Game.GetModByName("Ostim.esp") != 255
 endFunction
 
+Float Function GetLewd(Actor who)
+    float arousal = slaInternalModules.GetArousal(who)
+    if arousal <= 0.0
+        return 0.0
+    endIf
+    return arousal / 100.0
+EndFunction
+
 event OnEndState()
     OStim = OUtils.GetOStim()
 endEvent
@@ -206,7 +214,7 @@ Function HandleEndScene(int threadId, Actor[] threadActors)
             if victims[v] == PlayerRef
 	      	    self.main.wasPlayerRaped = True
 	        endIf
-	        float delta = traumaLewdRate - traumaBase
+	        float delta = traumaLewdRate * GetLewd(victims[v]) - traumaBase
 	        float limit = 50.0
 	        if delta < 0.0
 	             limit = -50.0
