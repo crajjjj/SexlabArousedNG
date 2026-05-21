@@ -15,9 +15,8 @@ namespace SLA {
 
     using ArousalEffectGroupPtr = std::shared_ptr<ArousalEffectGroup>;
    
-    static float GetEffectLimitOffset(uint32_t functionId) {
-        if (functionId == 1) return 0.5;
-        return 0.0;
+    constexpr float GetEffectLimitOffset(uint32_t functionId) {
+        return functionId == 1 ? 0.5f : 0.0f;
     }
 
     struct ArousalEffectData {
@@ -66,7 +65,7 @@ namespace SLA {
                 }
                 grp->value = ReadDataHelper<float>(intfc, length);
                 if (std::abs(grp->value) > 10000.f) {
-                    SKSE::log::info("Possibly corrupted data reseting to zero");
+                    SKSE::log::warn("Possibly corrupted group value ({}); resetting to zero", grp->value);
                     grp->value = 0.f;
                 }
                 groupsToUpdate.emplace_back(std::move(grp));
@@ -81,14 +80,9 @@ namespace SLA {
             count = ReadDataHelper<uint32_t>(intfc, length);
             for (uint32_t j = 0; j < count; ++j) dynamicEffectsToUpdate.insert(ReadString(intfc, length));
 
-            float recalculated = 0.f;
-            for (uint32_t i = 0; i < staticEffects.size(); ++i) {
-                if (!staticEffectGroups[i]) recalculated += staticEffects[i].value;
-            }
-            for (auto const& eff : dynamicEffects) recalculated += eff.second.value;
-            for (auto const& grp : groupsToUpdate) recalculated += grp->value;
+            float recalculated = RecalculateArousal();
             if (std::abs(recalculated - arousal) > 0.5)
-                SKSE::log::info("Arousal data mismatch: Expected: {} Got: {}", recalculated, arousal);
+                SKSE::log::warn("Arousal data mismatch on load: Expected: {} Got: {}", recalculated, arousal);
             arousal = recalculated;
         }
         ArousalData& operator=(ArousalData&& other) = default;
@@ -98,7 +92,8 @@ namespace SLA {
             intfc->WriteRecordData(&arousal, sizeof(arousal));
             intfc->WriteRecordData(&lastUpdate, sizeof(lastUpdate));
             WriteContainerData<std::vector<ArousalEffectData>>(intfc, staticEffects);
-            uint8_t groupCount = groupsToUpdate.size();
+            assert(groupsToUpdate.size() <= 255 && "group count exceeds uint8 serialization limit");
+            uint8_t groupCount = static_cast<uint8_t>(groupsToUpdate.size());
             intfc->WriteRecordData(&groupCount, sizeof(groupCount));
             for (auto& group : groupsToUpdate) {
                 WriteContainerData<std::vector<uint32_t>>(intfc, group->staticEffectIds);
@@ -147,6 +142,7 @@ namespace SLA {
         void UpdateGroup(ArousalEffectGroup& group, float timeDiff, RE::Actor* who);
         bool CalculateArousalEffect(ArousalEffectData& effect, float timeDiff, RE::Actor* who);
         bool UpdateArousalEffect(ArousalEffectData& effect, float timeDiff, RE::Actor* who);
+        float RecalculateArousal() const;
 
         std::unordered_set<int32_t> staticEffectsToUpdate;
         std::vector<ArousalEffectData> staticEffects;

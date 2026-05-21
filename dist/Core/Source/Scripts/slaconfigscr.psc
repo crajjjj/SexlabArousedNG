@@ -42,7 +42,7 @@ String keyPoshArmor
 String keyRaggedArmor
 String keyKillerHeels
 String keyClothingArmor
-String[] pageKeys
+String[] pageKeys ; unused — never read
 ; FOLDEND - Keys
 
 ; FOLDSTART - Keywords
@@ -91,6 +91,10 @@ Int clothingArmorValue
 Form[] bikiniArmors ; May not really be bikini armors, but that's what I'm trying to locate.
 Int[] bikiniSliderValues
 Int[] bikiniClothingValues
+String[] customKeywordIds
+Int customKeywordCount
+Int[] customKeywordValues
+Int[] customKeywordToggleOIDs
 ; FOLDEND - Variables
 
 ; FOLDSTART - OIDs
@@ -151,6 +155,8 @@ Int raggedToggleOID
 Int clothingToggleOID
 Int[] bikiniToggleOIDs
 Int[] bikiniClothingToggleOIDs
+Int registerKeywordOID
+Int removeKeywordOID
 
 ; FOLDEND - OIDs
 
@@ -253,6 +259,17 @@ Event OnGameReload()
     if !slaMain
         slaMain = Quest.GetQuest("sla_Main") as slaMainScr
     endif
+
+    Int ckwCount = StorageUtil.StringListCount(slaMain, "SLAroused.CustomKeywords")
+    While ckwCount > 0
+        ckwCount -= 1
+        String editorId = StorageUtil.StringListGet(slaMain, "SLAroused.CustomKeywords", ckwCount)
+        Keyword kw = Keyword.GetKeyword(editorId)
+        If kw
+            RestoreKeywords("SLAroused.CKW." + editorId, kw)
+        EndIf
+    EndWhile
+
     parent.OnGameReload() ; Don't forget to call the parent!
 EndEvent
 
@@ -623,9 +640,12 @@ Function DisplayArmorList()
 
         targetActorMenuOID = AddMenuOption("$SLA_SelectActor", targetActorNames[targetActorIndex])
         
+        registerKeywordOID = AddInputOption("Register Custom Keyword", "")
+        removeKeywordOID = AddInputOption("Remove Custom Keyword", "")
+
         AddHeaderOption("$SLA_EquippedItems")
         AddHeaderOption("$SLA_Options")
-		
+
 		DisplayWornItems(targetActors[targetActorIndex])
 
 EndFunction
@@ -791,6 +811,21 @@ Function GetBikiniArmorsForTargetActor(Actor who)
         bikiniClothingValues[ii] = StorageUtil.GetIntValue(bikiniArmors[ii], keyClothingArmor)
     EndWhile
 
+    customKeywordCount = StorageUtil.StringListCount(slaMain, "SLAroused.CustomKeywords")
+    If customKeywordCount > 0
+        customKeywordIds = Utility.CreateStringArray(customKeywordCount)
+        customKeywordValues = Utility.CreateIntArray(customKeywordCount)
+        customKeywordToggleOIDs = Utility.CreateIntArray(customKeywordCount)
+        Int kwIdx = customKeywordCount
+        While kwIdx > 0
+            kwIdx -= 1
+            customKeywordIds[kwIdx] = StorageUtil.StringListGet(slaMain, "SLAroused.CustomKeywords", kwIdx)
+            If bodyItem
+                customKeywordValues[kwIdx] = StorageUtil.GetIntValue(bodyItem, "SLAroused.CKW." + customKeywordIds[kwIdx])
+            EndIf
+        EndWhile
+    EndIf
+
 EndFunction
 
 
@@ -810,6 +845,12 @@ Function AddSlidersForBodyItem()
         raggedSliderOID  = AddSliderOption("$SLA_Ragged", raggedArmorValue)
         AddEmptyOption()
         clothingToggleOID = AddToggleOption("Counts as Clothing", clothingArmorValue > 0)
+        Int kwIdx = 0
+        While kwIdx < customKeywordCount
+            AddEmptyOption()
+            customKeywordToggleOIDs[kwIdx] = AddToggleOption(customKeywordIds[kwIdx], customKeywordValues[kwIdx] > 0)
+            kwIdx += 1
+        EndWhile
 EndFunction
 
 
@@ -829,6 +870,12 @@ Function AddTogglesForBodyItem()
         raggedToggleOID  = AddToggleOption("$SLA_Ragged", raggedArmorValue > 0)
         AddEmptyOption()
         clothingToggleOID = AddToggleOption("Counts as Clothing", clothingArmorValue > 0)
+        Int kwIdx = 0
+        While kwIdx < customKeywordCount
+            AddEmptyOption()
+            customKeywordToggleOIDs[kwIdx] = AddToggleOption(customKeywordIds[kwIdx], customKeywordValues[kwIdx] > 0)
+            kwIdx += 1
+        EndWhile
 EndFunction
 
 
@@ -917,9 +964,13 @@ Event OnOptionMenuAccept(int option, int index)
     
 EndEvent
 
-Event OnOptionInputOpen(int option) 
+Event OnOptionInputOpen(int option)
+    If option == registerKeywordOID || option == removeKeywordOID
+        SetInputDialogStartText("")
+        Return
+    EndIf
     int i = StorageUtil.GetIntValue(self, "SLAroused.MCM.OID." + option, -1)
-    
+
     if i >= 0
         float initialValue = slaMain.GetEffectValue(puppetActor, i)
         SetInputDialogStartText(initialValue)
@@ -927,8 +978,32 @@ Event OnOptionInputOpen(int option)
 EndEvent
 
 Event OnOptionInputAccept(int option, string value)
+    If option == registerKeywordOID
+        Keyword kw = Keyword.GetKeyword(value)
+        If !kw
+            ShowMessage("Keyword '" + value + "' was not found. Make sure the ESP containing it is loaded.", false, "$Accept")
+            Return
+        EndIf
+        If StorageUtil.StringListFind(slaMain, "SLAroused.CustomKeywords", value) >= 0
+            ShowMessage("Keyword '" + value + "' is already registered.", false, "$Accept")
+            Return
+        EndIf
+        StorageUtil.StringListAdd(slaMain, "SLAroused.CustomKeywords", value, false)
+        ForcePageReset()
+        Return
+    ElseIf option == removeKeywordOID
+        Int idx = StorageUtil.StringListFind(slaMain, "SLAroused.CustomKeywords", value)
+        If idx < 0
+            ShowMessage("Keyword '" + value + "' is not in the registered list.", false, "$Accept")
+            Return
+        EndIf
+        StorageUtil.StringListRemoveAt(slaMain, "SLAroused.CustomKeywords", idx)
+        ForcePageReset()
+        Return
+    EndIf
+
     int i = StorageUtil.GetIntValue(self, "SLAroused.MCM.OID." + option, -1)
-    
+
     if i >= 0
         float numeric = value as float
         slax.info("slaConfigScr: New static arousal value" + value + " numeric = " + numeric)
@@ -1130,6 +1205,32 @@ Event OnOptionSelect(int option)
                 bikiniClothingValues[clothingBikiniIndex] = cval
                 SetToggleOptionValue(option, cval > 0)
                 UpdateWearableState(bikiniArmors[clothingBikiniIndex], keyClothingArmor, cval)
+            EndIf
+
+            If customKeywordCount > 0
+                Int kwIdx = customKeywordToggleOIDs.Find(option)
+                If kwIdx >= 0
+                    Int cval = customKeywordValues[kwIdx]
+                    If cval > 0
+                        cval = 0
+                    Else
+                        cval = 51
+                    EndIf
+                    customKeywordValues[kwIdx] = cval
+                    SetToggleOptionValue(option, cval > 0)
+                    If bodyItem
+                        String editorId = customKeywordIds[kwIdx]
+                        Keyword kw = Keyword.GetKeyword(editorId)
+                        If kw
+                            UpdateWearableState(bodyItem, "SLAroused.CKW." + editorId, cval)
+                            If cval > 0
+                                KeywordUtil.AddKeywordToForm(bodyItem, kw)
+                            Else
+                                KeywordUtil.RemoveKeywordFromForm(bodyItem, kw)
+                            EndIf
+                        EndIf
+                    EndIf
+                EndIf
             EndIf
 
         EndIf
@@ -1440,6 +1541,18 @@ Event OnOptionHighlight(int option)
 
         ElseIf bikiniClothingToggleOIDs.Find(option) >= 0
             infoText = "Mark this bikini-slot armor as clothing. It will no longer trigger the naked state. Saved permanently - no KID required."
+
+        ElseIf option == registerKeywordOID
+            infoText = "Type the editor ID of an existing keyword (e.g. SLA_ArmorHalfNaked). It must exist in a loaded ESP. Once registered it appears as a toggle on all body-slot items."
+
+        ElseIf option == removeKeywordOID
+            infoText = "Type the editor ID of a registered custom keyword to remove it from the list."
+
+        ElseIf customKeywordCount > 0
+            Int kwIdx = customKeywordToggleOIDs.Find(option)
+            If kwIdx >= 0
+                infoText = "Apply keyword '" + customKeywordIds[kwIdx] + "' to this armor. State is saved in StorageUtil and restored on every game reload - no KID required."
+            EndIf
 
         EndIf
         

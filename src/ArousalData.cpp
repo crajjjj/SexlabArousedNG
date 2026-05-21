@@ -20,7 +20,7 @@ namespace SLA {
             SetStaticArousalEffect(id, 0, 0.f, 0.f, 0);
             if (staticEffectGroups[id]) RemoveEffectGroup(id);
         } catch (const std::exception& ex) {
-            SKSE::log::info("Unexpected exception in OnUnregisterStaticEffect: {}", ex.what());
+            SKSE::log::error("Unexpected exception in OnUnregisterStaticEffect: {}", ex.what());
         }
     }
     bool ArousalData::IsStaticEffectActive(int32_t effectIdx) {
@@ -127,17 +127,19 @@ namespace SLA {
         return actualDiff;
     }
 
-    float ArousalData::GetArousal() { 
-        float recalculated = 0.f;
+    float ArousalData::RecalculateArousal() const {
+        float total = 0.f;
         for (uint32_t i = 0; i < staticEffects.size(); ++i) {
-            if (!staticEffectGroups[i]) recalculated += staticEffects[i].value;
+            if (!staticEffectGroups[i]) total += staticEffects[i].value;
         }
-        for (auto const& eff : dynamicEffects) recalculated += eff.second.value;
-        for (auto const& grp : groupsToUpdate) recalculated += grp->value;
-    
-        arousal = recalculated;
+        for (auto const& eff : dynamicEffects) total += eff.second.value;
+        for (auto const& grp : groupsToUpdate) total += grp->value;
+        return total;
+    }
 
-        return arousal; 
+    float ArousalData::GetArousal() {
+        arousal = RecalculateArousal();
+        return arousal;
     }
 
     void ArousalData::UpdateGroupFactor(ArousalEffectGroup& group, float oldFactor, float newFactor) {
@@ -170,7 +172,12 @@ namespace SLA {
                 isDone = false;
                 break;
             case 4:
-                value = lastUpdate < effect.param ? 0.f : effect.limit;
+                if (lastUpdate < effect.param) {
+                    value = 0.f;
+                    isDone = false;
+                } else {
+                    value = effect.limit;
+                }
                 break;
             default:
                 return true;
@@ -251,15 +258,7 @@ namespace SLA {
                 ++itr;
         }
 
-        float recalculated = 0.f;
-        for (uint32_t i = 0; i < staticEffects.size(); ++i) {
-            if (!staticEffectGroups[i]) recalculated += staticEffects[i].value;
-        }
-        for (auto const& eff : dynamicEffects) recalculated += eff.second.value;
-        for (auto const& grp : groupsToUpdate) recalculated += grp->value;
-
-        arousal = recalculated;
-
+        arousal = RecalculateArousal();
     }
     bool ArousalData::GroupEffects(RE::Actor* who, int32_t idx, int32_t idx2) {
         ArousalEffectData& first = GetStaticArousalEffect(idx);
