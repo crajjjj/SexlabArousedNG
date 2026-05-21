@@ -95,6 +95,8 @@ String[] customKeywordIds
 Int customKeywordCount
 Int[] customKeywordValues
 Int[] customKeywordToggleOIDs
+Int[] bikiniCustomKeywordValues
+Int[] bikiniCustomKeywordToggleOIDs
 ; FOLDEND - Variables
 
 ; FOLDSTART - OIDs
@@ -705,6 +707,18 @@ Function DisplayWornItems(Actor who)
             AddEmptyOption()
             bikiniClothingToggleOIDs[ii] = AddToggleOption("Counts as Clothing", bikiniClothingValues[ii] > 0)
 
+            If customKeywordCount > 0
+                Int kwIdx = 0
+                While kwIdx < customKeywordCount
+                    Int flatIdx = ii * customKeywordCount + kwIdx
+                    If flatIdx < 128
+                        AddEmptyOption()
+                        bikiniCustomKeywordToggleOIDs[flatIdx] = AddToggleOption(customKeywordIds[kwIdx], bikiniCustomKeywordValues[flatIdx] > 0)
+                    EndIf
+                    kwIdx += 1
+                EndWhile
+            EndIf
+
             ii += 1
 
         EndWhile
@@ -816,13 +830,34 @@ Function GetBikiniArmorsForTargetActor(Actor who)
         customKeywordIds = Utility.CreateStringArray(customKeywordCount)
         customKeywordValues = Utility.CreateIntArray(customKeywordCount)
         customKeywordToggleOIDs = Utility.CreateIntArray(customKeywordCount)
-        Int kwIdx = customKeywordCount
-        While kwIdx > 0
-            kwIdx -= 1
+        Int kwIdx = 0
+        While kwIdx < customKeywordCount
             customKeywordIds[kwIdx] = StorageUtil.StringListGet(slaMain, "SLAroused.CustomKeywords", kwIdx)
             If bodyItem
                 customKeywordValues[kwIdx] = StorageUtil.GetIntValue(bodyItem, "SLAroused.CKW." + customKeywordIds[kwIdx])
             EndIf
+            kwIdx += 1
+        EndWhile
+
+        Int flatSize = bikiniArmors.Length * customKeywordCount
+        If flatSize > 128
+            flatSize = 128
+        ElseIf flatSize < 1
+            flatSize = 1
+        EndIf
+        bikiniCustomKeywordValues = Utility.CreateIntArray(flatSize)
+        bikiniCustomKeywordToggleOIDs = Utility.CreateIntArray(flatSize)
+        Int bii = 0
+        While bii < bikiniArmors.Length
+            kwIdx = 0
+            While kwIdx < customKeywordCount
+                Int flatIdx = bii * customKeywordCount + kwIdx
+                If flatIdx < 128
+                    bikiniCustomKeywordValues[flatIdx] = StorageUtil.GetIntValue(bikiniArmors[bii], "SLAroused.CKW." + customKeywordIds[kwIdx])
+                EndIf
+                kwIdx += 1
+            EndWhile
+            bii += 1
         EndWhile
     EndIf
 
@@ -1231,6 +1266,32 @@ Event OnOptionSelect(int option)
                         EndIf
                     EndIf
                 EndIf
+
+                Int flatIdx = bikiniCustomKeywordToggleOIDs.Find(option)
+                If flatIdx >= 0
+                    Int bii = flatIdx / customKeywordCount
+                    Int kwI = flatIdx - bii * customKeywordCount
+                    Int cval = bikiniCustomKeywordValues[flatIdx]
+                    If cval > 0
+                        cval = 0
+                    Else
+                        cval = 51
+                    EndIf
+                    bikiniCustomKeywordValues[flatIdx] = cval
+                    SetToggleOptionValue(option, cval > 0)
+                    If bii < bikiniArmors.Length
+                        String editorId = customKeywordIds[kwI]
+                        Keyword kw = Keyword.GetKeyword(editorId)
+                        If kw
+                            UpdateWearableState(bikiniArmors[bii], "SLAroused.CKW." + editorId, cval)
+                            If cval > 0
+                                KeywordUtil.AddKeywordToForm(bikiniArmors[bii], kw)
+                            Else
+                                KeywordUtil.RemoveKeywordFromForm(bikiniArmors[bii], kw)
+                            EndIf
+                        EndIf
+                    EndIf
+                EndIf
             EndIf
 
         EndIf
@@ -1552,6 +1613,12 @@ Event OnOptionHighlight(int option)
             Int kwIdx = customKeywordToggleOIDs.Find(option)
             If kwIdx >= 0
                 infoText = "Apply keyword '" + customKeywordIds[kwIdx] + "' to this armor. State is saved in StorageUtil and restored on every game reload - no KID required."
+            Else
+                Int flatIdx = bikiniCustomKeywordToggleOIDs.Find(option)
+                If flatIdx >= 0
+                    Int kwI = flatIdx - (flatIdx / customKeywordCount) * customKeywordCount
+                    infoText = "Apply keyword '" + customKeywordIds[kwI] + "' to this bikini-slot item. Saved permanently - no KID required."
+                EndIf
             EndIf
 
         EndIf
