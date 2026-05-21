@@ -355,7 +355,6 @@ namespace SLA {
 
     int32_t ArousalManager::CleanUpActors(float lastUpdateBefore) {
         SKSE::log::info("ArousalManager::CleanUpActors scheduled for async execution ({} cutoff)", lastUpdateBefore);
-        auto* cleanupFlag = &cleanupLock;
 
         SKSE::GetTaskInterface()->AddTask([lastUpdateBefore]() {
             auto& mgr = ArousalManager::GetSingleton();

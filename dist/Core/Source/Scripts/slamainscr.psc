@@ -133,11 +133,21 @@ State initializing
             ;"SLAroused.LastOrgasmDateAdjustmentDate"
 
         EndIf
-        
+
+        int pluginIdx = plugins.Length
+        while pluginIdx > 0
+            pluginIdx -= 1
+            if plugins[pluginIdx]
+                sla_PluginBase refreshPlugin = plugins[pluginIdx]
+                refreshPlugin.ClearOptions()
+                refreshPlugin.AddOptions()
+            endif
+        endWhile
+
         If !slaUtil
             slaUtil = Quest.GetQuest("sla_Internal") As slaInternalScr
         EndIf
-        
+
 
         SetVersion(GetCurrentVersion())
         
@@ -900,6 +910,9 @@ Bool Function IsActorNakedExtended(Actor who)
         if armorToCheck.HasKeyword(ArmorCuirass) || armorToCheck.HasKeyword(ClothingBody) ;wearing slot 32 that is not naked
             return false
         endif
+        if StorageUtil.GetIntValue(armorToCheck, "SLAroused.IsClothingArmor") > 0 ; user-marked as clothing in MCM
+            return false
+        endif
     endif
     
     ; Old code called GetEquippedArmors, which was a cut+paste of the same code in the MCM...
@@ -941,7 +954,7 @@ Bool Function IsActorNakedExtended(Actor who)
         Armor candidate = who.GetWornForm(slotsToTest[ii]) As Armor
         ; We can early-out if we find a naked armor
         If candidate
-            If candidate.HasKeyword(ArmorCuirass) || candidate.HasKeyword(ClothingBody)
+            If candidate.HasKeyword(ArmorCuirass) || candidate.HasKeyword(ClothingBody) || StorageUtil.GetIntValue(candidate, "SLAroused.IsClothingArmor") > 0
                 ; Look for an alternative to body covering armor that would make the character appear non-naked
                 If (StorageUtil.GetIntValue(candidate, "SLAroused.IsNakedArmor") < 1) && !candidate.HasKeyword(nakedArmorWord)
                     Return False

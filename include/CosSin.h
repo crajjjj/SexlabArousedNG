@@ -20,8 +20,6 @@ namespace {
         } else {
             return fast_cossin_table[(i + QUARTER_MAX_CIRCLE_ANGLE) & MASK_MAX_CIRCLE_ANGLE];
         }
-
-        assert(0);
     }
 
     inline float fastsin(float n) {
@@ -36,8 +34,6 @@ namespace {
             assert(idx >= 0 && idx <= MAX_CIRCLE_ANGLE);
             return fast_cossin_table[idx];
         }
-
-        assert(0);
     }
 
     inline void BuildSinCosTable() {

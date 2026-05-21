@@ -15,8 +15,8 @@ namespace SLA {
 
     using ArousalEffectGroupPtr = std::shared_ptr<ArousalEffectGroup>;
    
-    static float GetEffectLimitOffset(uint32_t effectIdx) {
-        if (effectIdx == 1) return 0.5;
+    static float GetEffectLimitOffset(uint32_t functionId) {
+        if (functionId == 1) return 0.5;
         return 0.0;
     }
 

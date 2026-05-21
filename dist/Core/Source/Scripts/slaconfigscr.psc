@@ -41,6 +41,7 @@ String keyIllegalArmor
 String keyPoshArmor
 String keyRaggedArmor
 String keyKillerHeels
+String keyClothingArmor
 String[] pageKeys
 ; FOLDEND - Keys
 
@@ -85,9 +86,11 @@ Int illegalArmorValue
 Int poshArmorValue
 Int raggedArmorValue
 Int killerHeelsValue
+Int clothingArmorValue
 
 Form[] bikiniArmors ; May not really be bikini armors, but that's what I'm trying to locate.
 Int[] bikiniSliderValues
+Int[] bikiniClothingValues
 ; FOLDEND - Variables
 
 ; FOLDSTART - OIDs
@@ -145,7 +148,9 @@ Int slootyToggleOID
 Int illegalToggleOID
 Int poshToggleOID
 Int raggedToggleOID
+Int clothingToggleOID
 Int[] bikiniToggleOIDs
+Int[] bikiniClothingToggleOIDs
 
 ; FOLDEND - OIDs
 
@@ -160,7 +165,7 @@ Armor[] emptyArmorArray
 
 
 Int Function GetVersion()
-    Return       30100007
+    Return       30100008
 	;	0.00.00000
     ; 1.0.0   -> 10000000
     ; 1.1.0   -> 10100000
@@ -170,7 +175,7 @@ Int Function GetVersion()
 EndFunction
 
 String Function GetVersionString() 
-    Return "3.1.7"
+    Return "3.1.8"
 EndFunction
 
 
@@ -666,18 +671,22 @@ Function DisplayWornItems(Actor who)
         Int ii = 0
         Int count = bikiniArmors.Length
         While ii < count
-        
+
             Armor bikini = bikiniArmors[ii] As Armor
             AddTextOption(slaInternalModules.FormatHex(bikini.GetFormId()), bikini.GetName())
-            
+
             Int value = bikiniSliderValues[ii]
             If sliderMode
                 bikiniSliderOIDs[ii] = AddSliderOption("$SLA_Bikini", value)
             Else
                 bikiniToggleOIDs[ii] = AddToggleOption("$SLA_Bikini", value > 0)
             EndIf
+
+            AddEmptyOption()
+            bikiniClothingToggleOIDs[ii] = AddToggleOption("Counts as Clothing", bikiniClothingValues[ii] > 0)
+
             ii += 1
-            
+
         EndWhile
 
     EndIf
@@ -723,6 +732,8 @@ Function UpdateWornItemStates(Actor who)
         If raggedArmorValue <= 0 && bodyItem.HasKeyword(wordRaggedArmor)
             raggedArmorValue = 51
         EndIf
+
+        clothingArmorValue = StorageUtil.GetIntValue(bodyItem, keyClothingArmor)
     EndIf
 
     footItem  = who.GetWornForm(slaSlotMaskValues[7]) As Armor ; 37 - 30
@@ -766,7 +777,9 @@ Function GetBikiniArmorsForTargetActor(Actor who)
     bikiniSliderOIDs = Utility.CreateIntArray(bikiniArmors.Length)
     bikiniToggleOIDs = Utility.CreateIntArray(bikiniArmors.Length)
     bikiniSliderValues = Utility.CreateIntArray(bikiniArmors.Length)
-    
+    bikiniClothingValues = Utility.CreateIntArray(bikiniArmors.Length)
+    bikiniClothingToggleOIDs = Utility.CreateIntArray(bikiniArmors.Length)
+
     ii = bikiniArmors.Length
     slax.info("slaConfigScr: Got " + ii + " bikini items ")
     While ii
@@ -775,6 +788,7 @@ Function GetBikiniArmorsForTargetActor(Actor who)
         If bikiniSliderValues[ii] <= 0 && bikiniArmors[ii].HasKeyword(wordBikiniArmor)
             bikiniSliderValues[ii] = 51
         EndIf
+        bikiniClothingValues[ii] = StorageUtil.GetIntValue(bikiniArmors[ii], keyClothingArmor)
     EndWhile
 
 EndFunction
@@ -794,6 +808,8 @@ Function AddSlidersForBodyItem()
         poshSliderOID    = AddSliderOption("$SLA_Posh", poshArmorValue)
         AddEmptyOption()
         raggedSliderOID  = AddSliderOption("$SLA_Ragged", raggedArmorValue)
+        AddEmptyOption()
+        clothingToggleOID = AddToggleOption("Counts as Clothing", clothingArmorValue > 0)
 EndFunction
 
 
@@ -811,6 +827,8 @@ Function AddTogglesForBodyItem()
         poshToggleOID    = AddToggleOption("$SLA_Posh", poshArmorValue > 0)
         AddEmptyOption()
         raggedToggleOID  = AddToggleOption("$SLA_Ragged", raggedArmorValue > 0)
+        AddEmptyOption()
+        clothingToggleOID = AddToggleOption("Counts as Clothing", clothingArmorValue > 0)
 EndFunction
 
 
@@ -1067,10 +1085,15 @@ Event OnOptionSelect(int option)
             SetToggleOptionValue(option, poshArmorValue > 0)
             UpdatePoshKeywords(bodyItem, poshArmorValue)
 
-        ElseIf option == raggedToggleOID    
+        ElseIf option == raggedToggleOID
             raggedArmorValue = ToggleBodyArmorValue(raggedArmorValue, keyRaggedArmor)
             SetToggleOptionValue(option, raggedArmorValue >0)
             UpdateRaggedKeywords(bodyItem, raggedArmorValue)
+
+        ElseIf option == clothingToggleOID
+            clothingArmorValue = ToggleBodyArmorValue(clothingArmorValue, keyClothingArmor)
+            SetToggleOptionValue(option, clothingArmorValue > 0)
+            UpdateWearableState(bodyItem, keyClothingArmor, clothingArmorValue)
 
         ElseIf option == heelsToggleOID
             If killerHeelsValue > 0
@@ -1095,7 +1118,20 @@ Event OnOptionSelect(int option)
                 SetToggleOptionValue(option, value > 0)
                 UpdateBikiniKeywords(bikiniArmors[bikiniIndex], value)
             EndIf
-            
+
+            Int clothingBikiniIndex = bikiniClothingToggleOIDs.Find(option)
+            If clothingBikiniIndex >= 0
+                Int cval = bikiniClothingValues[clothingBikiniIndex]
+                If cval > 0
+                    cval = 0
+                Else
+                    cval = 51
+                EndIf
+                bikiniClothingValues[clothingBikiniIndex] = cval
+                SetToggleOptionValue(option, cval > 0)
+                UpdateWearableState(bikiniArmors[clothingBikiniIndex], keyClothingArmor, cval)
+            EndIf
+
         EndIf
         
     ElseIf 4 == pageId ; Plugins
@@ -1390,6 +1426,9 @@ Event OnOptionHighlight(int option)
         ElseIf option == raggedToggleOID
             infoText = "$SLA_RaggedToggleInfo"
 
+        ElseIf option == clothingToggleOID
+            infoText = "Mark this armor as clothing. It will no longer trigger the naked state even if it has no ArmorCuirass or ClothingBody keyword. Saved permanently - no KID required."
+
         ElseIf option == footItemOID
             infoText = "$SLA_FootItemInfo"
         ElseIf option == noFootItemOID
@@ -1398,6 +1437,10 @@ Event OnOptionHighlight(int option)
             infoText = "$SLA_HeelsSliderInfo"
         ElseIf option == heelsToggleOID
             infoText = "$SLA_HeelsToggleInfo"
+
+        ElseIf bikiniClothingToggleOIDs.Find(option) >= 0
+            infoText = "Mark this bikini-slot armor as clothing. It will no longer trigger the naked state. Saved permanently - no KID required."
+
         EndIf
         
     ElseIf 4 == pageId ; Plugins
@@ -1714,6 +1757,7 @@ Function ResetKeys()
     keyPoshArmor = "SLAroused.IsPoshArmor"
     keyRaggedArmor = "SLAroused.IsRaggedArmor"
     keyKillerHeels = "SLAroused.IsKillerHeels"
+    keyClothingArmor = "SLAroused.IsClothingArmor"
     
     pageKeys = new String[8]
     pageKeys[0] = keyNakedArmor

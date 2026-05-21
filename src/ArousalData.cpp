@@ -19,7 +19,7 @@ namespace SLA {
             SetStaticArousalValue(id, 0.f);
             SetStaticArousalEffect(id, 0, 0.f, 0.f, 0);
             if (staticEffectGroups[id]) RemoveEffectGroup(id);
-        } catch (std::exception ex) {
+        } catch (const std::exception& ex) {
             SKSE::log::info("Unexpected exception in OnUnregisterStaticEffect: {}", ex.what());
         }
     }
@@ -35,7 +35,7 @@ namespace SLA {
         return itr->first.c_str();
     }
     float ArousalData::GetDynamicEffectValue(int32_t number) const {
-        if (number >= dynamicEffects.size()) return std::numeric_limits<float>::lowest();
+        if (number < 0 || number >= static_cast<int32_t>(dynamicEffects.size())) return std::numeric_limits<float>::lowest();
         auto itr = dynamicEffects.begin();
         std::advance(itr, number);
         return itr->second.value;
@@ -167,6 +167,7 @@ namespace SLA {
                 break;
             case 3:
                 value = (fastsin(float(who->formID % 7919) * 0.01f + lastUpdate * effect.param) + 1.f) * effect.limit;
+                isDone = false;
                 break;
             case 4:
                 value = lastUpdate < effect.param ? 0.f : effect.limit;
