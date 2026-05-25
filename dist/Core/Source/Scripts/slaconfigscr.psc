@@ -376,7 +376,7 @@ Event OnConfigClose()
     slaMain.updateFrequency = cellScanFreq
 	slaMain.setUpdateFrequency(cellScanFreq)
     
-    StorageUtil.ClearObjIntValuePrefix(none, "SLAroused.MCM.OID.")
+    StorageUtil.ClearObjIntValuePrefix(self, "SLAroused.MCM.OID.")
 
 EndEvent
 
@@ -385,7 +385,7 @@ Event OnPageReset(String page)
     if !slaMain
         slaMain = Quest.GetQuest("sla_Main") as slaMainScr
     endif
-    StorageUtil.ClearObjIntValuePrefix(none, "SLAroused.MCM.OID.")
+    StorageUtil.ClearObjIntValuePrefix(self, "SLAroused.MCM.OID.")
 
     pageName = page
 	; Load custom logo in DDS format
