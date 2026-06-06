@@ -248,7 +248,11 @@ Event OnVersionUpdate(int newVersion)
 		slax.Info("Updating MCM. Scaling Devices Rate from per-day to per-hour. Previous version:" + CurrentVersion + ".New version:" + newVersion)
 		If (slaMain.defaultPlugin.ddPlugin.IsInterfaceActive())
 			float oldRate = slaMain.defaultPlugin.ddPlugin.GetOptionValue(0)
-			slaMain.defaultPlugin.ddPlugin.OnUpdateOption(0, oldRate / 24.0)
+			float newRate = oldRate / 24.0
+			If (newRate < 0.1)
+				newRate = 0.1
+			EndIf
+			slaMain.defaultPlugin.ddPlugin.OnUpdateOption(0, newRate)
 		EndIf
 	EndIf
 EndEvent
