@@ -4,26 +4,60 @@ Skyrim SE mod: persistent per-actor arousal system as an SKSE C++ plugin with Pa
 
 ## Build
 
+**Do NOT compile. The user compiles Papyrus scripts and the C++ plugin themselves — never invoke `cmake`, `PapyrusCompiler.exe`, or any build tool to verify changes.** Edit `.psc` / C++ sources, then stop. Verify correctness by reading the code, not by building.
+
 ```sh
-# C++ plugin (CMake 3.21+, MSVC v143 or Clang-CL, vcpkg)
+# C++ plugin (CMake 3.21+, MSVC v143 or Clang-CL, vcpkg) -- user-run only
 cmake --preset build-release-msvc && cmake --build --preset release-msvc
 # Output: dist/Core/SKSE/Plugins/SexlabArousedNG.dll
 
-# Tests (Catch2)
+# Tests (Catch2) -- user-run only
 cmake --preset build-debug-msvc -DBUILD_TESTS=ON && cmake --build --preset debug-msvc
 ```
+
+## Bumping the Version
+
+Three files hold version strings — keep them in sync:
+
+1. **`dist/fomod/info.xml`** — FOMOD installer version displayed in mod managers. Update `<Version>` (e.g. `3.1.9`). This is the canonical user-facing version.
+2. **`dist/Core/Source/Scripts/slaconfigscr.psc`** — `GetVersionString()` (e.g. `"3.1.9"`) is shown in MCM; `GetVersion()` is the integer form using the `MMmmppp` packing scheme documented in the function (e.g. `30100009` for 3.1.9). Bumping the integer also drives `OnVersionUpdate()` migration paths — only the **integer** triggers migrations, the string is display-only. Recompile `slaconfigscr.pex` after editing.
+3. **`CMakeLists.txt`** — `project(... VERSION X.Y.Z ...)` controls the DLL's resource version. Historically out of sync with the fomod; bump when cutting a release that includes C++ changes.
+
+Cosave ID `SLAN` is stable across versions — do not change it without a save-compat strategy.
 
 ## Papyrus Language Notes
 
 ### Control flow
 - No `break` or `continue` -- use flags or early `return` to exit loops.
 - Only `if/elseif/else/endif` and `while/endwhile`. No for-loops, switch, or do-while.
+- Logical `||` and `&&` short-circuit.
+
+### Variables & types
+- Five base types: `Bool`, `Int`, `Float`, `String`, plus object references and arrays.
+- Value types copied on assignment; objects/arrays are by reference.
+- **Locals are function-scoped, not block-scoped.** Declaring the same name in sibling `if` branches (`float rate = ...` twice) is a compile error — hoist the declaration above the branches.
+- Variables inside `while` loops persist across iterations (NOT reset each iteration). Initialize explicitly.
+- Script-level variables can only be initialized with literals; function-level can use expressions.
 
 ### Arrays
-- Max 128 elements. `array[i] += 5` does NOT compile -- use `array[i] = array[i] + 5`.
+- Max 128 elements. Size must be an integer literal (`new int[128]`), not a variable.
+- `array[i] += 5` does NOT compile -- use `array[i] = array[i] + 5`.
+- No arrays of arrays. Passed/assigned by reference.
+- `Find()` / `RFind()` and SKSE string functions are case-insensitive; `==` string comparison is case-sensitive.
+
+### States
+- Script can be in only one state at a time. `GotoState("")` returns to empty state.
+- State function signatures must exactly match the empty-state definition (see `isInScene` / `UpdateActor` overrides in `sla_OStimPlugin.psc`).
+- State transitions fire `OnEndState()` → change → `OnBeginState()`.
 
 ### Threading
 - Only one thread can run a script instance at a time. Any external call (including `Debug.Trace()`, property access on other objects) unlocks the script, allowing other threads in.
+- After an external call returns, local assumptions about script state may be stale.
+
+### Misc gotchas
+- Compiler does not check all code paths for return values -- missing returns cause undefined behavior.
+- `parent.FunctionName()` calls one level up, not necessarily the base definition.
+- Unary minus can misbehave without spaces: write `x = y - 1` not `x = y-1`.
 
 ## Code Conventions
 
@@ -31,6 +65,10 @@ cmake --preset build-debug-msvc -DBUILD_TESTS=ON && cmake --build --preset debug
 - Keep edits ASCII unless the file already contains non-ASCII.
 - Papyrus source: `dist/Core/Source/Scripts/*.psc`, compiled: `dist/Core/Scripts/*.pex`.
 - C++ uses C++23, CommonLibSSE-NG, precompiled headers (`PCH.h`).
+
+## Commit Conventions
+
+- **Never include a `Co-Authored-By: Claude ...` trailer** in commit messages. Commits should look authored solely by the human user.
 
 ## Project Structure
 
@@ -181,4 +219,4 @@ External mods fire ModEvents -- no quest script needed:
 
 ## Version
 
-3.0.6 (from CMakeLists.txt), cosave ID `SLAN`, Apache-2.0 license.
+3.1.9 (canonical: `dist/fomod/info.xml`), cosave ID `SLAN`, Apache-2.0 license. `CMakeLists.txt` still reads `3.0.6` and is historically out of sync — see *Bumping the Version* above.

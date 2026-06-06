@@ -354,7 +354,7 @@ state Installed
 
     function EnablePlugin()
         RegisterForPerodicUpdates()
-        ;RegisterForLOSUpdates()
+        RegisterForLOSUpdates()
         registerOstimEventHandlers()
         sexEff = RegisterEffect("OSex", "$SLA_Effect_OSex", "$SLA_Effect_OSexDesc")
         fatigueEff = RegisterEffect("OFatigue", "$SLA_Effect_OFatigueBase", "$SLA_Effect_FatigueDesc")
@@ -441,39 +441,53 @@ state Installed
 
 	function UpdateActor(Actor who, bool fullUpdate)
 		if currentObserver != none
-			; 0 - none 1 - sees sex 2 - participating sex 3 - decay 
+			; 0 - none 1 - sees sex 2 - participating sex 3 - decay
 			int oldState = GetArousalEffectFncAux(currentObserver, sexEff)
+			float lewd = GetLewd(currentObserver)
+			float rate
 			if isInScene(currentObserver)
-				if oldState != 2
-					SetLinearArousalEffect(currentObserver, sexEff, 20.0 * 24.0, sexEffMax, 2)
-				endIf
+				rate = 20.0 * 24.0 * (1.0 + lewd)
+				SetLinearArousalEffect(currentObserver, sexEff, rate, sexEffMax, 2)
 			elseIf isSeeingSex
-				if oldState != 1
-					SetLinearArousalEffect(currentObserver, sexEff, 20.0 * 24.0, sexEffMax, 1)
-				endIf
+				rate = 20.0 * 24.0 * (0.5 + lewd)
+				SetLinearArousalEffect(currentObserver, sexEff, rate, sexEffMax, 1)
 			elseIf oldState != 0 && oldState != 3
 				SetArousalDecayEffect(currentObserver, sexEff, sexHalfTime, 0.0, 3)
 			endIf
 		endIf
-		
+
 		currentObserver = who
 		isSeeingSex = false
 		if who == none
 			return
 		endIf
-		
+
 	endFunction
 
 	function UpdateObserver(Actor observer, Actor observed)
-		if (OStim.IsActorInvolved(observed))
+		if isInScene(observed)
 			isSeeingSex = true
 		endIf
 	endFunction
 
     bool function isInScene(Actor act)
+        if act == none || OStim == none
+            return false
+        endIf
+        if OStim.GetAPIVersion() >= 29
+            int[] threadIds = OThread.GetAllThreadIDs()
+            int i = threadIds.Length
+            while i > 0
+                i -= 1
+                if OThread.GetActorPosition(threadIds[i], act) >= 0
+                    return true
+                endIf
+            endWhile
+            return false
+        endIf
         if OStim.AnimationRunning()
             return OStim.IsActorInvolved(act)
-        endif
+        endIf
         return false
     EndFunction
 endState
