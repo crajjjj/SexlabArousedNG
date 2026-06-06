@@ -102,7 +102,7 @@ event OnDeviceEquipped(Form inventoryDevice, Form deviceKeyword, Form akActor)
 			minimum = minimum * numberOfDevices
 		endIf
 	endIf
-	SetLinearArousalEffect(who, deviceEff, -deviceHalfTime, minimum)
+	SetLinearArousalEffect(who, deviceEff, -deviceHalfTime * 24.0, minimum)
 endEvent
 
 event OnDeviceRemoved(Form inventoryDevice, Form deviceKeyword, Form akActor)
@@ -114,7 +114,7 @@ event OnDeviceRemoved(Form inventoryDevice, Form deviceKeyword, Form akActor)
 		defaultPlugin.UpdateDenialModifier(who)
 	endIf
 	if !who.WornHasKeyword(libs.zad_Lockable)
-		SetLinearArousalEffect(who, deviceEff, -deviceHalfTime * 2.0, 0.0)
+		SetLinearArousalEffect(who, deviceEff, -deviceHalfTime * 24.0 * 2.0, 0.0)
 	endIf
 endEvent
 
@@ -187,7 +187,7 @@ event OnUpdate()
 	endIf
 endEvent
 
-float deviceHalfTime = 24.0
+float deviceHalfTime = 1.0
 float deviceArousal = 5.0
 float deviceMin = 0.0
 bool devicePerDevice = true
