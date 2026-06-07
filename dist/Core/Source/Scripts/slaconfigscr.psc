@@ -97,6 +97,8 @@ Int[] customKeywordValues
 Int[] customKeywordToggleOIDs
 Int[] bikiniCustomKeywordValues
 Int[] bikiniCustomKeywordToggleOIDs
+Int kidLineCount ; transient: count of lines emitted during the most recent ExportToKID() run
+String kidNL ; transient: cached real LF newline (StringUtil.AsChar(10)) used during KID export
 ; FOLDEND - Variables
 
 ; FOLDSTART - OIDs
@@ -159,6 +161,7 @@ Int[] bikiniToggleOIDs
 Int[] bikiniClothingToggleOIDs
 Int registerKeywordOID
 Int removeKeywordOID
+Int exportKidFileOID
 
 ; FOLDEND - OIDs
 
@@ -173,7 +176,7 @@ Armor[] emptyArmorArray
 
 
 Int Function GetVersion()
-    Return       30100009
+    Return       30100010
 	;	0.00.00000
     ; 1.0.0   -> 10000000
     ; 1.1.0   -> 10100000
@@ -182,8 +185,8 @@ Int Function GetVersion()
     ; 10.61.20 ->106100020
 EndFunction
 
-String Function GetVersionString() 
-    Return "3.1.9"
+String Function GetVersionString()
+    Return "3.1.10"
 EndFunction
 
 
@@ -656,6 +659,8 @@ Function DisplayArmorList()
         
         registerKeywordOID = AddInputOption("Register Custom Keyword", "")
         removeKeywordOID = AddInputOption("Remove Custom Keyword", "")
+        exportKidFileOID = AddTextOption("Export to KID file", "")
+        AddEmptyOption() ; pad to keep the LEFT_TO_RIGHT two-column layout aligned
 
         AddHeaderOption("$SLA_EquippedItems")
         AddHeaderOption("$SLA_Options")
@@ -744,39 +749,49 @@ Function UpdateWornItemStates(Actor who)
 
     bodyItem = who.GetWornForm(slaSlotMaskValues[2]) As Armor ; 32 - 30
     If bodyItem
+        ; Each block: read StorageUtil, then if value isn't set but the keyword is baked into
+        ; the source ESP, light the toggle AND backfill the player FormList so KID export and
+        ; OnGameReload's RestoreKeywords see ESP-baked items the user never explicitly clicked.
         nakedArmorValue   = StorageUtil.GetIntValue(bodyItem, keyNakedArmor)
         If nakedArmorValue <= 0 && bodyItem.HasKeyword(wordNakedArmor)
             nakedArmorValue = 51
+            StorageUtil.FormListAdd(player, keyNakedArmor, bodyItem, False)
         EndIf
 
         bikiniArmorValue  = StorageUtil.GetIntValue(bodyItem, keyBikiniArmor)
         If bikiniArmorValue <= 0 && bodyItem.HasKeyword(wordBikiniArmor)
             bikiniArmorValue = 51
+            StorageUtil.FormListAdd(player, keyBikiniArmor, bodyItem, False)
         EndIf
 
         sexyArmorValue    = StorageUtil.GetIntValue(bodyItem, keySexyArmor)
         If sexyArmorValue <= 0 && bodyItem.HasKeyword(wordSexyArmor)
             sexyArmorValue = 51
+            StorageUtil.FormListAdd(player, keySexyArmor, bodyItem, False)
         EndIf
 
         slootyArmorValue  = StorageUtil.GetIntValue(bodyItem, keySlootyArmor)
         If slootyArmorValue <= 0 && bodyItem.HasKeyword(wordSlootyArmor)
             slootyArmorValue = 51
+            StorageUtil.FormListAdd(player, keySlootyArmor, bodyItem, False)
         EndIf
 
         illegalArmorValue = StorageUtil.GetIntValue(bodyItem, keyIllegalArmor)
         If illegalArmorValue <= 0 && bodyItem.HasKeyword(wordIllegalArmor)
             illegalArmorValue = 51
+            StorageUtil.FormListAdd(player, keyIllegalArmor, bodyItem, False)
         EndIf
 
         poshArmorValue  = StorageUtil.GetIntValue(bodyItem, keyPoshArmor)
         If poshArmorValue <= 0 && bodyItem.HasKeyword(wordPoshArmor)
             poshArmorValue = 51
+            StorageUtil.FormListAdd(player, keyPoshArmor, bodyItem, False)
         EndIf
 
         raggedArmorValue  = StorageUtil.GetIntValue(bodyItem, keyRaggedArmor)
         If raggedArmorValue <= 0 && bodyItem.HasKeyword(wordRaggedArmor)
             raggedArmorValue = 51
+            StorageUtil.FormListAdd(player, keyRaggedArmor, bodyItem, False)
         EndIf
 
         clothingArmorValue = StorageUtil.GetIntValue(bodyItem, keyClothingArmor)
@@ -787,6 +802,7 @@ Function UpdateWornItemStates(Actor who)
         killerHeelsValue = StorageUtil.GetIntValue(footItem, keyKillerHeels)
         If killerHeelsValue <= 0 && footItem.HasKeyword(wordKillerHeels)
             killerHeelsValue = 75
+            StorageUtil.FormListAdd(player, keyKillerHeels, footItem, False)
         EndIf
     EndIf
     
@@ -833,6 +849,9 @@ Function GetBikiniArmorsForTargetActor(Actor who)
         bikiniSliderValues[ii] = StorageUtil.GetIntValue(bikiniArmors[ii], keyBikiniArmor)
         If bikiniSliderValues[ii] <= 0 && bikiniArmors[ii].HasKeyword(wordBikiniArmor)
             bikiniSliderValues[ii] = 51
+            ; Backfill: bikini-slot item already carries the keyword via ESP. Add to FormList
+            ; so KID export and RestoreKeywords see it without requiring an explicit user click.
+            StorageUtil.FormListAdd(player, keyBikiniArmor, bikiniArmors[ii], False)
         EndIf
         bikiniClothingValues[ii] = StorageUtil.GetIntValue(bikiniArmors[ii], keyClothingArmor)
     EndWhile
@@ -1176,7 +1195,10 @@ Event OnOptionSelect(int option)
         If option == sliderModeOID
             sliderMode = !sliderMode
             ForcePageReset()
-            
+
+        ElseIf option == exportKidFileOID
+            ExportToKID()
+
         ElseIf option == nakedToggleOID
             nakedArmorValue = ToggleBodyArmorValue(nakedArmorValue, keyNakedArmor)
             SetToggleOptionValue(option, nakedArmorValue > 0)
@@ -1620,6 +1642,9 @@ Event OnOptionHighlight(int option)
 
         ElseIf option == removeKeywordOID
             infoText = "Type the editor ID of a registered custom keyword to remove it from the list."
+
+        ElseIf option == exportKidFileOID
+            infoText = "Write Data\\SLArousedNG_Custom_KID.ini containing every currently-toggled (keyword, armor) pair. Requires PapyrusExtenderSSE. Re-export after merging or reordering plugins."
 
         ElseIf customKeywordCount > 0
             Int kwIdx = customKeywordToggleOIDs.Find(option)
@@ -2151,6 +2176,126 @@ function ImportSettings()
 
     ForcePageReset()
 endFunction
+
+
+; ----- KID export ------------------------------------------------------------
+; Snapshot the current armor->keyword toggles as a Keyword Item Distributor
+; (KID) .ini file. The output lives at Data\SLArousedNG_Custom_KID.ini and is
+; applied automatically by po3_KeywordItemDistributor.dll at the next game
+; start, before any save data is touched. Re-export after changing the load
+; order or merging plugins, since formIDs in the file are load-order-current.
+
+String Function GetKidFilePath()
+    Return "Data\\SLArousedNG_Custom_KID.ini"
+EndFunction
+
+; Build "0x<localID>~<plugin>" for a Form, ESL/ESL-FE-safe.
+; Returns "" for dynamically-created forms (no source file) or when
+; PapyrusExtenderSSE is not loaded (GetFormModName returns "").
+String Function FormToKidFilter(Form item)
+    If !item
+        Return ""
+    EndIf
+    String pluginName = PO3_SKSEFunctions.GetFormModName(item, False)
+    If pluginName == ""
+        Return ""
+    EndIf
+    ; IntToString takes uint32 on the C++ side, so ESL FormIDs (>= 0x80000000)
+    ; pass through Papyrus's signed Int unmolested and print correctly.
+    String fullHex = PO3_SKSEFunctions.IntToString(item.GetFormID(), True)
+    Int len = StringUtil.GetLength(fullHex)
+    Int hexLen = len - 2
+    String localHex = ""
+    If hexLen == 8 && StringUtil.Substring(fullHex, 2, 2) == "FE"
+        ; ESL: lower 12 bits == last 3 hex chars.
+        localHex = StringUtil.Substring(fullHex, len - 3, 3)
+    ElseIf hexLen > 6
+        ; Regular ESM/ESP: strip the load-order byte (lower 24 bits).
+        localHex = StringUtil.Substring(fullHex, len - 6, 6)
+    Else
+        ; Already short (e.g. Skyrim.esm low FormID) - use as-is.
+        localHex = StringUtil.Substring(fullHex, 2, hexLen)
+    EndIf
+    Return "0x" + localHex + "~" + pluginName
+EndFunction
+
+; Emit one KID line per Form currently toggled ON for the given storage key.
+String Function BuildLinesFor(String edid, String storageKey)
+    Form[] items = StorageUtil.FormListToArray(player, storageKey)
+    String out = ""
+    If !items
+        Return out
+    EndIf
+    Int i = 0
+    Int n = items.Length
+    While i < n
+        String filter = FormToKidFilter(items[i])
+        If filter != ""
+            out = out + "Keyword = " + edid + "|Armor|" + filter + "|NONE|100" + kidNL
+            kidLineCount += 1
+        EndIf
+        i += 1
+    EndWhile
+    Return out
+EndFunction
+
+Function ExportToKID()
+    SetTextOptionValue(exportKidFileOID, "$SLA_Working")
+
+    ; Dependency probe: GetFormModName on the config quest (which is always
+    ; defined in SLA's own plugin) must return a non-empty filename. An empty
+    ; result means PapyrusExtenderSSE isn't loaded.
+    String probe = PO3_SKSEFunctions.GetFormModName(self As Form, False)
+    If probe == ""
+        SetTextOptionValue(exportKidFileOID, "Error")
+        ShowMessage("KID export requires PapyrusExtenderSSE (powerofthree's Papyrus Extender). Install it and try again.", false, "$Accept")
+        Return
+    EndIf
+
+    If !slaMain
+        slaMain = Quest.GetQuest("sla_Main") As slaMainScr
+    EndIf
+
+    kidLineCount = 0
+    kidNL = StringUtil.AsChar(10) ; real LF; Papyrus has no string escapes so "\n" would be two literal chars
+
+    String body = "; Generated by SLArousedNG MCM" + kidNL
+    body = body + "; One line per (keyword, armor) pair. Re-export after merging or reordering plugins." + kidNL + kidNL
+
+    body = body + BuildLinesFor("EroticArmor",               keyNakedArmor)
+    body = body + BuildLinesFor("SLA_ArmorHalfNakedBikini",  keyBikiniArmor)
+    body = body + BuildLinesFor("SLA_ArmorPretty",           keySexyArmor)
+    body = body + BuildLinesFor("SLA_ArmorHalfNaked",        keySlootyArmor)
+    body = body + BuildLinesFor("SLA_ArmorIllegal",          keyIllegalArmor)
+    body = body + BuildLinesFor("ClothingRich",              keyPoshArmor)
+    body = body + BuildLinesFor("ClothingPoor",              keyRaggedArmor)
+    body = body + BuildLinesFor("SLA_KillerHeels",           keyKillerHeels)
+
+    Int ckwCount = StorageUtil.StringListCount(slaMain, "SLAroused.CustomKeywords")
+    Int ci = 0
+    While ci < ckwCount
+        String edid = StorageUtil.StringListGet(slaMain, "SLAroused.CustomKeywords", ci)
+        body = body + BuildLinesFor(edid, "SLAroused.CKW." + edid)
+        ci += 1
+    EndWhile
+
+    String path = GetKidFilePath()
+    Bool ok = MiscUtil.WriteToFile(path, body, False, False)
+    If ok
+        SetTextOptionValue(exportKidFileOID, "$SLA_Done")
+        slax.Info("slaConfigScr: KID export wrote " + kidLineCount + " entries to " + path)
+        If kidLineCount > 0
+            ShowMessage("Exported " + kidLineCount + " keyword entries to " + path + ".", false, "$Accept")
+        Else
+            ShowMessage("Wrote " + path + " but no keyword toggles were set. The file contains only a header.", false, "$Accept")
+        EndIf
+    Else
+        SetTextOptionValue(exportKidFileOID, "Error")
+        ShowMessage("Failed to write " + path + ". Check write permissions and Skyrim Data folder access.", false, "$Accept")
+        slax.Error("slaConfigScr: KID export failed to write " + path)
+    EndIf
+EndFunction
+
 
 ; obsolete - keep for backward compatibility
 float Property defaultExposureRate = 2.0 Auto Hidden

@@ -15,6 +15,8 @@ An SKSE plugin that provides a persistent, per-actor arousal system for Skyrim S
 - [For Mod Authors — Static Effects (Plugin Quest)](#for-mod-authors--static-effects-plugin-quest)
 - [Full Papyrus API Reference](#full-papyrus-api-reference)
 - [Effect Groups](#effect-groups)
+- [MCM Features (Players)](#mcm-features-players)
+- [Multi-mod / Compatibility (Supporting Both OSL Aroused and SLA NG)](#multi-mod--compatibility-supporting-both-osl-aroused-and-sla-ng)
 ---
 
 ## Build Instructions
@@ -485,6 +487,56 @@ slaInternalModules.GroupEffects(who, nudityIdx, clothIdx)
 
 ---
 
+
+## MCM Features (Players)
+
+This section covers MCM controls relevant to end users rather than mod authors. All live under **System &gt; SexLab Aroused NG**. For a full player-facing walkthrough see [docs/UserGuide.md](docs/UserGuide.md).
+
+### Current Armor List
+
+The *Current Armor List* page inspects every armor piece the selected actor is currently wearing and lets you toggle SLA's arousal-related keywords on or off per item:
+
+- **Body slot (32)** — toggles for *Naked*, *Bikini*, *Sexy*, *Slooty*, *Illegal*, *Posh*, *Ragged*, plus a *Counts as Clothing* state flag (used by SLA's naked-detection logic).
+- **Foot slot (37)** — *High Heels* toggle.
+- **Adjacent biped slots (44, 45, 48, 49, 52, 56, 58)** — listed as "Items in bikini slots". Each gets a *Bikini* toggle and a *Counts as Clothing* flag.
+- **Custom keywords** — register any keyword EditorID via the *Register Custom Keyword* input. It then appears as a toggle on every body-slot AND bikini-slot item shown. *Remove Custom Keyword* takes it back out of the registered list.
+
+Toggles persist in the SKSE cosave (so they live in your save file). On every game reload, `OnGameReload` walks the persisted lists and re-applies the keywords. Items whose source ESP already bakes in an SLA keyword are auto-detected at MCM open time and the toggle lights up without you needing to click it; that auto-detect also backfills the underlying persisted list so the keyword survives the inspection.
+
+### Export to KID file
+
+The **Export to KID file** button on the *Current Armor List* page writes the **complete current set of (keyword, armor)** flags to `Data\SLArousedNG_Custom_KID.ini` as a [Keyword Item Distributor](https://www.nexusmods.com/skyrimspecialedition/mods/55728) config. KID then applies the file at the **next game start, before any save data is read** — so the curation:
+
+- Survives starting a brand-new character / save.
+- Can be shared between players (just hand off the `.ini`).
+- Stops you from having to re-toggle everything per save.
+
+Scope:
+
+- Covers all 8 built-in keywords (Naked, Bikini, Sexy, Slooty, Illegal, Posh, Ragged, KillerHeels) and every custom keyword you've registered, for both body-slot and bikini-slot items.
+- ESL / ESL-FE safe.
+- Modal popup reports how many entries were written; failure cases (missing PapyrusExtenderSSE, write-permission error) show a clear error message.
+
+Caveats:
+
+- Each click **overwrites** the file with a fresh snapshot. If you've been hand-editing it, keep your edits in a *separate* `*_KID.ini` file (KID merges them all on load).
+- The IDs are load-order-current. Re-export after merging or reordering plugins. MergeMapper at the consumer side handles further shuffling automatically.
+- The file is written via PapyrusUtil to the game's data root. Under Mod Organizer 2, USVFS catches the write and stores it in your active overwrite mod (e.g. *SKSE Output*); from there KID reads it normally — no manual move required.
+
+### Runtime requirements
+
+Beyond the framework's standard SKSE / Address Library prerequisites, these MCM features require:
+
+| Mod | Used for | Required? |
+|---|---|---|
+| [PapyrusUtil SE](https://www.nexusmods.com/skyrimspecialedition/mods/13048) | All MCM state persistence (StorageUtil) and the KID export's `MiscUtil.WriteToFile` | **Required** (framework-wide dep) |
+| [PapyrusExtenderSSE](https://www.nexusmods.com/skyrimspecialedition/mods/22854) | KID export's source-plugin lookup and ESL-safe hex FormID | **Required for KID export** (the button shows an error if absent; the rest of SLA still works) |
+| [Keyword Item Distributor](https://www.nexusmods.com/skyrimspecialedition/mods/55728) | Reading and applying the exported `*_KID.ini` at game start | Required to actually consume the exported file |
+| [MergeMapper](https://www.nexusmods.com/skyrimspecialedition/mods/56014) | Auto-remapping FormIDs after plugin merges (KID-side feature) | Optional, recommended for merged-plugin setups |
+
+See [docs/KID_Reference.md](docs/KID_Reference.md) for a comprehensive reference on the KID INI format and how this mod's exporter fits into it.
+
+---
 
 ## Multi-mod / Compatibility (Supporting Both OSL Aroused and SLA NG)
 
