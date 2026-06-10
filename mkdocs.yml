@@ -1,0 +1,67 @@
+site_name: SexLab Aroused NG
+site_description: Persistent per-actor arousal system for Skyrim SE/AE — player and modder documentation.
+site_url: https://crajjjj.github.io/SexlabArousedNG/
+repo_url: https://github.com/crajjjj/SexlabArousedNG
+repo_name: crajjjj/SexlabArousedNG
+edit_uri: edit/master/docs/
+
+docs_dir: docs
+
+theme:
+  name: material
+  features:
+    - navigation.instant
+    - navigation.tracking
+    - navigation.tabs
+    - navigation.top
+    - search.suggest
+    - search.highlight
+    - content.code.copy
+    - content.action.edit
+    - toc.follow
+  palette:
+    - media: "(prefers-color-scheme: light)"
+      scheme: default
+      primary: deep purple
+      accent: pink
+      toggle:
+        icon: material/weather-night
+        name: Switch to dark mode
+    - media: "(prefers-color-scheme: dark)"
+      scheme: slate
+      primary: deep purple
+      accent: pink
+      toggle:
+        icon: material/weather-sunny
+        name: Switch to light mode
+  icon:
+    repo: fontawesome/brands/github
+
+nav:
+  - Home: index.md
+  - User Guide: UserGuide.md
+  - KID Reference: KID_Reference.md
+  - Mod Authors API ↗: https://github.com/crajjjj/SexlabArousedNG/blob/master/README.md
+
+markdown_extensions:
+  - admonition
+  - attr_list
+  - def_list
+  - footnotes
+  - tables
+  - toc:
+      permalink: true
+  - pymdownx.details
+  - pymdownx.highlight:
+      anchor_linenums: true
+  - pymdownx.inlinehilite
+  - pymdownx.superfences
+  - pymdownx.tabbed:
+      alternate_style: true
+  - pymdownx.tasklist:
+      custom_checkbox: true
+
+extra:
+  social:
+    - icon: fontawesome/brands/github
+      link: https://github.com/crajjjj/SexlabArousedNG

@@ -1,6 +1,6 @@
 # SexLab Aroused NG — User Guide
 
-A guide for players. If you're a mod author integrating with the arousal framework, see [README.md](../README.md) instead — that doc covers the Papyrus / SKSE API in depth.
+A guide for players. If you're a mod author integrating with the arousal framework, see [README.md](https://github.com/crajjjj/SexlabArousedNG/blob/master/README.md) instead — that doc covers the Papyrus / SKSE API in depth.
 
 ---
 
@@ -93,7 +93,7 @@ In a bit more depth:
 - Most timed effects use **game days** as the time unit (one in-game day = 24 in-game hours).
 - The arousal value isn't clamped to 0–100 by default — it's just a float. The convention is 0–100 and most consumer mods assume that range, but individual effects can push outside it.
 
-For the full math, see the *Arousal Model Overview* section of [README.md](../README.md).
+For the full math, see the *Arousal Model Overview* section of [README.md](https://github.com/crajjjj/SexlabArousedNG/blob/master/README.md#arousal-model-overview).
 
 ---
 
@@ -392,7 +392,7 @@ OSL ticks arousal up just because time passed. SLA NG's default plugin only tick
 
 ## References & further reading
 
-- **For mod authors**: [README.md](../README.md) — full API reference, plugin lifecycle, integration patterns, the multi-fork compatibility shim.
+- **For mod authors**: [README.md](https://github.com/crajjjj/SexlabArousedNG/blob/master/README.md) — full API reference, plugin lifecycle, integration patterns, the multi-fork compatibility shim.
 - **KID INI format details**: [docs/KID_Reference.md](KID_Reference.md) — comprehensive reference for the KID file format with a section on this mod's export.
 - **Nexus pages**:
   - [Keyword Item Distributor](https://www.nexusmods.com/skyrimspecialedition/mods/55728) — read the file you export.

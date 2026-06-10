@@ -365,7 +365,7 @@ Common failure modes you'll see in the log:
 
 ## 16. SLArousedNG: "Export to KID file" MCM button
 
-The MCM `Current Armor List` page exposes an **Export to KID file** action ([slaconfigscr.psc](../dist/Core/Source/Scripts/slaconfigscr.psc) — see `ExportToKID()`, `BuildLinesFor()`, `FormToKidFilter()`). It writes `Data\SLArousedNG_Custom_KID.ini` containing one `Keyword = <EDID>|Armor|0x<localID>~<plugin>|NONE|100` line for every currently-toggled (keyword, armor) pair — both the 8 built-in arousal keywords and any user-registered custom keywords.
+The MCM `Current Armor List` page exposes an **Export to KID file** action ([slaconfigscr.psc](https://github.com/crajjjj/SexlabArousedNG/blob/master/dist/Core/Source/Scripts/slaconfigscr.psc) — see `ExportToKID()`, `BuildLinesFor()`, `FormToKidFilter()`). It writes `Data\SLArousedNG_Custom_KID.ini` containing one `Keyword = <EDID>|Armor|0x<localID>~<plugin>|NONE|100` line for every currently-toggled (keyword, armor) pair — both the 8 built-in arousal keywords and any user-registered custom keywords.
 
 - **Dependency:** [PapyrusExtenderSSE](https://www.nexusmods.com/skyrimspecialedition/mods/22854) (`PO3_SKSEFunctions.GetFormModName` for plugin name; `PO3_SKSEFunctions.IntToString` for ESL-safe hex FormID without Papyrus signed-int overflow). PapyrusUtil SE is already a project-wide hard dependency.
 - **ESL-safe**: FormIDs with top byte `FE` use the lower 12 bits (last 3 hex chars); regular ESM/ESP use the lower 24 bits (last 6 hex chars). Algorithm in `FormToKidFilter`.
