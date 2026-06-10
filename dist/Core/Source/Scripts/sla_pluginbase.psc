@@ -28,10 +28,6 @@ endfunction
 event On_sla_Int_PlayerLoadsGame(string eventName, string strArg, float numArg, Form sender)
 	slax.info("sla_PluginBase - On_sla_Int_PlayerLoadsGame: " + name )
 	UpdatePluginState(false)
-	if isEnabled
-		ClearOptions()
-		AddOptions()
-	endIf
 endEvent
 
 function UpdatePluginState(bool forced)
