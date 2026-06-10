@@ -28,6 +28,10 @@ endfunction
 event On_sla_Int_PlayerLoadsGame(string eventName, string strArg, float numArg, Form sender)
 	slax.info("sla_PluginBase - On_sla_Int_PlayerLoadsGame: " + name )
 	UpdatePluginState(false)
+	if isEnabled
+		ClearOptions()
+		AddOptions()
+	endIf
 endEvent
 
 function UpdatePluginState(bool forced)
@@ -62,7 +66,7 @@ endFunction
 function DisablePlugin()
 	{To be implemented by plugin}
 	UnregisterForLOSUpdates()
-	main.SetPluginUpdateEvents(self, true)
+	main.SetPluginUpdateEvents(self, false)
 endFunction
 
 function Update(Actor[] actors, Actor[] nakedActors)
@@ -133,7 +137,7 @@ int function AddOption(string category, string title, string description, float 
 endFunction
 
 function SetOptionDefault(int option, float defaultValue)
-	string id = "SLAroused.MCM." + self.name + "." + numberOfOptions + ".Default"
+	string id = "SLAroused.MCM." + self.name + "." + option + ".Default"
 	StorageUtil.SetFloatValue(main, id, defaultValue)
 endFunction
 
