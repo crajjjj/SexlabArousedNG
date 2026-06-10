@@ -21,7 +21,7 @@ Three files hold version strings — keep them in sync:
 
 1. **`dist/fomod/info.xml`** — FOMOD installer version displayed in mod managers. Update `<Version>` (e.g. `3.1.9`). This is the canonical user-facing version.
 2. **`dist/Core/Source/Scripts/slaconfigscr.psc`** — `GetVersionString()` (e.g. `"3.1.9"`) is shown in MCM; `GetVersion()` is the integer form using the `MMmmppp` packing scheme documented in the function (e.g. `30100009` for 3.1.9). Bumping the integer also drives `OnVersionUpdate()` migration paths — only the **integer** triggers migrations, the string is display-only. Recompile `slaconfigscr.pex` after editing.
-3. **`CMakeLists.txt`** — `project(... VERSION X.Y.Z ...)` controls the DLL's resource version. Historically out of sync with the fomod; bump when cutting a release that includes C++ changes.
+3. **`CMakeLists.txt`** — `project(... VERSION X.Y.Z ...)` controls the DLL's resource version. Synced to the fomod version since 3.1.11; bump when cutting a release that includes C++ changes.
 
 Cosave ID `SLAN` is stable across versions — do not change it without a save-compat strategy.
 
@@ -220,4 +220,4 @@ External mods fire ModEvents -- no quest script needed:
 
 ## Version
 
-3.1.9 (canonical: `dist/fomod/info.xml`), cosave ID `SLAN`, Apache-2.0 license. `CMakeLists.txt` still reads `3.0.6` and is historically out of sync — see *Bumping the Version* above.
+3.1.11 (canonical: `dist/fomod/info.xml`), cosave ID `SLAN`, Apache-2.0 license. `CMakeLists.txt` is synced to the fomod version as of 3.1.11 — see *Bumping the Version* above.

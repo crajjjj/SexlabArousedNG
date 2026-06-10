@@ -176,7 +176,7 @@ Armor[] emptyArmorArray
 
 
 Int Function GetVersion()
-    Return       30100010
+    Return       30100011
 	;	0.00.00000
     ; 1.0.0   -> 10000000
     ; 1.1.0   -> 10100000
@@ -186,7 +186,7 @@ Int Function GetVersion()
 EndFunction
 
 String Function GetVersionString()
-    Return "3.1.10"
+    Return "3.1.11"
 EndFunction
 
 
