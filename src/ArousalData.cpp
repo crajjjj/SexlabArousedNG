@@ -6,6 +6,7 @@ namespace SLA {
     std::mt19937 randomEngine;
 
     void InitializeRandomEngine() {
+        BuildSinCosTable();  // fill this TU's copy of fast_cossin_table (anonymous namespace in header = per-TU table)
         std::random_device rd;
         randomEngine.seed(rd());
     }
