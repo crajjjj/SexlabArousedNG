@@ -101,7 +101,8 @@ test/                             Catch2 tests (ArousalMath.cpp)
 - Random engine init (mt19937)
 - Cosave registration (ID `SLAN` / 0x4E414C53): Save/Load/Revert callbacks on ArousalManager
 - Papyrus native function registration (21 functions on `slaInternalModules`)
-- Sine/cosine lookup table build
+
+(The sine/cosine lookup table in `CosSin.h` is a shared `inline` variable built at static initialization, not in `SKSEPluginLoad`.)
 
 ### 2. Arousal Model (`ArousalManager`, `ArousalData`)
 

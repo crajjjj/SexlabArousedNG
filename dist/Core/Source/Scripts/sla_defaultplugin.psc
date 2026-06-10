@@ -234,7 +234,7 @@ state Installed
 			endIf
 
 			if useDenialCycle
-				if GetArousalEffectFncAux(currentObserver, timedCycleEff) != 1 || GetArousalEffectFncParam(currentObserver, timedCycleEff) < 1.0
+				if GetArousalEffectFncAux(currentObserver, timedCycleEff) != 1
 					UpdateDenialCycle(currentObserver)
 				endIf
 			elseIf GetArousalEffectFncAux(currentObserver, timedCycleEff) == 1
