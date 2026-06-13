@@ -402,5 +402,6 @@ OSL ticks arousal up just because time passed. SLA NG's default plugin only tick
 
 Logs to check when things go wrong:
 
-- `Documents\My Games\Skyrim Special Edition\SKSE\SLOANG.log` — this mod's own log.
+- `Documents\My Games\Skyrim Special Edition\SKSE\SexlabArousedNG.log` — the SKSE C++ plugin log (DLL load, native functions, serialization).
+- `Documents\My Games\Skyrim Special Edition\Logs\Script\User\SLOANG.log` — the Papyrus script log.
 - `Documents\My Games\Skyrim Special Edition\SKSE\po3_KeywordItemDistributor.log` — KID's log (look here after launching to see how your exported file was processed).
