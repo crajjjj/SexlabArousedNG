@@ -1,29 +1,31 @@
 # SexLab Aroused NG
 
-A persistent, per-actor arousal system for Skyrim SE/AE, packaged as an SKSE C++ plugin with a Papyrus script API.
+A persistent, per-actor **arousal system** for Skyrim SE/AE, packaged as an SKSE C++ plugin with a Papyrus script API. Every tracked actor has a single arousal float (typically 0–100) that other mods read and react to. The framework handles storage, decay, scanning, line-of-sight evaluation, and MCM curation — your scripts and other adult-mod integrations stay focused on the *behavior* triggered by arousal, not the bookkeeping.
 
-Every tracked actor has a single arousal float (typically 0–100) that other mods read and react to. The framework handles storage, decay, scanning, line-of-sight evaluation, and MCM curation — your scripts and other adult-mod integrations stay focused on the *behavior* triggered by arousal, not the bookkeeping.
+These docs are split into two tracks. Pick the one that fits you:
 
-## Who's this for?
+## For Players
 
-<div class="grid cards" markdown>
+Install it, play it, configure it. Start here if you just want to use the mod.
 
-- :material-account: **Players**
-  Install it, open MCM, tune the sliders to taste, curate which armors count as "naked" / "bikini" / "sexy" on a per-item basis, and (optionally) export your curation to a KID file that survives new saves.
+- [Getting Started](players/getting-started.md) — requirements, installation, the FOMOD options, and first-time setup
+- [How Arousal Works](players/how-arousal-works.md) — the single-float model, time units, and the five built-in effect categories
+- [MCM Reference](players/mcm-reference.md) — every MCM page, control by control
+- [Armor Curation](players/armor-curation.md) — the *Current Armor List* page, custom keywords, and the built-in keyword cheat sheet
+- [Export to KID File](players/kid-export.md) — make your curation survive new saves and share it with friends
+- [Tuning Recipes](players/tuning-recipes.md) — "make it climb faster", coming from OSL Aroused, and other common workflows
+- [Troubleshooting & Logs](players/troubleshooting.md) — log locations, enabling Papyrus logging, and what to attach when reporting
 
-  [→ User Guide](UserGuide.md)
+## For Mod Authors
 
-- :material-file-document-edit: **Players sharing curation**
-  Export the keyword/armor pairs you've toggled to a plain-text KID file. Send it to friends, drop it on Nexus, back it up alongside your modlist.
+Integrate with the arousal framework without touching its core scripts.
 
-  [→ KID Reference](KID_Reference.md)
-
-- :material-code-tags: **Mod authors**
-  Register your own arousal effects (static or dynamic), read arousal on any actor, and plug into the multi-fork compatibility shim so consumer mods written against OSL Aroused work unchanged.
-
-  [→ API Reference (GitHub)](https://github.com/crajjjj/SexlabArousedNG/blob/master/README.md)
-
-</div>
+- [Overview](authors/overview.md) — the arousal model, repo layout, the key scripts, and how to choose an integration approach
+- [Dynamic Effects](authors/dynamic-effects.md) — the easy path: fire a ModEvent from any script, with ready-to-use recipes
+- [Static Effects (Plugin Quests)](authors/static-effects.md) — `sla_PluginBase`, the plugin lifecycle, LOS updates, and MCM options
+- [Papyrus API Reference](authors/papyrus-api.md) — every `slaInternalModules` native function, plus effect groups
+- [Compatibility (OSL Aroused & SLA NG)](authors/compatibility.md) — a universal interface that works on every fork
+- [Building from Source](authors/building.md) — CMake/vcpkg, the build presets, and the repo layout
 
 ## At a glance
 
@@ -33,15 +35,8 @@ Every tracked actor has a single arousal float (typically 0–100) that other mo
 - **Per-armor keyword curation** in MCM with on-disk persistence and KID export.
 - **Cosave-backed state** that survives across saves, with a configurable scan/update loop and full LOS evaluation.
 
-## Quick links
-
-- [How arousal actually works](UserGuide.md#how-arousal-works)
-- [MCM page-by-page tour](UserGuide.md#the-mcm-page-by-page)
-- [I want my arousal to climb faster — MCM tuning recipe](UserGuide.md#i-want-my-arousal-to-climb-faster-mcm-tuning-by-source)
-- [Coming from OSL Aroused?](UserGuide.md#im-coming-from-osl-aroused-and-nothing-is-happening)
-- [Troubleshooting](UserGuide.md#troubleshooting)
-
-## Project
+---
 
 - **Source / issues**: [github.com/crajjjj/SexlabArousedNG](https://github.com/crajjjj/SexlabArousedNG)
 - **License**: Apache-2.0
+- **Changelog**: [GitHub releases page](https://github.com/crajjjj/SexlabArousedNG/releases)

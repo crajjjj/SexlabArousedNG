@@ -39,9 +39,22 @@ theme:
 
 nav:
   - Home: index.md
-  - User Guide: UserGuide.md
+  - For Players:
+    - Getting Started: players/getting-started.md
+    - How Arousal Works: players/how-arousal-works.md
+    - MCM Reference: players/mcm-reference.md
+    - Armor Curation: players/armor-curation.md
+    - Export to KID File: players/kid-export.md
+    - Tuning Recipes: players/tuning-recipes.md
+    - Troubleshooting & Logs: players/troubleshooting.md
+  - For Mod Authors:
+    - Overview: authors/overview.md
+    - Dynamic Effects: authors/dynamic-effects.md
+    - Static Effects (Plugin Quests): authors/static-effects.md
+    - Papyrus API Reference: authors/papyrus-api.md
+    - Compatibility (OSL & SLA NG): authors/compatibility.md
+    - Building from Source: authors/building.md
   - KID Reference: KID_Reference.md
-  - Mod Authors API ↗: https://github.com/crajjjj/SexlabArousedNG/blob/master/README.md
 
 markdown_extensions:
   - admonition
