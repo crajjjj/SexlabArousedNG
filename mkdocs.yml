@@ -12,12 +12,12 @@ theme:
   features:
     - navigation.instant
     - navigation.tracking
-    - navigation.tabs
     - navigation.top
-    - search.suggest
-    - search.highlight
+    - navigation.indexes
     - content.code.copy
     - content.action.edit
+    - search.suggest
+    - search.highlight
     - toc.follow
   palette:
     - media: "(prefers-color-scheme: light)"
@@ -41,6 +41,7 @@ nav:
   - Home: index.md
   - For Players:
     - Getting Started: players/getting-started.md
+    - Requirements: players/requirements.md
     - How Arousal Works: players/how-arousal-works.md
     - MCM Reference: players/mcm-reference.md
     - Armor Curation: players/armor-curation.md
@@ -61,18 +62,28 @@ markdown_extensions:
   - attr_list
   - def_list
   - footnotes
+  - md_in_html
   - tables
   - toc:
       permalink: true
   - pymdownx.details
+  - pymdownx.superfences
   - pymdownx.highlight:
       anchor_linenums: true
   - pymdownx.inlinehilite
-  - pymdownx.superfences
+  - pymdownx.snippets
   - pymdownx.tabbed:
       alternate_style: true
   - pymdownx.tasklist:
       custom_checkbox: true
+
+validation:
+  links:
+    not_found: warn
+    anchors: warn
+
+plugins:
+  - search
 
 extra:
   social:

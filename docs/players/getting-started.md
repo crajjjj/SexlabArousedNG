@@ -19,22 +19,9 @@ See [How Arousal Works](how-arousal-works.md) for the model behind the number.
 
 ## Requirements
 
-### Required
+The only hard requirements are **SKSE64**, **Address Library**, and **PapyrusUtil SE**. Everything else is optional and unlocks the integration tied to it (SexLab, OStim, Devious Devices, KID export, aroused animations).
 
-| Mod | Why |
-|---|---|
-| **SKSE64** (Skyrim Script Extender) | This is an SKSE plugin |
-| **Address Library for SKSE Plugins** | Standard SKSE plugin runtime dep |
-| **PapyrusUtil SE** | All persistent state and config files use it |
-| **PapyrusExtenderSSE** | Required by the *Export to KID file* MCM button. Without it the rest of the mod still works, but the export button will pop up an error |
-
-### Recommended
-
-| Mod | Why |
-|---|---|
-| **Keyword Item Distributor (KID)** | Reads the file you export from MCM and applies it at game start. Without KID the export is just a text file |
-| **MergeMapper** | Auto-remaps FormIDs after plugin merges. Useful if you've merged armor mods |
-| **An animation system** — Open Animation Replacer (recommended) or FNIS/Nemesis | Drives the arousal animations. Picked during FOMOD install |
+See the [Requirements](requirements.md) page for the full breakdown of hard requirements, soft dependencies, and what each one unlocks.
 
 ## Installation
 
