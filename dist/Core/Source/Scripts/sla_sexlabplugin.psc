@@ -224,6 +224,11 @@ state Installed
 		fatigueEff = RegisterEffect("Fatigue", "$SLA_Effect_Fatigue", "$SLA_Effect_FatigueDesc")
 		traumaEff = RegisterEffect("Trauma", "$SLA_Effect_Trauma", "$SLA_Effect_TraumaDesc")
 	endFunction
+
+	function ReassertSubscriptions()
+		RegisterForPerodicUpdates()
+		RegisterForLOSUpdates()
+	endFunction
 	
 	function AddOptions()
 		slax.info("sla_SexlabPlugin - SL.AddOptions()")

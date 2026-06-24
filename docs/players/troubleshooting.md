@@ -53,6 +53,14 @@ Then **launch the game through SKSE**, reproduce the issue, and quit. The fresh 
 - If you're testing passive/timed gains with no naked actor nearby, make sure **Naked Only** ("Require naked actors to change arousal") is OFF — when ON it skips arousal updates unless a naked actor is present.
 - If you expected passive buildup, note that it comes from the *Timed* effect, not *Naked* — see [Coming from OSL Aroused](tuning-recipes.md#coming-from-osl-aroused).
 
+### Passive (Timed) and Naked stay at 0.0, but sleep and sex still work
+
+This specific split — the *Timed* and *Naked* effects frozen at `0.0` in Puppet Master while *Sleep*, *Sex*, and orgasm effects update normally — points to the plugin's periodic update subscription having desynced, usually after updating the mod from an older version on a long-running save. The event-driven effects keep working because they don't depend on the periodic scan; the passive ones do.
+
+- **Update to the current version and reload your save.** The framework now re-asserts its update subscriptions on every load, so loading once on the fixed build heals it automatically — no clean save needed.
+- To confirm the heal happened, enable Papyrus logging (above) and search `SLOANG.log` after a load for `Target state: Re-subscribed` on each plugin. Within a scan cycle or two, Timed should start climbing.
+- Remember passive buildup is the *Timed* effect and naked exposure is the *Naked* effect — both are separate from sleep/scene gains, and Naked additionally needs naked actors actually detected (see the nudity-detection notes in [Armor Curation](armor-curation.md)).
+
 ### The Export to KID button says "PapyrusExtenderSSE is required"
 
 - Install [PapyrusExtenderSSE](https://www.nexusmods.com/skyrimspecialedition/mods/22854) (powerof3's mod). That's the only dependency the export needs that the rest of the mod doesn't.

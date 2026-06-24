@@ -42,6 +42,12 @@ function EnablePlugin()
     _exposureEffectIdx = RegisterEffect("MyMod_Exposure", "Exposure", "Arousal from nearby nudity")
 endFunction
 
+; Called on every game load while ALREADY "Installed". Re-register only your
+; periodic/LOS subscriptions here — see "Plugin state machine" below for why.
+function ReassertSubscriptions()
+    RegisterForPerodicUpdates()  ; must match the subscriptions EnablePlugin() made
+endFunction
+
 ; Called when the plugin transitions out of "Installed" state.
 function DisablePlugin()
     parent.DisablePlugin()  ; tears down periodic/LOS registrations
@@ -56,9 +62,15 @@ int _exposureEffectIdx = -1
 The base class manages a two-state machine: `""` (not installed) and `"Installed"`. On every game load, `CheckDependencies()` is called:
 
 - If it returns `true` and the state is not `"Installed"` → calls `EnablePlugin()` then enters `"Installed"`
+- If it returns `true` and the state is **already** `"Installed"` (the usual game-load case) → calls `ReassertSubscriptions()`
 - If it returns `false` and the state is `"Installed"` → calls `DisablePlugin()` then leaves `"Installed"`
 
 `OnInstalled()` and `OnUninstalled()` are called automatically to register/unregister your plugin with the framework. Override `EnablePlugin`/`DisablePlugin` for your setup/teardown, not these events.
+
+!!! warning "Re-register periodic/LOS subscriptions in `ReassertSubscriptions()`"
+    The framework's periodic-update and LOS subscription lists are stored in the save and are **not** rebuilt from scratch on load. `EnablePlugin()` only runs on the *first* install transition — on a normal load your plugin is already `"Installed"`, so `EnablePlugin()` does **not** run again. If those lists ever desync (most often after a mod version upgrade), a plugin can stay "installed" yet silently stop receiving `UpdateActor()` / `UpdateObserver()` calls — its effects freeze at their last value while event-driven effects keep working.
+
+    `ReassertSubscriptions()` exists to heal that: it runs on every load and must re-make exactly the `RegisterForPerodicUpdates()` / `RegisterForLOSUpdates()` calls your `EnablePlugin()` made. Both are idempotent (the framework skips duplicates), so re-registering when already subscribed is a safe no-op. **Do not** re-register effects (`RegisterEffect`) or re-run other setup here — the C++ effect registry survives the save, and re-running full setup can clobber live state. A purely event-driven plugin (no periodic/LOS subscriptions) can leave this as the inherited no-op.
 
 ## Registering and using static effects
 
@@ -111,6 +123,11 @@ If your plugin needs to react when an actor sees another, register for LOS event
 function EnablePlugin()
     ...
     RegisterForLOSUpdates()
+endFunction
+
+function ReassertSubscriptions()
+    ...
+    RegisterForLOSUpdates()  ; re-assert on load alongside RegisterForPerodicUpdates()
 endFunction
 
 ; Called when observer gains LOS on observed:

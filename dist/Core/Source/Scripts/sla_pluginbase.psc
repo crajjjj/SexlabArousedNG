@@ -36,6 +36,17 @@ function UpdatePluginState(bool forced)
 		if GetState() != "Installed"
 			toState = "Installed"
 			GoToState("Installed")
+		else
+			; Already Installed (e.g. on game load). The update/LOS subscription
+			; arrays in slaMainScr are persisted in the save and are NOT rebuilt
+			; on load, so a desync (typically from a past version upgrade) leaves
+			; the plugin installed but unsubscribed -- UpdateActor/UpdateObserver
+			; never fire and pipeline-driven effects (Naked, Timed) stick at 0.
+			; ReassertSubscriptions re-registers only the periodic/LOS events (both
+			; Find-guarded, hence idempotent), self-healing the desync every load
+			; without the heavier side effects of a full EnablePlugin re-run.
+			toState = "Re-subscribed"
+			ReassertSubscriptions()
 		endIf
 	else
 		if GetState() != ""
@@ -53,6 +64,13 @@ endFunction
 
 function EnablePlugin()
 	{To be implemented by plugin}
+endFunction
+
+function ReassertSubscriptions()
+	{Re-register only the periodic/LOS update events with slaMainScr. Called on
+	every game load (from UpdatePluginState) to repair the persisted, non-rebuilt
+	subscription arrays. Overridden by plugins that subscribe to updates/LOS;
+	purely event-driven plugins leave this as a no-op.}
 endFunction
 
 function AddOptions()

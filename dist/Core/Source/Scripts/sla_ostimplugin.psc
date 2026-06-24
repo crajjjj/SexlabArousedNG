@@ -361,6 +361,11 @@ state Installed
         traumaEff = RegisterEffect("OTrauma", "$SLA_Effect_OTrauma", "$SLA_Effect_OTraumaDesc")
     endFunction
 
+    function ReassertSubscriptions()
+        RegisterForPerodicUpdates()
+        RegisterForLOSUpdates()
+    endFunction
+
     function AddOptions()
         slax.info("sla_OStimPlugin - Ostim.AddOptions()")
         AddOption("$SLA_Effect_SexCat", "$SLA_Effect_OSexMax", "$SLA_Effect_OSexMaxDesc", 50.0)

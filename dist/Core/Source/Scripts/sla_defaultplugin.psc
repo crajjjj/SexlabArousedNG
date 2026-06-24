@@ -195,6 +195,11 @@ state Installed
 		RegisterForSleep()
 	endFunction
 
+	function ReassertSubscriptions()
+		RegisterForPerodicUpdates()
+		RegisterForLOSUpdates()
+	endFunction
+
 	function AddOptions()
 		slax.info("sla_DefaultPlugin - Default.AddOptions()")
 		AddOption("$SLA_Effect_NakedCat", "$SLA_Effect_NakedMax", "$SLA_Effect_NakedMaxDesc", 50.0)
