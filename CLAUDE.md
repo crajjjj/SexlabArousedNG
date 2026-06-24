@@ -220,4 +220,4 @@ External mods fire ModEvents -- no quest script needed:
 
 ## Version
 
-3.1.11 (canonical: `dist/fomod/info.xml`), cosave ID `SLAN`, Apache-2.0 license. `CMakeLists.txt` is synced to the fomod version as of 3.1.11 — see *Bumping the Version* above.
+3.2.0 (canonical: `dist/fomod/info.xml`), cosave ID `SLAN`, Apache-2.0 license. `CMakeLists.txt` is bumped only on releases with C++ changes, so it may trail the fomod version (currently `3.1.11`) — see *Bumping the Version* above.

@@ -35,10 +35,12 @@ Both static and dynamic effects can carry one of these built-in timed functions:
 
 | Need | Use |
 |------|-----|
-| Temporary / rare effect from any script | [Dynamic effect](dynamic-effects.md) via `slaSetArousalEffect` ModEvent |
+| Temporary / rare effect from any script | [Dynamic effect](dynamic-effects.md) — `SloangNative.AddDecayingEffect(...)` etc., or the `slaSetArousalEffect` ModEvent |
 | Always-on per-actor condition, high-frequency updates | [Static effect](static-effects.md) via an `sla_PluginBase` plugin quest |
 | Effects that scale each other multiplicatively | Static effects + [`GroupEffects`](papyrus-api.md#effect-groups) |
 | Reacting to what actors see | [`RegisterForLOSUpdates`](static-effects.md#los-line-of-sight-updates) in the plugin base |
+| Reading or writing arousal from any script, no boilerplate | The [native API](native-api.md) — `SloangNative.GetArousal(who)` etc. |
+| Reacting when arousal recalculates | Listen for the [`sla_UpdateComplete`](native-api.md#reacting-to-updates-dont-poll) ModEvent |
 | Reading arousal from a non-plugin script | [`slaInternalModules.GetArousal(who)`](papyrus-api.md#reading-arousal) |
 | Supporting both OSL Aroused and SLA NG | The [compatibility shim](compatibility.md) |
 
@@ -75,6 +77,7 @@ The split that matters: **Papyrus is edited only in `dist/Core/Source/Scripts/`*
 | Script | Role |
 |--------|------|
 | `slamainscr` | Main quest, plugin lifecycle, actor tracking |
+| `SloangNative` | Canonical global-function API (hidden) — the [native API](native-api.md) |
 | `slaInternalModules` | Native bridge to C++ (hidden) — the [Papyrus API](papyrus-api.md) |
 | `sla_PluginBase` | Base class for all plugins — see [Static Effects](static-effects.md) |
 | `sla_defaultplugin` | Nudity, orgasm, denial, sleep effects |

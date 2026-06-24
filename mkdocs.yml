@@ -50,6 +50,7 @@ nav:
     - Troubleshooting & Logs: players/troubleshooting.md
   - For Mod Authors:
     - Overview: authors/overview.md
+    - Native API (SloangNative): authors/native-api.md
     - Dynamic Effects: authors/dynamic-effects.md
     - Static Effects (Plugin Quests): authors/static-effects.md
     - Papyrus API Reference: authors/papyrus-api.md
