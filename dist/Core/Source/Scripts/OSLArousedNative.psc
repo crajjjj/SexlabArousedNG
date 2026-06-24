@@ -56,11 +56,29 @@ float function GetArousalMultiplier(Actor who) global
 endFunction
 
 float function GetLibido(Actor who) global
-    return 0.0
+    ; OSL Aroused models Libido (and the closely-related Arousal Baseline) as a
+    ; per-actor floor that arousal gravitates toward over time. Its defaults are
+    ; MinLibidoValuePlayer = 30 and MinLibidoValueNPC = 80 (see OSLAroused_Main).
+    ; SLA NG keeps no libido state, so return that baseline floor by actor type.
+    ; This gives consumers that read libido (e.g. Devious Curses, which only reads
+    ; GetLibido) a sensible non-zero value instead of 0, which previously left
+    ; their libido-gated behaviour dead.
+    return _BaselineLibido(who)
 endFunction
 
 float function GetArousalBaseline(Actor who) global
-    return 0.0
+    ; OSL treats baseline arousal and libido as the same per-actor floor; mirror it.
+    return _BaselineLibido(who)
+endFunction
+
+float function _BaselineLibido(Actor who) global
+    if !who
+        return 0.0
+    endif
+    if who == Game.GetPlayer()
+        return 30.0
+    endif
+    return 80.0
 endFunction
 
 bool function IsActorNaked(Actor who) global
