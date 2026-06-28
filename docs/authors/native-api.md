@@ -118,7 +118,19 @@ EndEvent
 | Function | Notes |
 |----------|-------|
 | `float GetDaysSinceLastOrgasm(Actor who)` | Game days since last recorded orgasm |
-| `UpdateOrgasmDate(Actor who)` | Stamp an orgasm now |
+| `UpdateOrgasmDate(Actor who)` | Stamp an orgasm now (applies the default plugin's post-orgasm satisfaction handling, enjoyment `0`) |
+| `Orgasm(Actor who, float enjoyment)` | Same as `UpdateOrgasmDate` but `enjoyment` weights the climax (`0.0` plain; higher deepens the post-orgasm dip) |
+
+To register an orgasm from a script that must **not** compile-couple to SLA (e.g. cross-fork code, or you'd rather not import `SloangNative`), fire the **`slaOrgasm`** ModEvent instead — same effect as `UpdateOrgasmDate`, plus an `enjoyment` weight (`0.0` = a plain climax; higher values deepen the post-orgasm satisfaction dip):
+
+```papyrus
+int h = ModEvent.Create("slaOrgasm")
+ModEvent.PushForm(h, akActor)
+ModEvent.PushFloat(h, 0.0)   ; enjoyment
+ModEvent.Send(h)
+```
+
+Registered by SLA NG 3.2.1+ only (older builds and other forks ignore it — use `UpdateOrgasmDate` / `slaFrameworkScr.UpdateActorOrgasmDate` there).
 
 ## Meta
 

@@ -506,13 +506,30 @@ function UpdateOrgasmDate(Actor who) global
      post-orgasm handling). Call this from your own climax events so the dry-spell
      and satisfaction systems stay in sync. No-op for a None actor / no SLA.
 
+     Equivalent to Orgasm(who, 0.0). Use Orgasm if you want to weight the climax.
+
      Sample:
          SloangNative.UpdateOrgasmDate(akActor)}
-    slaFrameworkScr slaFramework = _Framework()
-    if !who || !slaFramework
+    Orgasm(who, 0.0)
+endFunction
+
+function Orgasm(Actor who, float enjoyment) global
+    {Registers an orgasm for `who`: stamps the last-orgasm time and applies the default
+     plugin's post-orgasm satisfaction handling. `enjoyment` weights how satisfying the
+     climax was -- 0.0 is a plain "they came", higher values deepen the satisfaction dip
+     (lowering arousal further afterwards). No-op for a None actor / no SLA.
+
+     This is the no-boilerplate equivalent of firing the `slaOrgasm` ModEvent; use the
+     ModEvent instead if you need zero compile-time coupling to SLA.
+
+     Sample -- a plain climax, and a very satisfying one:
+         SloangNative.Orgasm(akActor, 0.0)
+         SloangNative.Orgasm(akActor, 20.0)}
+    slaMainScr slaMain = _Main()
+    if !who || !slaMain
         return
     endif
-    slaFramework.UpdateActorOrgasmDate(who)
+    slaMain.defaultPlugin.OnOrgasm(who, enjoyment)
 endFunction
 
 ; ===========================================================================

@@ -461,6 +461,22 @@ function ModDynamicArousalEffect(Form whoF, string effectId, float modifier, flo
     slaInternalModules.ModDynamicArousalEffect(who, effectId, modifier, limit)
 endFunction
 
+; ModEvent: fire "slaOrgasm" to register an orgasm for `who` (stamps last-orgasm time
+; and applies the default plugin's post-orgasm satisfaction handling). `enjoyment` scales
+; the satisfaction dip -- pass 0.0 for a plain "they came" with no extra weighting.
+;   int h = ModEvent.Create("slaOrgasm")
+;   ModEvent.PushForm(h, akActor)
+;   ModEvent.PushFloat(h, 0.0)   ; enjoyment
+;   ModEvent.Send(h)
+function OnOrgasmEvent(Form whoF, float enjoyment)
+    Actor who = whoF as Actor
+    if who == none
+        return
+    endIf
+    slax.Info("slaMainScr - OnOrgasmEvent(" + who.GetLeveledActorBase().GetName() + ", " + enjoyment + ")")
+    defaultPlugin.OnOrgasm(who, enjoyment)
+endFunction
+
 float function ModEffectValue(Actor who, int effectIdx, float diff, float limit) 
     slax.Info("slaMainScr - ModEffectValue(" + who.GetLeveledActorBase().GetName() + ", " + GetEffectTitle(effectIdx) + ", " + diff + ", " + limit + ")")
     return slaInternalModules.ModStaticArousalValue(who, effectIdx, diff, limit)
@@ -1130,7 +1146,8 @@ Function RegisterForModEvents()
     RegisterForModEvent("slaSetArousalEffect", "SetDynamicArousalEffect")
     RegisterForModEvent("slaModArousalEffect", "ModDynamicArousalEffect")
     RegisterForModEvent("slaUpdateExposure", "ModifyExposure")
-    
+    RegisterForModEvent("slaOrgasm", "OnOrgasmEvent")
+
 EndFunction
 
 Actor [] function getLoadedActors(int lockNum)
