@@ -515,6 +515,7 @@ event OnPlayerLoadGame()
     if bWasInitialized
         SendModEvent("sla_Int_PlayerLoadsGame")
     endIf
+    EnsurePluginsRegistered()
     slax.info("slaMainScr - OnPlayerLoadGame()")
     if effectIds != None
         slax.Info("slaMainScr effectIds length: " + effectIds.length)
@@ -534,6 +535,34 @@ event OnPlayerLoadGame()
         slax.Info("slaMainScr effectDescriptions length: 0")
     endif
 endEvent
+
+; Self-heal on-load desync for saves where init never completed (bWasInitialized == False),
+; which otherwise leaves two symptoms: (1) blank MCM option labels, and (2) pipeline effects
+; (Naked, Timed) stuck at 0. Per active named plugin: register it if missing from plugins[]
+; (rebuilds .Title labels via AddOptions), then re-subscribe it to the update loop. Both steps
+; are idempotent, so this is a no-op once a save is healthy.
+Function EnsurePluginsRegistered()
+    EnsurePlugin(defaultPlugin)
+    if defaultPlugin
+        EnsurePlugin(defaultPlugin.ddPlugin)
+    endif
+    EnsurePlugin(ostimPlugin)
+    EnsurePlugin(sexlabPlugin)
+EndFunction
+
+Function EnsurePlugin(sla_PluginBase plugin)
+    if plugin && plugin.IsInterfaceActive()
+        if plugins.Find(plugin) == -1
+            RegisterPlugin(plugin, true)
+        endif
+        ; Re-subscribe to the periodic/LOS update loop. The update arrays are persisted but
+        ; NOT rebuilt on load, so an installed-but-unsubscribed plugin never runs UpdateActor
+        ; and its pipeline effects (Naked, Timed) stick at 0. The upstream self-heal fires only
+        ; from On_sla_Int_PlayerLoadsGame, whose SendModEvent is gated behind bWasInitialized -
+        ; False in these saves - so drive the idempotent re-subscribe directly here.
+        plugin.UpdatePluginState(false)
+    endif
+EndFunction
 
 Int Function IsAnimatingFemales()
     Return sla_AnimateFemales.getValue() As Int
