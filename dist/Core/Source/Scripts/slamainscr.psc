@@ -531,6 +531,7 @@ event OnPlayerLoadGame()
     if bWasInitialized
         SendModEvent("sla_Int_PlayerLoadsGame")
     endIf
+    EnsurePluginsRegistered()
     slax.info("slaMainScr - OnPlayerLoadGame()")
     if effectIds != None
         slax.Info("slaMainScr effectIds length: " + effectIds.length)
@@ -550,6 +551,24 @@ event OnPlayerLoadGame()
         slax.Info("slaMainScr effectDescriptions length: 0")
     endif
 endEvent
+
+; Self-heal MCM options after a script update against an existing save: register any active
+; named plugin that is missing from plugins[], which runs AddOptions() and rebuilds its
+; .Title labels. No-op once registered (RegisterPlugin guards on plugins.Find).
+Function EnsurePluginsRegistered()
+    EnsurePlugin(defaultPlugin)
+    if defaultPlugin
+        EnsurePlugin(defaultPlugin.ddPlugin)
+    endif
+    EnsurePlugin(ostimPlugin)
+    EnsurePlugin(sexlabPlugin)
+EndFunction
+
+Function EnsurePlugin(sla_PluginBase plugin)
+    if plugin && plugin.IsInterfaceActive() && plugins.Find(plugin) == -1
+        RegisterPlugin(plugin, true)
+    endif
+EndFunction
 
 Int Function IsAnimatingFemales()
     Return sla_AnimateFemales.getValue() As Int
