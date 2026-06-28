@@ -364,6 +364,9 @@ state Installed
     function ReassertSubscriptions()
         RegisterForPerodicUpdates()
         RegisterForLOSUpdates()
+        ; Re-assert mod-event hooks too -- they live in the co-save and are lost
+        ; if the player deletes it. See ReassertSubscriptions in sla_PluginBase.
+        registerOstimEventHandlers()
     endFunction
 
     function AddOptions()

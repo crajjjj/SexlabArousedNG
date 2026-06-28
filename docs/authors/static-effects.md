@@ -42,10 +42,11 @@ function EnablePlugin()
     _exposureEffectIdx = RegisterEffect("MyMod_Exposure", "Exposure", "Arousal from nearby nudity")
 endFunction
 
-; Called on every game load while ALREADY "Installed". Re-register only your
-; periodic/LOS subscriptions here — see "Plugin state machine" below for why.
+; Called on every game load while ALREADY "Installed". Re-register your
+; load-fragile registrations here — see "Plugin state machine" below for why.
 function ReassertSubscriptions()
-    RegisterForPerodicUpdates()  ; must match the subscriptions EnablePlugin() made
+    RegisterForPerodicUpdates()                          ; match EnablePlugin()'s subscriptions
+    RegisterForModEvent("SomeMod_Event", "OnSomeEvent")  ; and any external mod-event hooks
 endFunction
 
 ; Called when the plugin transitions out of "Installed" state.
@@ -62,15 +63,18 @@ int _exposureEffectIdx = -1
 The base class manages a two-state machine: `""` (not installed) and `"Installed"`. On every game load, `CheckDependencies()` is called:
 
 - If it returns `true` and the state is not `"Installed"` → calls `EnablePlugin()` then enters `"Installed"`
-- If it returns `true` and the state is **already** `"Installed"` (the usual game-load case) → calls `ReassertSubscriptions()`
+- If it returns `true` and the state is **already** `"Installed"` (the usual game-load case) → calls `ReassertSubscriptions()` to re-assert load-fragile registrations
 - If it returns `false` and the state is `"Installed"` → calls `DisablePlugin()` then leaves `"Installed"`
 
 `OnInstalled()` and `OnUninstalled()` are called automatically to register/unregister your plugin with the framework. Override `EnablePlugin`/`DisablePlugin` for your setup/teardown, not these events.
 
-!!! warning "Re-register periodic/LOS subscriptions in `ReassertSubscriptions()`"
-    The framework's periodic-update and LOS subscription lists are stored in the save and are **not** rebuilt from scratch on load. `EnablePlugin()` only runs on the *first* install transition — on a normal load your plugin is already `"Installed"`, so `EnablePlugin()` does **not** run again. If those lists ever desync (most often after a mod version upgrade), a plugin can stay "installed" yet silently stop receiving `UpdateActor()` / `UpdateObserver()` calls — its effects freeze at their last value while event-driven effects keep working.
+!!! warning "Re-assert load-fragile registrations in `ReassertSubscriptions()`"
+    `EnablePlugin()` only runs on the *first* install transition — on a normal load your plugin is already `"Installed"`, so `EnablePlugin()` does **not** run again. Two kinds of registration it makes can be missing on a later load:
 
-    `ReassertSubscriptions()` exists to heal that: it runs on every load and must re-make exactly the `RegisterForPerodicUpdates()` / `RegisterForLOSUpdates()` calls your `EnablePlugin()` made. Both are idempotent (the framework skips duplicates), so re-registering when already subscribed is a safe no-op. **Do not** re-register effects (`RegisterEffect`) or re-run other setup here — the C++ effect registry survives the save, and re-running full setup can clobber live state. A purely event-driven plugin (no periodic/LOS subscriptions) can leave this as the inherited no-op.
+    - **Periodic/LOS subscriptions** are stored in the save but **not** rebuilt from scratch on load; they can desync (most often after a mod version upgrade), leaving a plugin "installed" yet silently not receiving `UpdateActor()` / `UpdateObserver()` — effects freeze at their last value while event-driven effects keep working.
+    - **`RegisterForModEvent` hooks** persist only in the SKSE co-save (the MCBR record). That file is separate from the `.ess` save and is a common thing players delete to "clean" a save — doing so drops every mod-event registration, so your event handlers go dead with no other symptom.
+
+    `ReassertSubscriptions()` runs on **every** load to heal both. Re-make exactly the `RegisterForPerodicUpdates()` / `RegisterForLOSUpdates()` and `RegisterForModEvent(...)` calls your `EnablePlugin()` made — all are idempotent (re-registering overwrites the same registration), so it's a safe no-op when already registered. **Do not** re-register effects (`RegisterEffect`) or re-run other setup here — the C++ effect registry survives the save, and re-running full setup can clobber live state. A plugin that makes none of these registrations can leave this as the inherited no-op.
 
 ## Registering and using static effects
 

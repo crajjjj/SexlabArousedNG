@@ -239,7 +239,16 @@ state Installed
 		ModEvent.PushString(handle, "$SLA_Effect_DDTeasingDesc")
 		ModEvent.Send(handle)
 	endFunction
-	
+
+	function ReassertSubscriptions()
+		; DD is event-driven, so only its mod-event hooks need re-asserting on load.
+		; NOT teasingActors -- that is live save state EnablePlugin would discard.
+		RegisterForModEvent("DDI_DeviceEquipped", "OnDeviceEquipped")
+		RegisterForModEvent("DDI_DeviceRemoved", "OnDeviceRemoved")
+		RegisterForModEvent("DeviceVibrateEffectStart", "OnVibrationStart")
+		RegisterForModEvent("DeviceVibrateEffectStop", "OnVibrationStop")
+	endFunction
+
 	function AddOptions()
 		slax.info("sla_DDPlugin - Devices.AddOptions()")
 		AddOptionEx("$SLA_Effect_DeviceCat", "$SLA_Effect_DevicesHalfTime", "$SLA_Effect_DevicesHalfTimeDesc", 1.0, 0.1, 24.0, 0.1, "{1}/hour")

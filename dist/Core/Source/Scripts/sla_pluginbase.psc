@@ -67,10 +67,14 @@ function EnablePlugin()
 endFunction
 
 function ReassertSubscriptions()
-	{Re-register only the periodic/LOS update events with slaMainScr. Called on
-	every game load (from UpdatePluginState) to repair the persisted, non-rebuilt
-	subscription arrays. Overridden by plugins that subscribe to updates/LOS;
-	purely event-driven plugins leave this as a no-op.}
+	{Re-register this plugin's load-fragile registrations: the periodic/LOS update
+	subscriptions (slaMainScr's persisted, non-rebuilt arrays) and any external
+	RegisterForModEvent hooks (which live in the SKSE co-save and are lost if the
+	player deletes it). Called on every game load from UpdatePluginState, since
+	EnablePlugin only runs on the install transition. Re-register only -- do NOT
+	re-register effects or reset live state here. Overridden by any plugin that
+	subscribes to updates/LOS or registers mod events; a plugin with neither
+	leaves this as a no-op.}
 endFunction
 
 function AddOptions()
