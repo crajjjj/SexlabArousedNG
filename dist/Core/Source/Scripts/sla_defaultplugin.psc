@@ -13,8 +13,11 @@ Actor currentObserver = none
 int currentNakedCount = 0
 bool currentSeesNaked = false
 bool currentSeesNakedPref = false
+bool currentObserverExhibiting = false
+int currentExhibitionistCount = 0
 
 int nakedEff = -1
+int exhibitionistEff = -1
 int satisfactionEff = -1
 int timedEff = -1
 int timedCycleEff = -1
@@ -23,8 +26,12 @@ int sleepEff = -1
 
 float nakedMax = 50.0
 float nakedMaxNonPref = 15.0
-float nakedIncrease = 600.0 ; 25.0 * 24.0 
+float nakedIncrease = 600.0 ; 25.0 * 24.0
 float nakedHalfTime = 0.04166666 ; 1.0 / 24.0
+
+float exhibMax = 50.0
+float exhibIncrease = 600.0 ; 25.0 * 24.0
+float exhibHalfTime = 0.04166666 ; 1.0 / 24.0
 
 bool useDenialCycle = true
 float timedBaseRate = 12.5
@@ -90,6 +97,12 @@ float function GetOptionValue(int optionId)
 		return sleepHalfTime * 24.0
 	elseIf optionId == 16
 		return sleepMinHours
+	elseIf optionId == 17
+		return exhibMax
+	elseIf optionId == 18
+		return exhibIncrease / 24.0
+	elseIf optionId == 19
+		return exhibHalfTime * 24.0
 	endIf
 	return 0.0
 endFunction
@@ -129,6 +142,12 @@ function OnUpdateOption(int optionId, float value)
 		sleepHalfTime = value / 24.0
 	elseIf optionId == 16
 		sleepMinHours = value
+	elseIf optionId == 17
+		exhibMax = value
+	elseIf optionId == 18
+		exhibIncrease = value * 24.0
+	elseIf optionId == 19
+		exhibHalfTime = value / 24.0
 	endIf
 endFunction
 
@@ -186,6 +205,7 @@ state Installed
 		RegisterForPerodicUpdates()
 		RegisterForLOSUpdates()
 		nakedEff = RegisterEffect("Naked", "$SLA_Effect_Naked", "$SLA_Effect_NakedDesc")
+		exhibitionistEff = RegisterEffect("Exhibitionist", "$SLA_Effect_Exhibitionist", "$SLA_Effect_ExhibitionistDesc")
 		satisfactionEff = RegisterEffect("Orgasm", "$SLA_Effect_Satisfaction", "$SLA_Effect_SatisfactionDesc")
 		timedEff = RegisterEffect("Timed", "$SLA_Effect_Timed", "$SLA_Effect_TimedDesc")
 		timedCycleEff = RegisterEffect("TimedCycle", "Timed Cycle", "[Hidden in UI] Helper for denial effect.")
@@ -219,11 +239,18 @@ state Installed
 		AddOptionEx("$SLA_Effect_SleepCat", "$SLA_Effect_SleepMax", "$SLA_Effect_SleepMaxDesc", 15.0, 0.0, 100.0, 1.0, "{1}")
 		AddOptionEx("$SLA_Effect_SleepCat", "$SLA_Effect_SleepHalfTime", "$SLA_Effect_SleepHalfTimeDesc", 5.0, 0.1, 24.0, 0.1, "{1} hours")
 		AddOptionEx("$SLA_Effect_SleepCat", "$SLA_Effect_SleepMinTime", "$SLA_Effect_SleepMinTimeDesc", 3.0, 0.0, 24.0, 0.5, "{1} hours")
+		; Appended last so these keep option IDs 17/18/19, matching GetOptionValue/OnUpdateOption.
+		; AddOption assigns IDs by call order (sla_PluginBase numberOfOptions), so they must not
+		; be inserted mid-list -- doing so would renumber every later option and scramble the MCM.
+		AddOption("$SLA_Effect_ExhibitionistCat", "$SLA_Effect_ExhibitionistMax", "$SLA_Effect_ExhibitionistMaxDesc", 50.0)
+		AddOption("$SLA_Effect_ExhibitionistCat", "$SLA_Effect_ExhibitionistRate", "$SLA_Effect_ExhibitionistRateDesc", 25.0)
+		AddOptionEx("$SLA_Effect_ExhibitionistCat", "$SLA_Effect_ExhibitionistHalfTime", "$SLA_Effect_ExhibitionistHalfTimeDesc", 1.0, 0.1, 24.0, 0.1, "{1} hours")
 	endFunction
 
 	function DisablePlugin()
 		parent.DisablePlugin()
 		UnregisterEffect("Naked")
+		UnregisterEffect("Exhibitionist")
 		UnregisterEffect("Orgasm")
 		UnregisterEffect("Timed")
 		UnregisterEffect("TimedCycle")
@@ -268,19 +295,47 @@ state Installed
 					endIf
 				endIf
 			endIf
+
+			int exhibState = 0 ; Not being seen while exhibiting
+			if currentExhibitionistCount > 0
+				exhibState = 1 ; Naked exhibitionist with an attracted audience
+			endIf
+
+			int oldExhibState = GetArousalEffectFncAux(currentObserver, exhibitionistEff)
+			if (oldExhibState != exhibState)
+				if exhibState == 0
+					SetArousalEffectFunction(currentObserver, exhibitionistEff, 1, exhibHalfTime, 0.0, 0)
+				else
+					SetArousalEffectFunction(currentObserver, exhibitionistEff, 2, currentExhibitionistCount * exhibIncrease, exhibMax, 1)
+				endIf
+			endIf
 		endIf
-		
+
 		currentObserver = who
 		if who == none
 			return
 		endIf
-		
+
 		currentNakedCount = 0
 		currentSeesNaked = false
 		currentSeesNakedPref = false
+		currentExhibitionistCount = 0
+		currentObserverExhibiting = who.GetFactionRank(slaNaked) > -2 && slaUtil.IsActorExhibitionist(who)
 	endFunction
 	
 	function UpdateObserver(Actor observer, Actor observed)
+		; Exhibitionism: a naked exhibitionist (the observer) gains arousal from each
+		; nearby onlooker (the observed) who is attracted to them. Counted before the
+		; nudity checks below so it does not depend on the onlooker being naked.
+		if currentObserverExhibiting && !observed.HasKeyword(kActorTypeCreature)
+			int audiencePreference = slaUtil.GetGenderPreference(observed)
+			if audiencePreference == 2 || audiencePreference == observer.GetLeveledActorBase().GetSex()
+				currentExhibitionistCount += 2
+			else
+				currentExhibitionistCount += 1
+			endIf
+		endIf
+
 		if observed.HasKeyword(kActorTypeCreature)
 			if observer.HasKeyword(kActorTypeCreature) || observer.GetFactionRank(slaCreatureSexLoverFaction) > -1
 				currentSeesNaked = true

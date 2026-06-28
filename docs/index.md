@@ -30,7 +30,7 @@ Integrate with the arousal framework without touching its core scripts.
 ## At a glance
 
 - **Single float per actor**, calculated as the sum of all active effects.
-- **Five built-in effect categories** (Naked, Timed, Sleep, Satisfaction, Legacy) shipped by the Default plugin, each with its own MCM page.
+- **Six built-in effect categories** (Naked, Exhibitionist, Timed, Sleep, Satisfaction, Legacy) shipped by the Default plugin, each with its own MCM page.
 - **Plugins** for SexLab, Devious Devices, and OStim register additional effects when those mods are present.
 - **Per-armor keyword curation** in MCM with on-disk persistence and KID export.
 - **Cosave-backed state** that survives across saves, with a configurable scan/update loop and full LOS evaluation.

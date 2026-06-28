@@ -258,6 +258,15 @@ Event OnVersionUpdate(int newVersion)
 			slaMain.defaultPlugin.ddPlugin.OnUpdateOption(0, newRate)
 		EndIf
 	EndIf
+
+	If (slaMain && (CurrentVersion < 30200001) && (CurrentVersion > 0))
+		slax.Info("Updating MCM. Registering Exhibitionist effect on default plugin. Previous version:" + CurrentVersion + ".New version:" + newVersion)
+		If (slaMain.defaultPlugin.IsInterfaceActive())
+			slaMain.UnregisterPlugin(slaMain.defaultPlugin)
+			slaMain.defaultPlugin.ClearOptions()
+			slaMain.RegisterPlugin(slaMain.defaultPlugin)
+		EndIf
+	EndIf
 EndEvent
 
 

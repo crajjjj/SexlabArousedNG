@@ -18,7 +18,7 @@ At the bottom is the **Plugin List** showing which integrations are active. The 
 
 | Plugin | Drives |
 |---|---|
-| **Default** | Naked exposure, post-orgasm satisfaction decay, chastity denial buildup, sleep arousal decay |
+| **Default** | Naked exposure, exhibitionist arousal (being seen naked), post-orgasm satisfaction decay, chastity denial buildup, sleep arousal decay |
 | **SexLab** | Per-stage arousal during SexLab animations, animation-tag scoring |
 | **Devious Devices** | Device-equipped arousal, belt/plug denial modifiers, device-stacking multiplier |
 | **OStim** | OStim NG (and legacy v<29) thread tracking, observer LOS arousal scaling |
@@ -36,7 +36,7 @@ Inspect any actor's arousal effects in detail. Pick them from the **Select Puppe
 
 - **Is Arousal Blocked** — force this actor's arousal to a fixed `-2` (used to exclude them entirely).
 - **Is Arousal Locked** — keep their arousal pinned at the current value; exposure and time no longer change it.
-- **Is Exhibitionist** — flag them as getting aroused when *they* are seen naked. Changes some plugin calculations.
+- **Is Exhibitionist** — flag them as getting aroused when *they* are seen naked. While flagged and naked, the Default plugin's **Exhibitionist** effect climbs for each onlooker in view (onlookers attracted to the actor's gender count twice), mirroring how the Naked effect rewards the viewer.
 - **Gender Preference** — what this actor finds arousing.
 
 The list below shows every static arousal effect on this actor with the current value, the timed function (if any), and parameters. You can edit values directly via input fields on each row. This is the page to open first when arousal isn't behaving — see [Troubleshooting](troubleshooting.md).
