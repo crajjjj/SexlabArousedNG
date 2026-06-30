@@ -215,10 +215,13 @@ state Installed
 	function EnablePlugin()
 		RegisterForPerodicUpdates()
 		RegisterForLOSUpdates()
-		; use the same events with and without slso since slso also sends regular events and they contain more information  
+		; use the same events with and without slso since slso also sends regular events and they contain more information
 		RegisterForModEvent("SexLabOrgasm", "OnSexLabOrgasm")
 		RegisterForModEvent("HookStageStart", "OnStageStart")
-		RegisterForModEvent("HookOrgasmEnd", "OnAnimationEnd")
+		; Drop the legacy HookOrgasmEnd binding so saves upgraded from <=3.2.1 don't
+		; keep firing OnAnimationEnd twice (the co-save registration outlives the script).
+		UnregisterForModEvent("HookOrgasmEnd")
+		RegisterForModEvent("HookAnimationEnd", "OnAnimationEnd")
 
 		sexEff = RegisterEffect("Sex", "$SLA_Effect_Sex", "$SLA_Effect_SexDesc")
 		fatigueEff = RegisterEffect("Fatigue", "$SLA_Effect_Fatigue", "$SLA_Effect_FatigueDesc")
@@ -232,7 +235,10 @@ state Installed
 		; if the player deletes it. See ReassertSubscriptions in sla_PluginBase.
 		RegisterForModEvent("SexLabOrgasm", "OnSexLabOrgasm")
 		RegisterForModEvent("HookStageStart", "OnStageStart")
-		RegisterForModEvent("HookOrgasmEnd", "OnAnimationEnd")
+		; Drop the legacy HookOrgasmEnd binding (see EnablePlugin); runs every load so
+		; saves upgraded from <=3.2.1 self-heal the stale double registration.
+		UnregisterForModEvent("HookOrgasmEnd")
+		RegisterForModEvent("HookAnimationEnd", "OnAnimationEnd")
 	endFunction
 	
 	function AddOptions()
