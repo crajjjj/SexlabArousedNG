@@ -15,6 +15,7 @@ bool currentSeesNaked = false
 bool currentSeesNakedPref = false
 bool currentObserverExhibiting = false
 int currentExhibitionistCount = 0
+float currentExhibitionistExposure = 0.0
 
 int nakedEff = -1
 int exhibitionistEff = -1
@@ -296,17 +297,21 @@ state Installed
 				endIf
 			endIf
 
-			int exhibState = 0 ; Not being seen while exhibiting
-			if currentExhibitionistCount > 0
-				exhibState = 1 ; Naked exhibitionist with an attracted audience
+			int exhibTier = 0 ; Covered, or not being seen while exhibiting
+			if currentExhibitionistCount > 0 && currentExhibitionistExposure > 0.0
+				; Quantise exposure into tiers 1-4 and store it as the aux state, so a
+				; change in how much is shown re-applies the rate/cap (the effect only
+				; refreshes on an aux-state transition).
+				exhibTier = ((currentExhibitionistExposure * 3.0) as int) + 1
 			endIf
 
 			int oldExhibState = GetArousalEffectFncAux(currentObserver, exhibitionistEff)
-			if (oldExhibState != exhibState)
-				if exhibState == 0
+			if (oldExhibState != exhibTier)
+				if exhibTier == 0
 					SetArousalEffectFunction(currentObserver, exhibitionistEff, 1, exhibHalfTime, 0.0, 0)
 				else
-					SetArousalEffectFunction(currentObserver, exhibitionistEff, 2, currentExhibitionistCount * exhibIncrease, exhibMax, 1)
+					; More exposed -> both a higher cap and a faster climb.
+					SetArousalEffectFunction(currentObserver, exhibitionistEff, 2, currentExhibitionistCount * exhibIncrease * currentExhibitionistExposure, exhibMax * currentExhibitionistExposure, exhibTier)
 				endIf
 			endIf
 		endIf
@@ -320,7 +325,15 @@ state Installed
 		currentSeesNaked = false
 		currentSeesNakedPref = false
 		currentExhibitionistCount = 0
-		currentObserverExhibiting = who.GetFactionRank(slaNaked) > -2 && slaUtil.IsActorExhibitionist(who)
+		currentExhibitionistExposure = 0.0
+		; Only exhibitionists feed the exposure check (avoids ~8 faction reads per
+		; non-exhibitionist). Exposure is graduated via Advanced Nudity Detection
+		; when present, else the binary naked flag -- see slaMainScr.GetExposureLevel.
+		currentObserverExhibiting = slaUtil.IsActorExhibitionist(who)
+		if currentObserverExhibiting
+			currentExhibitionistExposure = main.GetExposureLevel(who)
+			currentObserverExhibiting = currentExhibitionistExposure > 0.0
+		endIf
 	endFunction
 	
 	function UpdateObserver(Actor observer, Actor observed)

@@ -79,6 +79,10 @@ Faction AND_Nude
 Faction AND_Topless
 Faction AND_Bottomless
 Faction AND_Genitals
+Faction AND_ShowingChest
+Faction AND_ShowingAss
+Faction AND_ShowingBra
+Faction AND_ShowingUnderwear
 Bool Property IsSLPInstalled = false auto hidden ; Sexlab Plus
 Bool Property IsSLSOInstalled = false auto hidden ; SLSO
 State cleaning
@@ -626,12 +630,19 @@ Function Maintenance()
     sexlabPlugin.registerForInternalEvents()
     ostimPlugin.registerForInternalEvents()
 
-    if !IsANDInstalled && Game.GetModByName("Advanced Nudity Detection.esp") != 255
+    ; Re-resolve if AND_ShowingBra is unset too, so saves that detected AND on an
+    ; older build (IsANDInstalled already persisted True) still pick up the factions
+    ; added later -- otherwise the graduated-exposure tiers stay dead on upgrade.
+    if (!IsANDInstalled || !AND_ShowingBra) && Game.GetModByName("Advanced Nudity Detection.esp") != 255
          slax.Info("slaMainScr: Advanced Nudity Detection mod found")
          AND_Nude = Game.GetFormFromFile(0x831, "Advanced Nudity Detection.esp") as Faction
          AND_Bottomless = Game.GetFormFromFile(0x833, "Advanced Nudity Detection.esp") as Faction
          AND_Genitals = Game.GetFormFromFile(0x830, "Advanced Nudity Detection.esp") as Faction
          AND_Topless = Game.GetFormFromFile(0x832, "Advanced Nudity Detection.esp") as Faction
+         AND_ShowingChest = Game.GetFormFromFile(0x82F, "Advanced Nudity Detection.esp") as Faction
+         AND_ShowingAss = Game.GetFormFromFile(0x82E, "Advanced Nudity Detection.esp") as Faction
+         AND_ShowingBra = Game.GetFormFromFile(0x834, "Advanced Nudity Detection.esp") as Faction
+         AND_ShowingUnderwear = Game.GetFormFromFile(0x835, "Advanced Nudity Detection.esp") as Faction
          IsANDInstalled = True
     endif
 
@@ -894,7 +905,52 @@ Bool Function IsActorNaked(Actor who)
     EndIf
     
     Return isNaked
-    
+
+EndFunction
+
+
+; Returns how exposed an actor is, 0.0 (covered) .. 1.0 (fully nude), for the
+; exhibitionist effect. Uses Advanced Nudity Detection's graduated states when
+; present (top and bottom scored independently, then averaged); otherwise falls
+; back to the binary slaNaked flag so behaviour is unchanged without AND.
+Float Function GetExposureLevel(Actor who)
+    If !who
+        Return 0.0
+    EndIf
+
+    If IsANDInstalled && AND_Nude
+        If who.GetFactionRank(AND_Nude) == 1
+            Return 1.0
+        EndIf
+
+        Float top = 0.0
+        If who.GetFactionRank(AND_Topless) == 1
+            top = 1.0
+        ElseIf AND_ShowingChest && who.GetFactionRank(AND_ShowingChest) == 1
+            top = 0.6
+        ElseIf AND_ShowingBra && who.GetFactionRank(AND_ShowingBra) == 1
+            top = 0.3
+        EndIf
+
+        Float bottom = 0.0
+        If who.GetFactionRank(AND_Genitals) == 1
+            bottom = 1.0
+        ElseIf who.GetFactionRank(AND_Bottomless) == 1
+            bottom = 0.9
+        ElseIf AND_ShowingAss && who.GetFactionRank(AND_ShowingAss) == 1
+            bottom = 0.6
+        ElseIf AND_ShowingUnderwear && who.GetFactionRank(AND_ShowingUnderwear) == 1
+            bottom = 0.3
+        EndIf
+
+        Return (top + bottom) / 2.0
+    EndIf
+
+    ; No Advanced Nudity Detection: fall back to the binary naked flag.
+    If who.GetFactionRank(slaNaked) > -2
+        Return 1.0
+    EndIf
+    Return 0.0
 EndFunction
 
 
