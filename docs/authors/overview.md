@@ -26,8 +26,8 @@ Both static and dynamic effects can carry one of these built-in timed functions:
 | ID | Name | Behaviour |
 |----|------|-----------|
 | 0 | None | Effect stays at its current value indefinitely |
-| 1 | Decay | Value halves every `param` game days. Stops (and removes effect) when it reaches `limit`. If `param` is negative the effect *grows* until reaching `limit` |
-| 2 | Linear | Value changes by `param` per game day. Stops at `limit` |
+| 1 | Decay | Value halves every `param` game days. On reaching `limit` it freezes there and the timer turns off (a dynamic effect that lands on `0` is removed entirely). If `param` is negative the effect *grows* until reaching `limit` |
+| 2 | Linear | Value changes by `param` per game day. On reaching `limit` it freezes there and the timer turns off |
 | 3 | Sine wave | `value = (sin(time * param) + 1.0) * limit` — oscillates continuously, never stops |
 | 4 | Delayed step | `value = 0` until `param` game days have elapsed, then `value = limit` |
 

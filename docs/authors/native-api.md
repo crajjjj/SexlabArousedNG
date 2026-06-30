@@ -72,6 +72,19 @@ float v = SloangNative.GetDynamicEffectValue(akActor, "MyMod_Tease")
 | `ModDynamicEffect(Actor who, string effectId, float modifier, float limit)` | Add `modifier` to an effect, clamped at `limit` |
 | `float GetDynamicEffectValue(Actor who, string effectId)` | Read a single dynamic effect's value |
 
+### What happens when a cap is reached
+
+The `cap`/`limit` argument is always **per-effect** — it bounds that one named contribution, never the actor's total arousal. There is **no global ceiling**: capped effects still sum freely, so a total can exceed 100. (`GetArousalInt` clamps to 0–100, but that's a display convenience — the underlying float and every other effect are unaffected.)
+
+What "reaching the cap" does depends on the effect kind:
+
+- **Ramping effects** (`AddLinearEffect`, `AddDecayingEffect`, or the `FuncLinear()`/`FuncDecay()` primitives) — when the value crosses the cap it is **pinned to the cap and the timer is switched off**. The effect stops advancing and stays parked at the cap value as a steady (function-`None`) contribution; it won't drift past it. A *decaying* effect whose cap is `0` is **removed entirely** once it lands there (same as `ClearDynamicEffect`).
+- **`ModDynamicEffect` / `ModArousal`** — the cap is a **directional clamp that only prevents overshoot on this call**. A positive `modifier` treats the cap as an upper bound, a negative one as a lower bound, and only the partial step up to the cap is applied. It does **not** pull a value that is *already* past the cap back toward it — if you're beyond the cap in the direction you're pushing, the clamp doesn't fire.
+- **Sine (`FuncSine()`)** and **delayed step (`FuncDelayedStep()`)** never "finish" on the cap: for sine, `limit` is the oscillation amplitude (it keeps updating forever); for delayed step, `limit` is the *target value* it jumps to after `param`, not a ceiling.
+
+!!! tip "Want a hard overall ceiling?"
+    Cap each effect you contribute, or read `GetArousal` and decide in your own plugin — SLA will not clamp the sum for you.
+
 ### Timed-function ID accessors
 
 Prefer these over bare integers — they document intent and survive any future renumbering. See [Timed function IDs](overview.md#timed-function-ids) for behaviour.
