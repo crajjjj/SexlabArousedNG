@@ -10,11 +10,8 @@
   <a href="https://github.com/crajjjj/SexlabArousedNG/releases/latest"><img src="https://img.shields.io/github/v/release/crajjjj/SexlabArousedNG?label=release" alt="Latest release"></a>
   <img src="https://img.shields.io/badge/Skyrim-SE%2FAE-orange" alt="Skyrim SE/AE">
   <img src="https://img.shields.io/badge/plugin-SKSE%20(CommonLibSSE--NG)-8A2BE2" alt="SKSE plugin">
-  <img src="https://img.shields.io/badge/content-18%2B-black" alt="18+ content"><br>
-  <a href="https://github.com/crajjjj/SexlabArousedNG/releases"><img src="https://img.shields.io/github/downloads/crajjjj/SexlabArousedNG/total" alt="Total downloads"></a>
-  <img src="https://img.shields.io/github/last-commit/crajjjj/SexlabArousedNG" alt="Last commit">
+  <img src="https://img.shields.io/badge/content-18%2B-black" alt="18+ content">
   <img src="https://img.shields.io/badge/license-GPL--3.0-blue" alt="License: GPL-3.0">
-  <img src="https://img.shields.io/github/repo-size/crajjjj/SexlabArousedNG" alt="Repo size">
 </p>
 
 A persistent, per-actor **arousal system** for Skyrim SE/AE, packaged as an SKSE C++ plugin (CommonLibSSE-NG) with a Papyrus script API. Every tracked actor has a single arousal float (typically 0–100); other mods register static or dynamic effects that sum into it, and read it back to drive behavior.
