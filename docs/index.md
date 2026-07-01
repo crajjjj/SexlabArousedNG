@@ -2,6 +2,9 @@
 
 A persistent, per-actor **arousal system** for Skyrim SE/AE, packaged as an SKSE C++ plugin with a Papyrus script API. Every tracked actor has a single arousal float (typically 0–100) that other mods read and react to. The framework handles storage, decay, scanning, line-of-sight evaluation, and MCM curation — your scripts and other adult-mod integrations stay focused on the *behavior* triggered by arousal, not the bookkeeping.
 
+!!! warning "Adult mod — reference documentation"
+    SexLab Aroused NG is a mature (18+) Skyrim framework used by adult mods. **These pages are reference documentation:** they describe the mod's systems, MCM options, and its Papyrus API so players can configure it and authors can integrate with it. They contain no pornographic media and exist to document software behaviour. Install and use the mod only where appropriate for your age and local laws.
+
 These docs are split into two tracks. Pick the one that fits you:
 
 ## For Players

@@ -23,8 +23,8 @@ Pick the sources you want to lean on.
 This is the "I haven't had sex in a while" rising effect. Fires on every tracked actor regardless of nudity.
 
 - **Timed Rate** (default `12.5`/day) — base rate. Raise to `25–50` for a clearly noticeable hourly climb. Capped by *Maximum Timed arousal*.
-- **Maximum Timed arousal** (default `60`) — cap. Raise to `100` if you want the timed effect alone to push you to a "needy" state.
-- **Use timed cycle** (default ON) — modulates the timed rate with a per-actor daily sine wave (so your character has horny/calm phases of a day). Turn OFF if you want a flat, predictable rise — useful if you found the cycle made gains feel inconsistent.
+- **Maximum Timed arousal** (default `60`) — cap. Raise to `100` if you want the timed effect alone to push the value to its maximum.
+- **Use timed cycle** (default ON) — modulates the timed rate with a per-actor daily sine wave (so the actor has higher- and lower-arousal phases across a day). Turn OFF if you want a flat, predictable rise — useful if you found the cycle made gains feel inconsistent.
 
 ### Faster sleep gains (Sleep Effect category)
 
