@@ -741,15 +741,22 @@ Function DisplayWornItems(Actor who)
             bikiniClothingToggleOIDs[ii] = AddToggleOption("Counts as Clothing", bikiniClothingValues[ii] > 0)
 
             If customKeywordCount > 0
+                ; Pack keyword toggles two-per-row (no per-keyword spacer). Count the ones
+                ; actually shown (the flatIdx cap can truncate this item mid-list) and pad if
+                ; odd, so the next item's row keeps LEFT_TO_RIGHT column parity.
                 Int kwIdx = 0
+                Int shown = 0
                 While kwIdx < customKeywordCount
                     Int flatIdx = ii * customKeywordCount + kwIdx
                     If flatIdx < 128
-                        AddEmptyOption()
                         bikiniCustomKeywordToggleOIDs[flatIdx] = AddToggleOption(customKeywordIds[kwIdx], bikiniCustomKeywordValues[flatIdx] > 0)
+                        shown += 1
                     EndIf
                     kwIdx += 1
                 EndWhile
+                If (shown / 2) * 2 != shown
+                    AddEmptyOption()
+                EndIf
             EndIf
 
             ii += 1
@@ -927,12 +934,17 @@ Function AddSlidersForBodyItem()
         raggedSliderOID  = AddSliderOption("$SLA_Ragged", raggedArmorValue)
         AddEmptyOption()
         clothingToggleOID = AddToggleOption("Counts as Clothing", clothingArmorValue > 0)
+        ; Pack keyword toggles two-per-row (no per-keyword spacer) to fit ~2x more under
+        ; the 128-option MCM page cap. Pad once if the count is odd so LEFT_TO_RIGHT column
+        ; parity is preserved for everything rendered after this list.
         Int kwIdx = 0
         While kwIdx < customKeywordCount
-            AddEmptyOption()
             customKeywordToggleOIDs[kwIdx] = AddToggleOption(customKeywordIds[kwIdx], customKeywordValues[kwIdx] > 0)
             kwIdx += 1
         EndWhile
+        If (customKeywordCount / 2) * 2 != customKeywordCount
+            AddEmptyOption()
+        EndIf
 EndFunction
 
 
@@ -952,12 +964,17 @@ Function AddTogglesForBodyItem()
         raggedToggleOID  = AddToggleOption("$SLA_Ragged", raggedArmorValue > 0)
         AddEmptyOption()
         clothingToggleOID = AddToggleOption("Counts as Clothing", clothingArmorValue > 0)
+        ; Pack keyword toggles two-per-row (no per-keyword spacer) to fit ~2x more under
+        ; the 128-option MCM page cap. Pad once if the count is odd so LEFT_TO_RIGHT column
+        ; parity is preserved for everything rendered after this list.
         Int kwIdx = 0
         While kwIdx < customKeywordCount
-            AddEmptyOption()
             customKeywordToggleOIDs[kwIdx] = AddToggleOption(customKeywordIds[kwIdx], customKeywordValues[kwIdx] > 0)
             kwIdx += 1
         EndWhile
+        If (customKeywordCount / 2) * 2 != customKeywordCount
+            AddEmptyOption()
+        EndIf
 EndFunction
 
 
