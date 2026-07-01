@@ -47,6 +47,10 @@ function UpdatePluginState(bool forced)
 			; without the heavier side effects of a full EnablePlugin re-run.
 			toState = "Re-subscribed"
 			ReassertSubscriptions()
+			; Same persisted-across-upgrade desync affects slaMainScr.plugins[]: the
+			; plugin can be Installed yet missing from the array (dropped from the
+			; Plugin List). Re-assert membership here; idempotent when already present.
+			main.EnsureRegistered(self)
 		endIf
 	else
 		if GetState() != ""

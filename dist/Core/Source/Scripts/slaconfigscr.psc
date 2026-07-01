@@ -176,7 +176,7 @@ Armor[] emptyArmorArray
 
 
 Int Function GetVersion()
-    Return       30200002
+    Return       30200003
 	;	0.00.00000
     ; 1.0.0   -> 10000000
     ; 1.1.0   -> 10100000
@@ -186,7 +186,7 @@ Int Function GetVersion()
 EndFunction
 
 String Function GetVersionString()
-    Return "3.2.2"
+    Return "3.2.3"
 EndFunction
 
 
@@ -519,6 +519,14 @@ function AddOptionHelper(sla_PluginBase plugin, int option)
     if (plugin != StorageUtil.GetFormValue(slaMain, prefix + ".Owner") as sla_PluginBase)
         return
     endIf
+	string title = StorageUtil.GetStringValue(slaMain, prefix + ".Title")
+    if title == ""
+        ; Orphaned entry from a plugin that no longer owns it (stale registration).
+        ; Real options always have a $-token title, so an empty title means the row
+        ; would render blank -- skip it (before touching the filter list) instead of
+        ; drawing a labelless slider.
+        return
+    endIf
     string category = StorageUtil.GetStringValue(slaMain, prefix + ".Category")
     if filterModes.Find(category) < 0
         filterModes = PapyrusUtil.PushString(filterModes, category)
@@ -526,7 +534,6 @@ function AddOptionHelper(sla_PluginBase plugin, int option)
     if filterMode != "" && category != filterMode
         return
     endIf
-	string title = StorageUtil.GetStringValue(slaMain, prefix + ".Title")
     string description = StorageUtil.GetStringValue(slaMain, prefix + ".Description")
     string optionType = StorageUtil.GetStringValue(slaMain, prefix + ".Type")
     string format = StorageUtil.GetStringValue(slaMain, prefix + ".Format", "{0}")

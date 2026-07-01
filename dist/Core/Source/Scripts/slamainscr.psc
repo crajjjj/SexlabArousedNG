@@ -227,6 +227,31 @@ function RegisterPlugin(sla_PluginBase plugin, bool addMCMOptions = true)
     plugin.isEnabled = true
 endFunction
 
+function EnsureRegistered(sla_PluginBase plugin)
+    {Re-assert plugins[] membership for a plugin that is already Installed but was
+     dropped from the array by a past desync (array reinit / version upgrade). Unlike
+     RegisterPlugin this skips EnablePlugin -- the plugin is already installed and
+     ReassertSubscriptions handles its live subscriptions -- so it is safe to call on
+     every load. Membership drives the Plugin List and the load-time option refresh.}
+    if !plugin || !plugins || plugins.Find(plugin) > -1
+        return
+    endIf
+    int pluginPos = slax.FindFirstFreeIndex(plugins)
+    if pluginPos == -1
+        slax.Error("slaMainScr - EnsureRegistered - not enough plugin slots")
+        return
+    endIf
+    slax.info("slaMainScr - EnsureRegistered re-adding " + plugin.name + ".Position:" + pluginPos)
+    plugins[pluginPos] = plugin
+    plugin.isEnabled = true
+    ; Only rebuild options if they were actually lost; clear first so we never
+    ; stack a fresh set on top of orphaned entries left in StorageUtil.
+    if plugin.GetNumberOfOptions() == 0
+        plugin.ClearOptions()
+        plugin.AddOptions()
+    endif
+endFunction
+
 function UnregisterPlugin(sla_PluginBase plugin)
 	; LogDebug("UnregisterPlugin(" + plugin.name + ")")
 	int idx = plugins.Find(plugin)
