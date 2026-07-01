@@ -52,4 +52,4 @@ Papyrus sources in `dist/Core/Source/Scripts/*.psc` compile to `dist/Core/Script
 
 ## License & changelog
 
-Apache-2.0. Release notes are published on the [GitHub releases page](https://github.com/crajjjj/SexlabArousedNG/releases).
+GPL-3.0. Release notes are published on the [GitHub releases page](https://github.com/crajjjj/SexlabArousedNG/releases).
