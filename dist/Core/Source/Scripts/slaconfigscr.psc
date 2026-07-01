@@ -427,7 +427,16 @@ Event OnPageReset(String page)
         
 		SetCursorFillMode(TOP_TO_BOTTOM)
 
-		AddTextOption("$SLA_Version" , "" + GetVersionString() + "(" + slaUtil.GetVersion() + ")", OPTION_FLAG_DISABLED)
+		; Show the compiled code version (GetVersion() is local, never the stale
+		; persisted modVersion). While slaMainScr is in its "initializing" state the
+		; ~10s post-load init pass is still running (Maintenance GotoStates in at load,
+		; the init OnUpdate GotoStates back to "" when done), so prompt a MCM reopen.
+		; The hint MUST be a standalone option: SkyUI only translates a $token when it
+		; is the whole string, so a token embedded mid-value renders as literal text.
+		AddTextOption("$SLA_Version" , GetVersionString() + " (" + GetVersion() + ")", OPTION_FLAG_DISABLED)
+		If slaMain && slaMain.GetState() == "initializing"
+			AddTextOption("$SLA_VersionUpdating", "", OPTION_FLAG_DISABLED)
+		EndIf
         
 		AddHeaderOption("$SLA_General")
         
@@ -679,7 +688,10 @@ Function DisplayArmorList()
         AddEmptyOption() ; pad to keep the LEFT_TO_RIGHT two-column layout aligned
 
         AddHeaderOption("$SLA_EquippedItems")
-        AddHeaderOption("$SLA_Options")
+        ; No right-column "Options" header: the grid below packs two-per-row across BOTH
+        ; columns, so a right-side "Options" title mislabels half the toggles. Pad with an
+        ; empty instead to preserve the LEFT_TO_RIGHT column parity for the grid.
+        AddEmptyOption()
 
 		DisplayWornItems(targetActors[targetActorIndex])
 
@@ -919,60 +931,50 @@ EndFunction
 
 
 Function AddSlidersForBodyItem()
+        ; Everything packs two-per-row (no spacers) so no column cell is left blank.
         nakedSliderOID   = AddSliderOption("$SLA_Naked", nakedArmorValue)
-        AddEmptyOption()
         bikiniSliderOID  = AddSliderOption("$SLA_Bikini", bikiniArmorValue)
-        AddEmptyOption()
         sexySliderOID    = AddSliderOption("$SLA_Sexy", sexyArmorValue)
-        AddEmptyOption()
         slootySliderOID  = AddSliderOption("$SLA_Slooty", slootyArmorValue)
-        AddEmptyOption()
         illegalSliderOID = AddSliderOption("$SLA_Illegal", illegalArmorValue)
-        AddEmptyOption()
         poshSliderOID    = AddSliderOption("$SLA_Posh", poshArmorValue)
-        AddEmptyOption()
         raggedSliderOID  = AddSliderOption("$SLA_Ragged", raggedArmorValue)
-        AddEmptyOption()
         clothingToggleOID = AddToggleOption("Counts as Clothing", clothingArmorValue > 0)
-        ; Pack keyword toggles two-per-row (no per-keyword spacer) to fit ~2x more under
-        ; the 128-option MCM page cap. Pad once if the count is odd so LEFT_TO_RIGHT column
-        ; parity is preserved for everything rendered after this list.
         Int kwIdx = 0
         While kwIdx < customKeywordCount
             customKeywordToggleOIDs[kwIdx] = AddToggleOption(customKeywordIds[kwIdx], customKeywordValues[kwIdx] > 0)
             kwIdx += 1
         EndWhile
-        If (customKeywordCount / 2) * 2 != customKeywordCount
+        ; Emit an ODD option count (8 fixed + customKeywordCount) so the body block in
+        ; DisplayWornItems (item name + this + 2 empties) stays even and the foot/bikini
+        ; rows below keep LEFT_TO_RIGHT column parity.
+        Int total = 8 + customKeywordCount
+        If (total / 2) * 2 == total
             AddEmptyOption()
         EndIf
 EndFunction
 
 
 Function AddTogglesForBodyItem()
+        ; Everything packs two-per-row (no spacers) so no column cell is left blank.
         nakedToggleOID   = AddToggleOption("$SLA_Naked", nakedArmorValue > 0)
-        AddEmptyOption()
         bikiniToggleOID  = AddToggleOption("$SLA_Bikini", bikiniArmorValue > 0)
-        AddEmptyOption()
         sexyToggleOID    = AddToggleOption("$SLA_Sexy", sexyArmorValue > 0)
-        AddEmptyOption()
         slootyToggleOID  = AddToggleOption("$SLA_Slooty", slootyArmorValue > 0)
-        AddEmptyOption()
         illegalToggleOID = AddToggleOption("$SLA_Illegal", illegalArmorValue > 0)
-        AddEmptyOption()
         poshToggleOID    = AddToggleOption("$SLA_Posh", poshArmorValue > 0)
-        AddEmptyOption()
         raggedToggleOID  = AddToggleOption("$SLA_Ragged", raggedArmorValue > 0)
-        AddEmptyOption()
         clothingToggleOID = AddToggleOption("Counts as Clothing", clothingArmorValue > 0)
-        ; Pack keyword toggles two-per-row (no per-keyword spacer) to fit ~2x more under
-        ; the 128-option MCM page cap. Pad once if the count is odd so LEFT_TO_RIGHT column
-        ; parity is preserved for everything rendered after this list.
         Int kwIdx = 0
         While kwIdx < customKeywordCount
             customKeywordToggleOIDs[kwIdx] = AddToggleOption(customKeywordIds[kwIdx], customKeywordValues[kwIdx] > 0)
             kwIdx += 1
         EndWhile
-        If (customKeywordCount / 2) * 2 != customKeywordCount
+        ; Emit an ODD option count (8 fixed + customKeywordCount) so the body block in
+        ; DisplayWornItems (item name + this + 2 empties) stays even and the foot/bikini
+        ; rows below keep LEFT_TO_RIGHT column parity.
+        Int total = 8 + customKeywordCount
+        If (total / 2) * 2 == total
             AddEmptyOption()
         EndIf
 EndFunction
