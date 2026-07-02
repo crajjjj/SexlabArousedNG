@@ -6,7 +6,7 @@ message("Using toolchain file ${CMAKE_TOOLCHAIN_FILE}.")
 ########################################################################################################################
 project(
         SexlabArousedNG
-        VERSION 3.1.11
+        VERSION 3.3.0
         DESCRIPTION "Next generation arousal for Sexlab and Ostim"
         LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 23)
@@ -24,6 +24,7 @@ set(headers
         include/Papyrus.h
         include/ArousalManager.h
         include/ArousalData.h
+        include/ArousalAPI.h
         include/CosSin.h
         include/SerializationHelper.h
     )
@@ -33,6 +34,7 @@ set(sources
         src/Papyrus.cpp
         src/ArousalManager.cpp
         src/ArousalData.cpp
+        src/ArousalAPI.cpp
         src/SerializationHelper.cpp
 
         ${CMAKE_CURRENT_BINARY_DIR}/version.rc)

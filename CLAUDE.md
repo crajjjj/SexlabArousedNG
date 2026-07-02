@@ -128,7 +128,23 @@ arousal = sum(static effects not in a group)
 | 3 | Sine | `(sin(formID*0.01 + t*param) + 1) * limit` -- oscillation |
 | 4 | Delayed Step | `0` until `t >= param`, then `limit` |
 
-Thread safety: mutex on ArousalManager, atomic flags for cleanup.
+**Thread safety / locking invariant (read before editing `ArousalManager`):**
+
+A single `std::mutex _lock` guards `arousalData` / `staticEffectIds` / `staticEffectCount`. Every **public** `ArousalManager` method takes `std::scoped_lock lock(_lock)` at entry; the `CleanUpActors` erase task and all three cosave callbacks lock too. This makes the maps safe under concurrent Papyrus threads **and** the native C++ API (see below). `cleanupLock` (atomic flag) remains as a belt-and-suspenders cleanup guard.
+
+The lock is intentionally **non-recursive**, which stays deadlock-free only while these rules hold:
+- **Never call one public `ArousalManager` method from another** (a "public→public call") — the second `scoped_lock` on the same thread self-deadlocks. Put shared logic in a **private, non-locking helper** (`TryGetArousalData` / `GetArousalData` are the pattern) and call that from both.
+- **Never hold `_lock` across a call back into the Papyrus VM / a ModEvent dispatch / `AddTask`-then-wait.** Locked sections must stay pure in-memory work (map ops + arithmetic). `ArousalData` must remain a leaf (it must not call back into `ArousalManager`).
+
+Reads still **create/track** the actor on access (pull-based tracking, by design — do not change get to non-inserting); idle actors are reclaimed by `CleanUpActors`.
+
+### Native C++ inter-plugin API (`ArousalAPI.h` / `ArousalAPI.cpp`)
+
+`extern "C"` `SLA_*` exports let other SKSE plugins drive arousal in C++ via `GetModuleHandle`+`GetProcAddress` — no linking, no Papyrus round-trip. They are a **C++ mirror of the `SloangNative` Papyrus API** (same names/units/semantics) for the subset backed by `ArousalManager`: `SLA_GetVersion`, `SLA_GetArousal`/`SLA_GetArousalInt`, the dynamic-effect convenience wrappers (`SLA_AddFlatEffect` / `AddDecayingEffect` / `AddLinearEffect` / `AddDelayedEffect` / `ClearDynamicEffect` / `HasDynamicEffect`, time args in **in-game hours**), and the low-level `SLA_GetDynamicEffectValue` / `SLA_SetDynamicEffect` / `SLA_ModDynamicEffect` (`SLA_Func*` enum for functionId). All are thin, null-safe forwarders onto the locked `ArousalManager` methods — thread-safe, callable from any thread.
+
+Deliberately **not** exported: the `SloangNative` functions backed by Papyrus quest scripts (`GetExposure`, exposure-based `ModArousal`/`SetArousal`, `IsActorNaked`, exhibitionist / arousal-locked / blocked / gender-preference flags, orgasm tracking) — those live in `slaFrameworkScr` / `slaMainScr` / `defaultPlugin`, not the DLL, so they can't be forwarded without the plugin calling back into Papyrus. Use the Papyrus `SloangNative` API for those.
+
+`include/ArousalAPI.h` is the shippable consumer header; keep it self-contained. `SLA_GetVersion` packs the DLL's own resource version (CMake `project VERSION`); the C-API-surface version is the separate `SLA_GetInterfaceVersion` — append new exports (never reorder/remove) and bump that.
 
 ### 3. Plugin System (`sla_PluginBase`)
 
@@ -220,4 +236,4 @@ External mods fire ModEvents -- no quest script needed:
 
 ## Version
 
-3.2.0 (canonical: `dist/fomod/info.xml`), cosave ID `SLAN`, Apache-2.0 license. `CMakeLists.txt` is bumped only on releases with C++ changes, so it may trail the fomod version (currently `3.1.11`) — see *Bumping the Version* above.
+3.3.0 (canonical: `dist/fomod/info.xml`), cosave ID `SLAN`, Apache-2.0 license. `CMakeLists.txt` is bumped only on releases with C++ changes; it was synced to `3.3.0` for this release (native C++ API + `ArousalManager` locking) after trailing at `3.1.11` — see *Bumping the Version* above.

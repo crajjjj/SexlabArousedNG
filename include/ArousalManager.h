@@ -51,6 +51,11 @@ namespace SLA {
         ArousalData* TryGetArousalData(RE::Actor* who);
 
         ArousalManager() = default;
+        // Single lock guarding arousalData / staticEffectIds / staticEffectCount. Non-recursive
+        // on purpose: no public method calls another and ArousalData is a leaf, so the lock is
+        // never re-entered. Rule to keep it that way: never call one public ArousalManager
+        // method from another, and never hold _lock across a call back into the Papyrus VM.
+        // (Violating that self-deadlocks loudly in testing - which is the point.)
         mutable std::mutex _lock;
         std::unordered_map<std::string, uint32_t> staticEffectIds;
         std::unordered_map<uint32_t, ArousalData> arousalData;

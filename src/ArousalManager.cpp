@@ -29,6 +29,7 @@ namespace SLA {
     }
 
     int ArousalManager::GetStaticEffectCount() {
+        std::scoped_lock lock(_lock);
         if (cleanupLock.test(std::memory_order_relaxed)) {
             SKSE::log::warn("GetStaticEffectCount called during cleanup, skipping.");
             return 0;
@@ -37,6 +38,7 @@ namespace SLA {
     }
 
     int32_t ArousalManager::RegisterStaticEffect(std::string name) {
+        std::scoped_lock lock(_lock);
         if (cleanupLock.test(std::memory_order_relaxed)) {
             SKSE::log::warn("RegisterStaticEffect called during cleanup, skipping.");
             return -2;
@@ -64,6 +66,7 @@ namespace SLA {
         return result;
     }
     int32_t ArousalManager::GetStaticEffectId(std::string name) {
+        std::scoped_lock lock(_lock);
         if (cleanupLock.test(std::memory_order_relaxed)) {
             SKSE::log::warn("GetStaticEffectId called during cleanup, skipping.");
             return -2;
@@ -82,6 +85,7 @@ namespace SLA {
     }
 
     bool ArousalManager::UnregisterStaticEffect(std::string name) {
+        std::scoped_lock lock(_lock);
         if (cleanupLock.test(std::memory_order_relaxed)) {
             SKSE::log::warn("UnregisterStaticEffect called during cleanup, skipping.");
             return false;
@@ -133,6 +137,7 @@ namespace SLA {
     }
 
     bool ArousalManager::IsStaticEffectActive(RE::Actor* who, int32_t effectIdx) {
+        std::scoped_lock lock(_lock);
         auto data = TryGetArousalData(who);
         if (!data) return false;
         try {
@@ -144,6 +149,7 @@ namespace SLA {
     }
 
     int32_t ArousalManager::GetDynamicEffectCount(RE::Actor* who) {
+        std::scoped_lock lock(_lock);
         auto data = TryGetArousalData(who);
         if (!data) return 0;
         try {
@@ -155,6 +161,7 @@ namespace SLA {
     }
 
     std::string ArousalManager::GetDynamicEffect(RE::Actor* who, int32_t number) {
+        std::scoped_lock lock(_lock);
         auto data = TryGetArousalData(who);
         if (!data) return "";
         try {
@@ -166,6 +173,7 @@ namespace SLA {
     }
 
     float ArousalManager::GetDynamicEffectValueByName(RE::Actor* who, std::string effectId) {
+        std::scoped_lock lock(_lock);
         auto data = TryGetArousalData(who);
         if (!data) return 0.0f;
         try {
@@ -177,6 +185,7 @@ namespace SLA {
     }
 
     float ArousalManager::GetDynamicEffectValue(RE::Actor* who, int32_t number) {
+        std::scoped_lock lock(_lock);
         auto data = TryGetArousalData(who);
         if (!data) return std::numeric_limits<float>::lowest();
         try {
@@ -188,6 +197,7 @@ namespace SLA {
     }
 
     float ArousalManager::GetStaticEffectValue(RE::Actor* who, int32_t effectIdx) {
+        std::scoped_lock lock(_lock);
         auto data = TryGetArousalData(who);
         if (!data) return 0.0f;
         try {
@@ -201,6 +211,7 @@ namespace SLA {
     }
 
     float ArousalManager::GetStaticEffectParam(RE::Actor* who, int32_t effectIdx) {
+        std::scoped_lock lock(_lock);
         auto data = TryGetArousalData(who);
         if (!data) return 0.0f;
         try {
@@ -213,6 +224,7 @@ namespace SLA {
     }
 
     int32_t ArousalManager::GetStaticEffectAux(RE::Actor* who, int32_t effectIdx) {
+        std::scoped_lock lock(_lock);
         auto data = TryGetArousalData(who);
         if (!data) return 0;
         try {
@@ -225,6 +237,7 @@ namespace SLA {
     }
 
     ArousalEffectData& ArousalManager::GetStaticArousalEffect(RE::Actor* who, int32_t effectIdx) {
+        std::scoped_lock lock(_lock);
         ArousalData* data = GetArousalData(who);
         if (!data) {
             static ArousalEffectData dummy;  // or handle this better if needed
@@ -236,6 +249,7 @@ namespace SLA {
 
     void ArousalManager::SetStaticArousalEffect(RE::Actor* who, int32_t effectIdx, int32_t functionId, float param,
                                                 float limit, int32_t auxilliary) {
+        std::scoped_lock lock(_lock);
         auto data = TryGetArousalData(who);
         if (!data) return;
         try {
@@ -247,6 +261,7 @@ namespace SLA {
 
     void ArousalManager::SetDynamicArousalEffect(RE::Actor* who, std::string effectId, float initialValue,
                                                  int32_t functionId, float param, float limit) {
+        std::scoped_lock lock(_lock);
         auto data = TryGetArousalData(who);
         if (!data) return;
         try {
@@ -257,6 +272,7 @@ namespace SLA {
     }
 
     void ArousalManager::ModDynamicArousalEffect(RE::Actor* who, std::string effectId, float modifier, float limit) {
+        std::scoped_lock lock(_lock);
         auto data = TryGetArousalData(who);
         if (!data) return;
         try {
@@ -267,6 +283,7 @@ namespace SLA {
     }
 
     void ArousalManager::SetStaticArousalValue(RE::Actor* who, int32_t effectIdx, float value) {
+        std::scoped_lock lock(_lock);
         auto data = TryGetArousalData(who);
         if (!data) return;
         try {
@@ -277,6 +294,7 @@ namespace SLA {
     }
 
     void ArousalManager::SetStaticAuxillaryFloat(RE::Actor* who, int32_t effectIdx, float value) {
+        std::scoped_lock lock(_lock);
         auto data = TryGetArousalData(who);
         if (!data) return;
         try {
@@ -288,6 +306,7 @@ namespace SLA {
     }
 
     void ArousalManager::SetStaticAuxillaryInt(RE::Actor* who, int32_t effectIdx, int32_t value) {
+        std::scoped_lock lock(_lock);
         auto data = TryGetArousalData(who);
         if (!data) return;
         try {
@@ -299,6 +318,7 @@ namespace SLA {
     }
 
     float ArousalManager::ModStaticArousalValue(RE::Actor* who, int32_t effectIdx, float diff, float limit) {
+        std::scoped_lock lock(_lock);
         auto data = TryGetArousalData(who);
         if (!data) return 0.0f;
         try {
@@ -310,6 +330,7 @@ namespace SLA {
     }
 
     float ArousalManager::GetArousal(RE::Actor* who) {
+        std::scoped_lock lock(_lock);
         auto data = TryGetArousalData(who);
         if (!data) return 0.0f;
         try {
@@ -321,6 +342,7 @@ namespace SLA {
     }
 
     void ArousalManager::UpdateSingleActorArousal(RE::Actor* who, float GameDaysPassed) {
+        std::scoped_lock lock(_lock);
         auto data = TryGetArousalData(who);
         if (!data) return;
         try {
@@ -331,6 +353,7 @@ namespace SLA {
     }
 
     bool ArousalManager::GroupEffects(RE::Actor* who, int32_t idx, int32_t idx2) {
+        std::scoped_lock lock(_lock);
         auto data = TryGetArousalData(who);
         if (!data) return false;
         try {
@@ -342,6 +365,7 @@ namespace SLA {
     }
 
     bool ArousalManager::RemoveEffectGroup(RE::Actor* who, int32_t idx) {
+        std::scoped_lock lock(_lock);
         auto data = TryGetArousalData(who);
         if (!data) return false;
         try {
@@ -363,6 +387,8 @@ namespace SLA {
                 SKSE::log::warn("Cleanup already running, skipping");
                 return;
             }
+            // Serialize the erase pass against concurrent get/set on other threads.
+            std::scoped_lock lock(mgr._lock);
             int removed = 0;
             {
                 auto& data = ArousalManager::GetSingleton().arousalData;
@@ -397,6 +423,7 @@ namespace SLA {
 
     void ArousalManager::OnRevert(SKSE::SerializationInterface*) {
         ArousalManager& inst = ArousalManager::GetSingleton();
+        std::scoped_lock lock(inst._lock);
         SKSE::log::info("revert");
 
         staticEffectCount = 0;
@@ -416,6 +443,7 @@ namespace SLA {
     void ArousalManager::OnGameSaved(SKSE::SerializationInterface* serde) {
         using namespace Serialization;
         ArousalManager& inst = ArousalManager::GetSingleton();
+        std::scoped_lock lock(inst._lock);
         SKSE::log::info("save");
 
         if (serde->OpenRecord('DATA', kSerializationDataVersion)) {
@@ -439,6 +467,7 @@ namespace SLA {
 
     void ArousalManager::OnGameLoaded(SKSE::SerializationInterface* serde) {
         ArousalManager& inst = ArousalManager::GetSingleton();
+        std::scoped_lock lock(inst._lock);
 
         SKSE::log::info("load");
         
