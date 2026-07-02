@@ -130,7 +130,7 @@ arousal = sum(static effects not in a group)
 
 **Thread safety / locking invariant (read before editing `ArousalManager`):**
 
-A single `std::mutex _lock` guards `arousalData` / `staticEffectIds` / `staticEffectCount`. Every **public** `ArousalManager` method takes `std::scoped_lock lock(_lock)` at entry; the `CleanUpActors` erase task and all three cosave callbacks lock too. This makes the maps safe under concurrent Papyrus threads **and** the native C++ API (see below). `cleanupLock` (atomic flag) remains as a belt-and-suspenders cleanup guard.
+A single `std::mutex _lock` guards `arousalData` / `staticEffectIds` / `staticEffectCount`. Every **public** `ArousalManager` method takes `std::scoped_lock lock(_lock)` at entry; the `CleanUpActors` erase task and all three cosave callbacks lock too. This makes the maps safe under concurrent Papyrus threads **and** the native C++ API (see below). Callers concurrent with the cleanup erase simply block until it finishes — there is no cleanup flag anymore (the old `cleanupLock` atomic and its spurious `-2`/skip early-outs were removed once `_lock` covered the erase pass).
 
 The lock is intentionally **non-recursive**, which stays deadlock-free only while these rules hold:
 - **Never call one public `ArousalManager` method from another** (a "public→public call") — the second `scoped_lock` on the same thread self-deadlocks. Put shared logic in a **private, non-locking helper** (`TryGetArousalData` / `GetArousalData` are the pattern) and call that from both.

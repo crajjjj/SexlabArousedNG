@@ -176,7 +176,7 @@ Pre-release checklist. Each scenario should be verified in-game or by code inspe
 | # | P | Scenario | Expected | Code |
 |---|---|----------|----------|------|
 | 15.1 | P1 | CleanUpActors | Actors not updated since `lastUpdateBefore` removed asynchronously | ArousalManager |
-| 15.2 | P1 | Cleanup during active updates | Atomic flag prevents concurrent modification | ArousalManager |
+| 15.2 | P1 | Cleanup during active updates | Mutex serializes erase pass; concurrent calls block briefly, none fail | ArousalManager |
 | 15.3 | P2 | Reset script | `slaresetscr` clears all data cleanly | slaresetscr |
 | 15.4 | P2 | Unregister effect during gameplay | Slot marked unused, no orphaned data on actors | ArousalManager |
 
@@ -186,7 +186,7 @@ Pre-release checklist. Each scenario should be verified in-game or by code inspe
 |---|---|----------|----------|------|
 | 16.1 | P0 | Concurrent arousal reads | Mutex protects ArousalManager, no data races | ArousalManager |
 | 16.2 | P1 | Concurrent effect registration | Mutex serializes, no corruption | ArousalManager |
-| 16.3 | P1 | Cleanup + read race | Atomic flag prevents use-after-free | ArousalManager |
+| 16.3 | P1 | Cleanup + read race | Mutex prevents use-after-free | ArousalManager |
 | 16.4 | P2 | Papyrus TryLock/Unlock | Script-side synchronization works correctly | Papyrus |
 
 ## 17. Translation Files

@@ -4,25 +4,6 @@
 
 namespace SLA {
 
-    class AtomicFlagGuard {
-    public:
-        explicit AtomicFlagGuard(std::atomic_flag& flag) : _flag(flag), _owns(false) {
-            _owns = !_flag.test_and_set(std::memory_order_acquire);
-            SKSE::log::info("AtomicFlagGuard cleanupLock set.");
-        }
-        ~AtomicFlagGuard() {
-            if (_owns) {
-                _flag.clear(std::memory_order_release);
-                SKSE::log::info("AtomicFlagGuard cleanupLock removed.");
-            }
-        }
-        bool owns_lock() const { return _owns; }
-
-    private:
-        std::atomic_flag& _flag;
-        bool _owns;
-    };
-
     ArousalManager& ArousalManager::GetSingleton() noexcept {
         static ArousalManager instance;
         return instance;
@@ -30,19 +11,11 @@ namespace SLA {
 
     int ArousalManager::GetStaticEffectCount() {
         std::scoped_lock lock(_lock);
-        if (cleanupLock.test(std::memory_order_relaxed)) {
-            SKSE::log::warn("GetStaticEffectCount called during cleanup, skipping.");
-            return 0;
-        }
         return staticEffectCount;
     }
 
     int32_t ArousalManager::RegisterStaticEffect(std::string name) {
         std::scoped_lock lock(_lock);
-        if (cleanupLock.test(std::memory_order_relaxed)) {
-            SKSE::log::warn("RegisterStaticEffect called during cleanup, skipping.");
-            return -2;
-        }
         auto itr = staticEffectIds.find(name);
         if (itr != staticEffectIds.end()) return itr->second;
 
@@ -67,10 +40,6 @@ namespace SLA {
     }
     int32_t ArousalManager::GetStaticEffectId(std::string name) {
         std::scoped_lock lock(_lock);
-        if (cleanupLock.test(std::memory_order_relaxed)) {
-            SKSE::log::warn("GetStaticEffectId called during cleanup, skipping.");
-            return -2;
-        }
         auto itr = staticEffectIds.find(name);
         if (itr != staticEffectIds.end()) return static_cast<int32_t>(itr->second);
         return -1;  // Not found, return -1 to indicate error
@@ -86,10 +55,6 @@ namespace SLA {
 
     bool ArousalManager::UnregisterStaticEffect(std::string name) {
         std::scoped_lock lock(_lock);
-        if (cleanupLock.test(std::memory_order_relaxed)) {
-            SKSE::log::warn("UnregisterStaticEffect called during cleanup, skipping.");
-            return false;
-        }
         auto itr = staticEffectIds.find(name);
         if (itr != staticEffectIds.end()) {
             uint32_t id = itr->second;
@@ -104,10 +69,6 @@ namespace SLA {
 
     // Use this private helper to avoid code duplication
     ArousalData* ArousalManager::TryGetArousalData(RE::Actor* who) {
-        if (cleanupLock.test(std::memory_order_relaxed)) {
-            SKSE::log::warn("TryGetArousalData: locked for cleanup, skipping actor {}", who ? who->formID : 0);
-            return nullptr;
-        }
         if (!who) {
             SKSE::log::warn("TryGetArousalData called with nullptr actor");
             return nullptr;
@@ -122,11 +83,6 @@ namespace SLA {
     }
 
     ArousalData* ArousalManager::GetArousalData(RE::Actor* who) {
-        if (cleanupLock.test(std::memory_order_relaxed)) {
-            SKSE::log::warn("TryGetArousalData: locked for cleanup, skipping actor {}", who ? who->formID : 0);
-            return nullptr;
-        }
-        // For internal use, you can assume this is not called during cleanup
         if (!who) throw std::invalid_argument("Attempt to get arousal data for none actor");
         RE::FormID formId = who->formID;
         //if (lastLookup == formId && lastData) return *lastData; //to not mutex it
@@ -382,12 +338,8 @@ namespace SLA {
 
         SKSE::GetTaskInterface()->AddTask([lastUpdateBefore]() {
             auto& mgr = ArousalManager::GetSingleton();
-            AtomicFlagGuard cleanupGuard(mgr.cleanupLock);
-            if (!cleanupGuard.owns_lock()) {
-                SKSE::log::warn("Cleanup already running, skipping");
-                return;
-            }
-            // Serialize the erase pass against concurrent get/set on other threads.
+            // _lock serializes the erase pass against concurrent get/set on other threads;
+            // callers blocked here simply wait out the erase instead of failing.
             std::scoped_lock lock(mgr._lock);
             int removed = 0;
             {
@@ -409,7 +361,6 @@ namespace SLA {
 
     bool ArousalManager::TryLock(int32_t lock) {
         if (lock < 0 || lock >= locks.size()) return false;
-        if (cleanupLock.test(std::memory_order_relaxed)) return false;
         if (locks[lock].test_and_set()) return false;
         return true;
     }
@@ -434,10 +385,6 @@ namespace SLA {
         inst.arousalData.clear();
 
         for (auto& lock : inst.locks) lock.clear();
-        if (inst.cleanupLock.test(std::memory_order_relaxed)) {
-            SKSE::log::warn("cleanupLock is set OnRevert, removing");
-            inst.cleanupLock.clear();
-        }
     }
 
     void ArousalManager::OnGameSaved(SKSE::SerializationInterface* serde) {
@@ -470,12 +417,7 @@ namespace SLA {
         std::scoped_lock lock(inst._lock);
 
         SKSE::log::info("load");
-        
-        if (inst.cleanupLock.test(std::memory_order_relaxed)) {
-            SKSE::log::warn("cleanupLock is set ongameload, removing");
-            inst.cleanupLock.clear();
-        }
-     
+
         uint32_t type;
         uint32_t version;
         uint32_t length;

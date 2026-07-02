@@ -39,7 +39,9 @@ See [Dynamic Effects](dynamic-effects.md) for the ModEvent-based wrappers most m
 
 ```papyrus
 ; Registration — call from your plugin's EnablePlugin() via sla_PluginBase.RegisterEffect().
-; Returns the effect slot index (>= 0). Returns -1 if not found, -2 if called during cleanup.
+; Returns the effect slot index (>= 0). GetStaticEffectId returns -1 if not found.
+; (DLLs older than 3.3.0 could also return -2 when actor cleanup was running; treat any
+; negative value as "not registered".)
 int  function RegisterStaticEffect(string id) global native
 int  function GetStaticEffectId(string id) global native
 bool function UnregisterStaticEffect(string id) global native
