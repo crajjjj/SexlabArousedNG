@@ -40,6 +40,7 @@ Both static and dynamic effects can carry one of these built-in timed functions:
 | Effects that scale each other multiplicatively | Static effects + [`GroupEffects`](papyrus-api.md#effect-groups) |
 | Reacting to what actors see | [`RegisterForLOSUpdates`](static-effects.md#los-line-of-sight-updates) in the plugin base |
 | Reading or writing arousal from any script, no boilerplate | The [native API](native-api.md) — `SloangNative.GetArousal(who)` etc. |
+| Reading or writing arousal from a **C++ SKSE plugin** | The [C++ API](cpp-api.md) — `SLA_GetArousal(who)` etc. via `GetProcAddress` |
 | Reacting when arousal recalculates | Listen for the [`sla_UpdateComplete`](native-api.md#reacting-to-updates-dont-poll) ModEvent |
 | Reading arousal from a non-plugin script | [`slaInternalModules.GetArousal(who)`](papyrus-api.md#reading-arousal) |
 | Supporting both OSL Aroused and SLA NG | The [compatibility shim](compatibility.md) |
