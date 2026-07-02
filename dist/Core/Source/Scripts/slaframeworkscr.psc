@@ -141,11 +141,41 @@ Function SetActorExhibitionist(Actor who, Bool isExhibitionist = False)
     If slaExhibitionist && !who.IsInFaction(slaExhibitionist)
     	who.AddToFaction(slaExhibitionist)
     EndIf
-    
+
     If slaExhibitionist && who.IsInFaction(slaExhibitionist)
     	who.SetFactionRank(slaExhibitionist, factionRank)
     EndIf
-    
+
+EndFunction
+
+
+; Dynamic exhibitionism: mirrors Advanced Nudity Detection's modesty ranks into
+; the slaExhibitionist faction so the MCM, the API and third-party mods reading
+; the faction all see it. Faction rank 1 marks auto-managed membership; rank 0
+; (a manual SetActorExhibitionist flag) is never touched, so manual flags stick.
+; Called periodically per tracked actor by sla_DefaultPlugin.
+Function UpdateDynamicExhibitionist(Actor who, Int threshold)
+
+    If !who || !slaExhibitionist || !slaMain
+        Return
+    EndIf
+
+    Int current = who.GetFactionRank(slaExhibitionist)
+    If current == 0 ; manual flag -- leave alone
+        Return
+    EndIf
+
+    If slaMain.IsModestyExhibitionist(who, threshold)
+        If current != 1
+            If !who.IsInFaction(slaExhibitionist)
+                who.AddToFaction(slaExhibitionist)
+            EndIf
+            who.SetFactionRank(slaExhibitionist, 1)
+        EndIf
+    ElseIf current == 1
+        who.SetFactionRank(slaExhibitionist, -2)
+    EndIf
+
 EndFunction
 
 

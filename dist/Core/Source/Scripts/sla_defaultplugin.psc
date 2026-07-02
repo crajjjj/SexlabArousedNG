@@ -10,7 +10,8 @@ event OnEndState()
 endEvent
 
 Actor currentObserver = none
-int currentNakedCount = 0
+float currentNakedWeight = 0.0 ; onlooker count weighted by gender preference and AND exposure
+float currentNakedMaxExposure = 0.0 ; most exposed naked actor in view, 0.0 .. 1.0
 bool currentSeesNaked = false
 bool currentSeesNakedPref = false
 bool currentObserverExhibiting = false
@@ -29,10 +30,17 @@ float nakedMax = 50.0
 float nakedMaxNonPref = 15.0
 float nakedIncrease = 600.0 ; 25.0 * 24.0
 float nakedHalfTime = 0.04166666 ; 1.0 / 24.0
+; Scale the Naked effect by how much the observed actor is showing (AND graded
+; exposure, cached per cycle) -- see slaMainScr.GetNakedExposureScale.
+bool scaleNakedByExposure = true
 
 float exhibMax = 50.0
 float exhibIncrease = 600.0 ; 25.0 * 24.0
 float exhibHalfTime = 0.04166666 ; 1.0 / 24.0
+; Dynamic exhibitionism: mirror Advanced Nudity Detection's modesty ranks into
+; the exhibitionist faction -- see slaFrameworkScr.UpdateDynamicExhibitionist.
+bool useModestyRanks = true
+int modestyThreshold = 4 ; AND rank: 4 Tease, 5 Brazen, 6 Shameless
 
 bool useDenialCycle = true
 float timedBaseRate = 12.5
@@ -104,6 +112,12 @@ float function GetOptionValue(int optionId)
 		return exhibIncrease / 24.0
 	elseIf optionId == 19
 		return exhibHalfTime * 24.0
+	elseIf optionId == 20
+		return useModestyRanks as float
+	elseIf optionId == 21
+		return modestyThreshold as float
+	elseIf optionId == 22
+		return scaleNakedByExposure as float
 	endIf
 	return 0.0
 endFunction
@@ -149,6 +163,12 @@ function OnUpdateOption(int optionId, float value)
 		exhibIncrease = value * 24.0
 	elseIf optionId == 19
 		exhibHalfTime = value / 24.0
+	elseIf optionId == 20
+		useModestyRanks = (value as bool)
+	elseIf optionId == 21
+		modestyThreshold = value as int
+	elseIf optionId == 22
+		scaleNakedByExposure = (value as bool)
 	endIf
 endFunction
 
@@ -246,6 +266,10 @@ state Installed
 		AddOption("$SLA_Effect_ExhibitionistCat", "$SLA_Effect_ExhibitionistMax", "$SLA_Effect_ExhibitionistMaxDesc", 50.0)
 		AddOption("$SLA_Effect_ExhibitionistCat", "$SLA_Effect_ExhibitionistRate", "$SLA_Effect_ExhibitionistRateDesc", 25.0)
 		AddOptionEx("$SLA_Effect_ExhibitionistCat", "$SLA_Effect_ExhibitionistHalfTime", "$SLA_Effect_ExhibitionistHalfTimeDesc", 1.0, 0.1, 24.0, 0.1, "{1} hours")
+		; IDs 20/21/22 -- Advanced Nudity Detection integration. Appended last (see above).
+		AddToggleOption("$SLA_Effect_ExhibitionistCat", "$SLA_Effect_ExhibitionistANDRanks", "$SLA_Effect_ExhibitionistANDRanksDesc", true)
+		AddOptionEx("$SLA_Effect_ExhibitionistCat", "$SLA_Effect_ExhibitionistANDThreshold", "$SLA_Effect_ExhibitionistANDThresholdDesc", 4.0, 1.0, 6.0, 1.0, "{0}")
+		AddToggleOption("$SLA_Effect_NakedCat", "$SLA_Effect_NakedANDScale", "$SLA_Effect_NakedANDScaleDesc", true)
 	endFunction
 
 	function DisablePlugin()
@@ -281,18 +305,34 @@ state Installed
 			elseIf currentSeesNakedPref == false
 				seesNakedState = 2 ; Naked actor without preferred gender
 			endIf
-			
+
+			int nakedState = seesNakedState
+			if seesNakedState != 0
+				if currentNakedMaxExposure <= 0.0
+					; Seeing "naked" without a weighted contribution (creature-lover
+					; path with a creature outside the naked faction) -- keep the
+					; caps at full strength instead of collapsing them to 0.
+					currentNakedMaxExposure = 1.0
+				endIf
+				; Fold the quantised max exposure (tiers 1-10) into the aux state so a
+				; change in how much the most exposed actor shows re-applies rate/cap
+				; (the effect only refreshes on an aux-state transition). Decode the
+				; base state as aux - (aux / 4) * 4; legacy saves stored plain 1/2,
+				; which decodes the same and just triggers a one-time re-apply.
+				nakedState = seesNakedState + (((currentNakedMaxExposure * 9.0) as int) + 1) * 4
+			endIf
+
 			int oldState = GetArousalEffectFncAux(currentObserver, nakedEff)
-			if (oldState != seesNakedState) 
+			if (oldState != nakedState)
 				if seesNakedState == 0
 					SetArousalEffectFunction(currentObserver, nakedEff, 1, nakedHalfTime, 0.0, 0)
 				elseIf seesNakedState == 1
-					SetArousalEffectFunction(currentObserver, nakedEff, 2, currentNakedCount * nakedIncrease, nakedMax, 1)
+					SetArousalEffectFunction(currentObserver, nakedEff, 2, currentNakedWeight * nakedIncrease, nakedMax * currentNakedMaxExposure, nakedState)
 				elseIf seesNakedState == 2
-					if oldState == 1 && GetArousalEffectValue(currentObserver, nakedEff)
-						SetArousalEffectFunction(currentObserver, nakedEff, 1, nakedHalfTime, nakedMaxNonPref, 2)
+					if oldState - (oldState / 4) * 4 == 1 && GetArousalEffectValue(currentObserver, nakedEff)
+						SetArousalEffectFunction(currentObserver, nakedEff, 1, nakedHalfTime, nakedMaxNonPref * currentNakedMaxExposure, nakedState)
 					else
-						SetArousalEffectFunction(currentObserver, nakedEff, 2, currentNakedCount * nakedIncrease, nakedMaxNonPref, 2)
+						SetArousalEffectFunction(currentObserver, nakedEff, 2, currentNakedWeight * nakedIncrease, nakedMaxNonPref * currentNakedMaxExposure, nakedState)
 					endIf
 				endIf
 			endIf
@@ -321,11 +361,18 @@ state Installed
 			return
 		endIf
 
-		currentNakedCount = 0
+		currentNakedWeight = 0.0
+		currentNakedMaxExposure = 0.0
 		currentSeesNaked = false
 		currentSeesNakedPref = false
 		currentExhibitionistCount = 0
 		currentExhibitionistExposure = 0.0
+		; Dynamic exhibitionism: mirror AND's modesty ranks into the exhibitionist
+		; faction (rank 1 = auto-managed; manual rank-0 flags are never touched)
+		; before reading it -- see slaFrameworkScr.UpdateDynamicExhibitionist.
+		if useModestyRanks && main.IsANDInstalled
+			slaUtil.UpdateDynamicExhibitionist(who, modestyThreshold)
+		endIf
 		; Only exhibitionists feed the exposure check (avoids ~8 faction reads per
 		; non-exhibitionist). Exposure is graduated via Advanced Nudity Detection
 		; when present, else the binary naked flag -- see slaMainScr.GetExposureLevel.
@@ -362,13 +409,23 @@ state Installed
 			return
 		endIf
 
+		; Graded exposure of the observed actor, cached once per cycle by
+		; slaMainScr.IsActorNaked (1.0 without AND / for pre-cache saves).
+		float exposureScale = 1.0
+		if scaleNakedByExposure
+			exposureScale = StorageUtil.GetFloatValue(observed, "SLAroused.NakedExposure", 1.0)
+		endIf
+
 		currentSeesNaked = true
+		if exposureScale > currentNakedMaxExposure
+			currentNakedMaxExposure = exposureScale
+		endIf
 		int genderPreference = slaUtil.GetGenderPreference(observer)
 		if genderPreference == 2 || genderPreference == observed.GetLeveledActorBase().GetSex()
 			currentSeesNakedPref = true
-			currentNakedCount += 2
+			currentNakedWeight += 2.0 * exposureScale
 		else
-			currentNakedCount += 1
+			currentNakedWeight += 1.0 * exposureScale
 		endIf
 	endFunction
 endState

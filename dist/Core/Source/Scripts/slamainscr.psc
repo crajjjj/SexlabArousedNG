@@ -83,6 +83,9 @@ Faction AND_ShowingChest
 Faction AND_ShowingAss
 Faction AND_ShowingBra
 Faction AND_ShowingUnderwear
+Faction AND_Modesty ; faction rank 0 (Modest) .. 6 (Shameless)
+Faction AND_TopModesty
+Faction AND_BottomModesty
 Bool Property IsSLPInstalled = false auto hidden ; Sexlab Plus
 Bool Property IsSLSOInstalled = false auto hidden ; SLSO
 State cleaning
@@ -655,10 +658,11 @@ Function Maintenance()
     sexlabPlugin.registerForInternalEvents()
     ostimPlugin.registerForInternalEvents()
 
-    ; Re-resolve if AND_ShowingBra is unset too, so saves that detected AND on an
-    ; older build (IsANDInstalled already persisted True) still pick up the factions
-    ; added later -- otherwise the graduated-exposure tiers stay dead on upgrade.
-    if (!IsANDInstalled || !AND_ShowingBra) && Game.GetModByName("Advanced Nudity Detection.esp") != 255
+    ; Re-resolve if the most recently added faction (AND_BottomModesty) is unset
+    ; too, so saves that detected AND on an older build (IsANDInstalled already
+    ; persisted True) still pick up factions added later -- otherwise the graduated
+    ; exposure tiers / modesty ranks stay dead on upgrade.
+    if (!IsANDInstalled || !AND_BottomModesty) && Game.GetModByName("Advanced Nudity Detection.esp") != 255
          slax.Info("slaMainScr: Advanced Nudity Detection mod found")
          AND_Nude = Game.GetFormFromFile(0x831, "Advanced Nudity Detection.esp") as Faction
          AND_Bottomless = Game.GetFormFromFile(0x833, "Advanced Nudity Detection.esp") as Faction
@@ -668,6 +672,9 @@ Function Maintenance()
          AND_ShowingAss = Game.GetFormFromFile(0x82E, "Advanced Nudity Detection.esp") as Faction
          AND_ShowingBra = Game.GetFormFromFile(0x834, "Advanced Nudity Detection.esp") as Faction
          AND_ShowingUnderwear = Game.GetFormFromFile(0x835, "Advanced Nudity Detection.esp") as Faction
+         AND_Modesty = Game.GetFormFromFile(0x86D, "Advanced Nudity Detection.esp") as Faction
+         AND_TopModesty = Game.GetFormFromFile(0x8A3, "Advanced Nudity Detection.esp") as Faction
+         AND_BottomModesty = Game.GetFormFromFile(0x8A4, "Advanced Nudity Detection.esp") as Faction
          IsANDInstalled = True
     endif
 
@@ -925,12 +932,66 @@ Bool Function IsActorNaked(Actor who)
 
     If isNaked
         who.SetFactionRank(slaNaked, 0)
+        ; Cache the graded exposure for the Naked effect here, where we already
+        ; pay the AND faction reads once per actor per cycle -- UpdateObserver
+        ; runs per observer/observed PAIR and must not re-read 8 factions.
+        StorageUtil.SetFloatValue(who, "SLAroused.NakedExposure", GetNakedExposureScale(who))
     Else
         who.SetFactionRank(slaNaked, -2)
     EndIf
-    
+
     Return isNaked
 
+EndFunction
+
+
+; How arousing the sight of `who` is to onlookers, 0.1 .. 1.0, from Advanced
+; Nudity Detection's graduated states: showing bra/underwear +0.1 each, showing
+; chest/genitals/ass +0.2 each, topless/bottomless 0.5 per region (subsuming
+; that region's showing-states), fully nude 1.0. Returns 1.0 when AND is not
+; installed or detects nothing on an actor we consider naked anyway (e.g.
+; keyword-flagged naked armor), so the Naked effect keeps full strength.
+Float Function GetNakedExposureScale(Actor who)
+    If !who || !IsANDInstalled || !AND_Nude
+        Return 1.0
+    EndIf
+
+    If who.GetFactionRank(AND_Nude) == 1
+        Return 1.0
+    EndIf
+
+    Float top = 0.0
+    If who.GetFactionRank(AND_Topless) == 1
+        top = 0.5
+    Else
+        If AND_ShowingChest && who.GetFactionRank(AND_ShowingChest) == 1
+            top += 0.2
+        EndIf
+        If AND_ShowingBra && who.GetFactionRank(AND_ShowingBra) == 1
+            top += 0.1
+        EndIf
+    EndIf
+
+    Float bottom = 0.0
+    If who.GetFactionRank(AND_Bottomless) == 1
+        bottom = 0.5
+    Else
+        If who.GetFactionRank(AND_Genitals) == 1
+            bottom += 0.2
+        EndIf
+        If AND_ShowingAss && who.GetFactionRank(AND_ShowingAss) == 1
+            bottom += 0.2
+        EndIf
+        If AND_ShowingUnderwear && who.GetFactionRank(AND_ShowingUnderwear) == 1
+            bottom += 0.1
+        EndIf
+    EndIf
+
+    Float scale = top + bottom
+    If scale <= 0.0
+        Return 1.0 ; naked by keyword/armor while AND sees nothing
+    EndIf
+    Return scale
 EndFunction
 
 
@@ -976,6 +1037,27 @@ Float Function GetExposureLevel(Actor who)
         Return 1.0
     EndIf
     Return 0.0
+EndFunction
+
+
+; Dynamic exhibitionism qualification from Advanced Nudity Detection's modesty
+; ranks (0 Modest, 1 Reasonable, 2 Relaxed, 3 Comfortable, 4 Tease, 5 Brazen,
+; 6 Shameless): TRUE when the overall (strict) rank reaches the threshold, or
+; when BOTH the top and bottom region ranks do. FALSE when AND is not installed
+; (including a save where AND's factions no longer resolve after uninstall).
+Bool Function IsModestyExhibitionist(Actor who, Int threshold)
+    If !who || !IsANDInstalled || !AND_Modesty
+        Return False
+    EndIf
+
+    If who.GetFactionRank(AND_Modesty) >= threshold
+        Return True
+    EndIf
+
+    If AND_TopModesty && AND_BottomModesty
+        Return who.GetFactionRank(AND_TopModesty) >= threshold && who.GetFactionRank(AND_BottomModesty) >= threshold
+    EndIf
+    Return False
 EndFunction
 
 

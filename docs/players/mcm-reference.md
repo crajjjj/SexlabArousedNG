@@ -36,7 +36,7 @@ Inspect any actor's arousal effects in detail. Pick them from the **Select Puppe
 
 - **Is Arousal Blocked** — force this actor's arousal to a fixed `-2` (used to exclude them entirely).
 - **Is Arousal Locked** — keep their arousal pinned at the current value; exposure and time no longer change it.
-- **Is Exhibitionist** — flag them as getting aroused when *they* are seen naked. While flagged and naked, the Default plugin's **Exhibitionist** effect climbs for each onlooker in view (onlookers attracted to the actor's gender count twice), mirroring how the Naked effect rewards the viewer.
+- **Is Exhibitionist** — flag them as getting aroused when *they* are seen naked. While flagged and naked, the Default plugin's **Exhibitionist** effect climbs for each onlooker in view (onlookers attracted to the actor's gender count twice), mirroring how the Naked effect rewards the viewer. With Advanced Nudity Detection installed, actors whose AND modesty rank (overall, or both top and bottom regions) reaches the threshold set on the Default plugin's Exhibitionist page are added to the exhibitionist faction automatically, and removed again when the rank drops — "Dynamic Exhibitionism". Manually flagged actors are never unflagged automatically.
 - **Gender Preference** — what this actor finds arousing.
 
 The list below shows every static arousal effect on this actor with the current value, the timed function (if any), and parameters. You can edit values directly via input fields on each row. This is the page to open first when arousal isn't behaving — see [Troubleshooting](troubleshooting.md).
@@ -48,5 +48,7 @@ Per-item keyword curation — covered fully in [Armor Curation](armor-curation.m
 ## Plugins
 
 Each integration plugin has its own MCM page with settings specific to that integration: the Default plugin has sliders for nudity rate, orgasm satiation, sleep decay, etc. Devious Devices has device-rate sliders. SexLab has per-stage bonuses. OStim has thread / observer toggles and rate scaling.
+
+With Advanced Nudity Detection installed, the Default plugin's page also offers **Scale by AND Exposure** (the Naked effect's rate and cap scale with how much each seen actor is showing: bra/underwear +10% each, chest/genitals/ass +20% each, topless/bottomless 50% per side, fully nude 100%) and the **Dynamic Exhibitionism** toggle and threshold described under Puppet Master above.
 
 You don't normally need to touch these unless you want to tune the feel — see [Tuning Recipes](tuning-recipes.md) for which sliders to reach for.

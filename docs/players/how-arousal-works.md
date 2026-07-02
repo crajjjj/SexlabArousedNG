@@ -27,8 +27,8 @@ The **Default plugin** ships six categories of effect, each with its own page un
 
 | Category | What it represents | Climbs when… |
 |---|---|---|
-| **Naked** | Exposure from nearby nudity | A naked (or revealingly-dressed) actor is in view — optionally requiring line-of-sight |
-| **Exhibitionist** | Arousal from *being seen* naked | The actor is flagged an exhibitionist (see "Is Exhibitionist" in the MCM), is naked, and has onlookers in view |
+| **Naked** | Exposure from nearby nudity | A naked (or revealingly-dressed) actor is in view — optionally requiring line-of-sight. With Advanced Nudity Detection installed, the gain scales with how much each seen actor is showing |
+| **Exhibitionist** | Arousal from *being seen* naked | The actor is flagged an exhibitionist — manually via "Is Exhibitionist" in the MCM, or automatically while their Advanced Nudity Detection modesty rank meets the configurable threshold — is naked, and has onlookers in view |
 | **Timed** | Passive "haven't had sex in a while" buildup | Time passes — this is the OSL-Aroused-style tick |
 | **Sleep** | Morning arousal | The actor wakes from a long enough sleep |
 | **Satisfaction** | Post-orgasm cooldown (a *penalty*) | Resets downward after orgasm, then decays back |
