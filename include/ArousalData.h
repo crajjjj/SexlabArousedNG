@@ -52,6 +52,8 @@ namespace SLA {
             arousal = ReadDataHelper<float>(intfc, length);
             lastUpdate = ReadDataHelper<float>(intfc, length);
             uint32_t count = ReadDataHelper<uint32_t>(intfc, length);
+            if (count > staticEffects.size())
+                throw std::out_of_range("static effect count exceeds registered effects (corrupt cosave)");
             for (uint32_t j = 0; j < count; ++j) staticEffects[j] = ReadDataHelper<ArousalEffectData>(intfc, length);
 
             count = ReadDataHelper<uint8_t>(intfc, length);
@@ -60,6 +62,8 @@ namespace SLA {
                 uint32_t grpEntiryCount = ReadDataHelper<uint32_t>(intfc, length);
                 for (uint32_t k = 0; k < grpEntiryCount; ++k) {
                     uint32_t effIdx = ReadDataHelper<uint32_t>(intfc, length);
+                    if (effIdx >= staticEffectGroups.size())
+                        throw std::out_of_range("group effect index out of range (corrupt cosave)");
                     grp->staticEffectIds.emplace_back(effIdx);
                     staticEffectGroups[effIdx] = grp;
                 }
@@ -71,7 +75,12 @@ namespace SLA {
                 groupsToUpdate.emplace_back(std::move(grp));
             }
             count = ReadDataHelper<uint32_t>(intfc, length);
-            for (uint32_t j = 0; j < count; ++j) staticEffectsToUpdate.insert(ReadDataHelper<uint32_t>(intfc, length));
+            for (uint32_t j = 0; j < count; ++j) {
+                uint32_t idx = ReadDataHelper<uint32_t>(intfc, length);
+                if (idx >= staticEffects.size())
+                    throw std::out_of_range("static-effect-to-update index out of range (corrupt cosave)");
+                staticEffectsToUpdate.insert(idx);
+            }
             count = ReadDataHelper<uint32_t>(intfc, length);
             for (uint32_t j = 0; j < count; ++j) {
                 std::string name = ReadString(intfc, length);
@@ -92,13 +101,20 @@ namespace SLA {
             intfc->WriteRecordData(&arousal, sizeof(arousal));
             intfc->WriteRecordData(&lastUpdate, sizeof(lastUpdate));
             WriteContainerData<std::vector<ArousalEffectData>>(intfc, staticEffects);
-            assert(groupsToUpdate.size() <= 255 && "group count exceeds uint8 serialization limit");
-            uint8_t groupCount = static_cast<uint8_t>(groupsToUpdate.size());
+            size_t rawGroupCount = groupsToUpdate.size();
+            if (rawGroupCount > 255) {
+                // uint8 count field can't represent more; bound both count and the loop
+                // so the record stays internally consistent (never happens in practice).
+                SKSE::log::error("group count {} exceeds uint8 serialization limit; truncating to 255", rawGroupCount);
+                rawGroupCount = 255;
+            }
+            uint8_t groupCount = static_cast<uint8_t>(rawGroupCount);
             intfc->WriteRecordData(&groupCount, sizeof(groupCount));
-            for (auto& group : groupsToUpdate) {
+            for (uint8_t g = 0; g < groupCount; ++g) {
+                auto& group = groupsToUpdate[g];
                 WriteContainerData<std::vector<uint32_t>>(intfc, group->staticEffectIds);
                 intfc->WriteRecordData(&group->value, sizeof(group->value));
-            };
+            }
            WriteContainerData<std::unordered_set<int32_t>>(intfc, staticEffectsToUpdate);
             uint32_t size = static_cast<uint32_t>(dynamicEffects.size());
             intfc->WriteRecordData(&size, sizeof(size));

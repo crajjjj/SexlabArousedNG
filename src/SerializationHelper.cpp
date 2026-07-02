@@ -11,10 +11,7 @@ std::string Serialization::ReadString(SKSE::SerializationInterface* intfc, uint3
     uint32_t strlength = ReadDataHelper<uint32_t>(intfc, length);
     if (strlength > length) throw std::length_error("savegame data ended unexpected");
     length -= strlength;
-    char* buf = new char[strlength + 1];
-    intfc->ReadRecordData(buf, strlength);
-    buf[strlength] = '\0';
-    std::string result(buf);
-    delete[] buf;
+    std::string result(strlength, '\0');
+    if (strlength) intfc->ReadRecordData(result.data(), strlength);
     return result;
 }
