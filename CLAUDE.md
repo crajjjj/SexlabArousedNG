@@ -236,4 +236,4 @@ External mods fire ModEvents -- no quest script needed:
 
 ## Version
 
-3.3.0 (canonical: `dist/fomod/info.xml`), cosave ID `SLAN`, Apache-2.0 license. `CMakeLists.txt` is bumped only on releases with C++ changes; it was synced to `3.3.0` for this release (native C++ API + `ArousalManager` locking) after trailing at `3.1.11` — see *Bumping the Version* above.
+3.3.1 (canonical: `dist/fomod/info.xml`), cosave ID `SLAN`, Apache-2.0 license. `CMakeLists.txt` is bumped only on releases with C++ changes; it stays at `3.3.0` for 3.3.1 (Papyrus-only: keyword file loader + Armor-page keyword menus) — see *Bumping the Version* above.

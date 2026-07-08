@@ -93,10 +93,13 @@ Int[] bikiniSliderValues
 Int[] bikiniClothingValues
 String[] customKeywordIds
 Int customKeywordCount
-Int[] customKeywordValues
-Int[] customKeywordToggleOIDs
-Int[] bikiniCustomKeywordValues
-Int[] bikiniCustomKeywordToggleOIDs
+; Maps the open keyword menu dialog's entries back to editor IDs. Written in
+; OnOptionMenuOpen, read in OnOptionMenuAccept - safe because MCM dialogs are modal.
+; Dialog row 0 is a reserved do-nothing entry (backing out of a menu dialog fires
+; accept with the start index, so "cancel" must land on a harmless row): dialog
+; index N maps to keywordDialogIds[N-1] via PickedKeywordFromDialog. An empty
+; array means the dialog shows only a placeholder row.
+String[] keywordDialogIds
 Int kidLineCount ; transient: count of lines emitted during the most recent ExportToKID() run
 String kidNL ; transient: cached real LF newline (StringUtil.AsChar(10)) used during KID export
 ; FOLDEND - Variables
@@ -160,8 +163,16 @@ Int clothingToggleOID
 Int[] bikiniToggleOIDs
 Int[] bikiniClothingToggleOIDs
 Int registerKeywordOID
-Int removeKeywordOID
+Int removeKeywordOID ; menu: unregister a custom keyword (was an input option)
 Int exportKidFileOID
+Int saveKeywordsOID
+Int loadKeywordsOID
+Int bodyAppliedMenuOID ; view-only menu: lists the item's applied keywords
+Int bodyAddKeywordMenuOID
+Int bodyRemoveKeywordMenuOID
+Int[] bikiniAppliedMenuOIDs
+Int[] bikiniAddKeywordMenuOIDs
+Int[] bikiniRemoveKeywordMenuOIDs
 
 ; FOLDEND - OIDs
 
@@ -176,7 +187,7 @@ Armor[] emptyArmorArray
 
 
 Int Function GetVersion()
-    Return       30300000
+    Return       30300001
 	;	0.00.00000
     ; 1.0.0   -> 10000000
     ; 1.1.0   -> 10100000
@@ -186,7 +197,7 @@ Int Function GetVersion()
 EndFunction
 
 String Function GetVersionString()
-    Return "3.3.0"
+    Return "3.3.1"
 EndFunction
 
 
@@ -267,6 +278,7 @@ Event OnVersionUpdate(int newVersion)
 			slaMain.RegisterPlugin(slaMain.defaultPlugin)
 		EndIf
 	EndIf
+
 EndEvent
 
 
@@ -683,9 +695,13 @@ Function DisplayArmorList()
         targetActorMenuOID = AddMenuOption("$SLA_SelectActor", targetActorNames[targetActorIndex])
         
         registerKeywordOID = AddInputOption("Register Custom Keyword", "")
-        removeKeywordOID = AddInputOption("Remove Custom Keyword", "")
+        ; Live count read: this runs before DisplayWornItems refreshes the cached
+        ; customKeywordCount, so don't trust the script variable for the flag here.
+        removeKeywordOID = AddMenuOption("Remove Custom Keyword", "", _getFlag(StorageUtil.StringListCount(slaMain, "SLAroused.CustomKeywords") > 0))
+        saveKeywordsOID = AddTextOption("Save Keywords to File", "", _getFlag(StorageUtil.StringListCount(slaMain, "SLAroused.CustomKeywords") > 0))
+        loadKeywordsOID = AddTextOption("Load Keywords from File", "")
         exportKidFileOID = AddTextOption("Export to KID file", "")
-        AddEmptyOption() ; pad to keep the LEFT_TO_RIGHT two-column layout aligned
+        AddEmptyOption() ; pad the 7th control so the header row below starts in the LEFT column
 
         AddHeaderOption("$SLA_EquippedItems")
         ; No right-column "Options" header: the grid below packs two-per-row across BOTH
@@ -709,10 +725,20 @@ Function DisplayWornItems(Actor who)
         Else
             AddTogglesForBodyItem()
         EndIf
+        ; "Applied" is a view-only menu: its value shows how many keywords are set and
+        ; opening it lists them; picking an entry changes nothing.
+        bodyAppliedMenuOID = AddMenuOption("Applied", AppliedKeywordLabel(bodyItem), _getFlag(customKeywordCount > 0))
+        bodyAddKeywordMenuOID = AddMenuOption("Add keyword...", "", _getFlag(customKeywordCount > 0))
+        bodyRemoveKeywordMenuOID = AddMenuOption("Remove keyword...", "", _getFlag(customKeywordCount > 0))
         AddEmptyOption()
         AddEmptyOption()
     Else
         noBodyItemOID = AddTextOption("", "$SLA_NoBodyItem")
+        ; Stale-OID insurance: OIDs are reassigned on every page build; a leftover value
+        ; from a previous build could collide with another option's new OID.
+        bodyAppliedMenuOID = -1
+        bodyAddKeywordMenuOID = -1
+        bodyRemoveKeywordMenuOID = -1
         AddEmptyOption()
         AddEmptyOption()
         AddEmptyOption()
@@ -749,27 +775,12 @@ Function DisplayWornItems(Actor who)
                 bikiniToggleOIDs[ii] = AddToggleOption("$SLA_Bikini", value > 0)
             EndIf
 
-            AddEmptyOption()
+            ; 6 options per item (even - no pad needed): [name | rating],
+            ; [Applied | Counts as Clothing], [Add keyword | Remove keyword].
+            bikiniAppliedMenuOIDs[ii] = AddMenuOption("Applied", AppliedKeywordLabel(bikiniArmors[ii]), _getFlag(customKeywordCount > 0))
             bikiniClothingToggleOIDs[ii] = AddToggleOption("Counts as Clothing", bikiniClothingValues[ii] > 0)
-
-            If customKeywordCount > 0
-                ; Pack keyword toggles two-per-row (no per-keyword spacer). Count the ones
-                ; actually shown (the flatIdx cap can truncate this item mid-list) and pad if
-                ; odd, so the next item's row keeps LEFT_TO_RIGHT column parity.
-                Int kwIdx = 0
-                Int shown = 0
-                While kwIdx < customKeywordCount
-                    Int flatIdx = ii * customKeywordCount + kwIdx
-                    If flatIdx < 128
-                        bikiniCustomKeywordToggleOIDs[flatIdx] = AddToggleOption(customKeywordIds[kwIdx], bikiniCustomKeywordValues[flatIdx] > 0)
-                        shown += 1
-                    EndIf
-                    kwIdx += 1
-                EndWhile
-                If (shown / 2) * 2 != shown
-                    AddEmptyOption()
-                EndIf
-            EndIf
+            bikiniAddKeywordMenuOIDs[ii] = AddMenuOption("Add keyword...", "", _getFlag(customKeywordCount > 0))
+            bikiniRemoveKeywordMenuOIDs[ii] = AddMenuOption("Remove keyword...", "", _getFlag(customKeywordCount > 0))
 
             ii += 1
 
@@ -876,6 +887,9 @@ Function GetBikiniArmorsForTargetActor(Actor who)
     bikiniSliderValues = Utility.CreateIntArray(bikiniArmors.Length)
     bikiniClothingValues = Utility.CreateIntArray(bikiniArmors.Length)
     bikiniClothingToggleOIDs = Utility.CreateIntArray(bikiniArmors.Length)
+    bikiniAppliedMenuOIDs = Utility.CreateIntArray(bikiniArmors.Length)
+    bikiniAddKeywordMenuOIDs = Utility.CreateIntArray(bikiniArmors.Length)
+    bikiniRemoveKeywordMenuOIDs = Utility.CreateIntArray(bikiniArmors.Length)
 
     ii = bikiniArmors.Length
     slax.info("slaConfigScr: Got " + ii + " bikini items ")
@@ -891,41 +905,20 @@ Function GetBikiniArmorsForTargetActor(Actor who)
         bikiniClothingValues[ii] = StorageUtil.GetIntValue(bikiniArmors[ii], keyClothingArmor)
     EndWhile
 
+    ; Keywords are managed through per-item Add/Remove menu dialogs, so the page cost is
+    ; FIXED per item (Applied menu + 2 menus) no matter how many keywords are registered:
+    ; worst case 10 top + 14 body block + 2 shoes + 2 headers + 7*6 bikini = 70 options,
+    ; comfortably under SkyUI's hard 128-options-per-page cap. Menu dialogs themselves
+    ; have no size cap (the string array may exceed 128 and the list scrolls). Re-check
+    ; this budget if options are added to the page. Always refresh the id array - the
+    ; global "Remove Custom Keyword" menu needs it even when nothing is worn.
     customKeywordCount = StorageUtil.StringListCount(slaMain, "SLAroused.CustomKeywords")
-    If customKeywordCount > 0
-        customKeywordIds = Utility.CreateStringArray(customKeywordCount)
-        customKeywordValues = Utility.CreateIntArray(customKeywordCount)
-        customKeywordToggleOIDs = Utility.CreateIntArray(customKeywordCount)
-        Int kwIdx = 0
-        While kwIdx < customKeywordCount
-            customKeywordIds[kwIdx] = StorageUtil.StringListGet(slaMain, "SLAroused.CustomKeywords", kwIdx)
-            If bodyItem
-                customKeywordValues[kwIdx] = StorageUtil.GetIntValue(bodyItem, "SLAroused.CKW." + customKeywordIds[kwIdx])
-            EndIf
-            kwIdx += 1
-        EndWhile
-
-        Int flatSize = bikiniArmors.Length * customKeywordCount
-        If flatSize > 128
-            flatSize = 128
-        ElseIf flatSize < 1
-            flatSize = 1
-        EndIf
-        bikiniCustomKeywordValues = Utility.CreateIntArray(flatSize)
-        bikiniCustomKeywordToggleOIDs = Utility.CreateIntArray(flatSize)
-        Int bii = 0
-        While bii < bikiniArmors.Length
-            kwIdx = 0
-            While kwIdx < customKeywordCount
-                Int flatIdx = bii * customKeywordCount + kwIdx
-                If flatIdx < 128
-                    bikiniCustomKeywordValues[flatIdx] = StorageUtil.GetIntValue(bikiniArmors[bii], "SLAroused.CKW." + customKeywordIds[kwIdx])
-                EndIf
-                kwIdx += 1
-            EndWhile
-            bii += 1
-        EndWhile
-    EndIf
+    customKeywordIds = Utility.CreateStringArray(customKeywordCount)
+    Int kwIdx = 0
+    While kwIdx < customKeywordCount
+        customKeywordIds[kwIdx] = StorageUtil.StringListGet(slaMain, "SLAroused.CustomKeywords", kwIdx)
+        kwIdx += 1
+    EndWhile
 
 EndFunction
 
@@ -940,18 +933,9 @@ Function AddSlidersForBodyItem()
         poshSliderOID    = AddSliderOption("$SLA_Posh", poshArmorValue)
         raggedSliderOID  = AddSliderOption("$SLA_Ragged", raggedArmorValue)
         clothingToggleOID = AddToggleOption("Counts as Clothing", clothingArmorValue > 0)
-        Int kwIdx = 0
-        While kwIdx < customKeywordCount
-            customKeywordToggleOIDs[kwIdx] = AddToggleOption(customKeywordIds[kwIdx], customKeywordValues[kwIdx] > 0)
-            kwIdx += 1
-        EndWhile
-        ; Emit an ODD option count (8 fixed + customKeywordCount) so the body block in
-        ; DisplayWornItems (item name + this + 2 empties) stays even and the foot/bikini
-        ; rows below keep LEFT_TO_RIGHT column parity.
-        Int total = 8 + customKeywordCount
-        If (total / 2) * 2 == total
-            AddEmptyOption()
-        EndIf
+        ; Exactly 8 options (even). DisplayWornItems appends the Applied menu + the
+        ; Add/Remove keyword menus + 2 empties, keeping the body block (14) even for
+        ; LEFT_TO_RIGHT column parity.
 EndFunction
 
 
@@ -965,18 +949,9 @@ Function AddTogglesForBodyItem()
         poshToggleOID    = AddToggleOption("$SLA_Posh", poshArmorValue > 0)
         raggedToggleOID  = AddToggleOption("$SLA_Ragged", raggedArmorValue > 0)
         clothingToggleOID = AddToggleOption("Counts as Clothing", clothingArmorValue > 0)
-        Int kwIdx = 0
-        While kwIdx < customKeywordCount
-            customKeywordToggleOIDs[kwIdx] = AddToggleOption(customKeywordIds[kwIdx], customKeywordValues[kwIdx] > 0)
-            kwIdx += 1
-        EndWhile
-        ; Emit an ODD option count (8 fixed + customKeywordCount) so the body block in
-        ; DisplayWornItems (item name + this + 2 empties) stays even and the foot/bikini
-        ; rows below keep LEFT_TO_RIGHT column parity.
-        Int total = 8 + customKeywordCount
-        If (total / 2) * 2 == total
-            AddEmptyOption()
-        EndIf
+        ; Exactly 8 options (even). DisplayWornItems appends the Applied menu + the
+        ; Add/Remove keyword menus + 2 empties, keeping the body block (14) even for
+        ; LEFT_TO_RIGHT column parity.
 EndFunction
 
 
@@ -999,15 +974,42 @@ Event OnOptionMenuOpen(int option)
         EndIf
     
     ElseIf 3 == pageId ; Armor
-    
+
         If option == targetActorMenuOID
-            
+
             SetMenuDialogOptions(targetActorNames)
             SetMenuDialogStartIndex(targetActorIndex)
             SetMenuDialogDefaultIndex(0)
-            
+
+        ElseIf option == removeKeywordOID
+            SetKeywordDialogOptions(customKeywordIds, "(none registered)")
+
+        ElseIf option == bodyAppliedMenuOID
+            SetKeywordDialogOptions(BuildKeywordSubset(bodyItem, True), "(none applied)")
+
+        ElseIf option == bodyAddKeywordMenuOID
+            SetKeywordDialogOptions(BuildKeywordSubset(bodyItem, False), "(all keywords applied)")
+
+        ElseIf option == bodyRemoveKeywordMenuOID
+            SetKeywordDialogOptions(BuildKeywordSubset(bodyItem, True), "(none applied)")
+
+        Else
+            Int bIdx = bikiniAppliedMenuOIDs.Find(option)
+            If bIdx >= 0
+                SetKeywordDialogOptions(BuildKeywordSubset(bikiniArmors[bIdx], True), "(none applied)")
+            Else
+                bIdx = bikiniAddKeywordMenuOIDs.Find(option)
+                If bIdx >= 0
+                    SetKeywordDialogOptions(BuildKeywordSubset(bikiniArmors[bIdx], False), "(all keywords applied)")
+                Else
+                    bIdx = bikiniRemoveKeywordMenuOIDs.Find(option)
+                    If bIdx >= 0
+                        SetKeywordDialogOptions(BuildKeywordSubset(bikiniArmors[bIdx], True), "(none applied)")
+                    EndIf
+                EndIf
+            EndIf
         EndIf
-    
+
     ElseIf 4 == pageId ; Plugins
 
         if option == filterOID
@@ -1041,15 +1043,55 @@ Event OnOptionMenuAccept(int option, int index)
         EndIf
         
     ElseIf 3 == pageId ; Armor
-    
+
         If option == targetActorMenuOID
-        
+
             targetActorIndex = index
             UpdateWornItemStates(targetActors[index])
             ForcePageReset()
-        
+
+        ElseIf option == removeKeywordOID
+            String edid = PickedKeywordFromDialog(index)
+            If edid != "" && ShowMessage("Remove custom keyword '" + edid + "' from the registered list? Keywords.json is not changed. Its per-armor assignments are kept and come back if you register it again.")
+                ; Re-find instead of trusting the dialog index - the registered list is
+                ; authoritative and could have shifted since the page was built.
+                Int lIdx = StorageUtil.StringListFind(slaMain, "SLAroused.CustomKeywords", edid)
+                If lIdx >= 0
+                    StorageUtil.StringListRemoveAt(slaMain, "SLAroused.CustomKeywords", lIdx)
+                    ForcePageReset()
+                EndIf
+            EndIf
+
+        ElseIf option == bodyAppliedMenuOID
+            ; view-only list of the item's applied keywords - picking changes nothing
+
+        ElseIf option == bodyAddKeywordMenuOID
+            ApplyKeywordChoice(bodyItem, PickedKeywordFromDialog(index), True)
+            SetMenuOptionValue(bodyAppliedMenuOID, AppliedKeywordLabel(bodyItem))
+
+        ElseIf option == bodyRemoveKeywordMenuOID
+            ApplyKeywordChoice(bodyItem, PickedKeywordFromDialog(index), False)
+            SetMenuOptionValue(bodyAppliedMenuOID, AppliedKeywordLabel(bodyItem))
+
+        Else
+            Int bIdx = bikiniAppliedMenuOIDs.Find(option)
+            If bIdx >= 0
+                ; view-only list - picking changes nothing
+            Else
+                bIdx = bikiniAddKeywordMenuOIDs.Find(option)
+                If bIdx >= 0
+                    ApplyKeywordChoice(bikiniArmors[bIdx], PickedKeywordFromDialog(index), True)
+                    SetMenuOptionValue(bikiniAppliedMenuOIDs[bIdx], AppliedKeywordLabel(bikiniArmors[bIdx]))
+                Else
+                    bIdx = bikiniRemoveKeywordMenuOIDs.Find(option)
+                    If bIdx >= 0
+                        ApplyKeywordChoice(bikiniArmors[bIdx], PickedKeywordFromDialog(index), False)
+                        SetMenuOptionValue(bikiniAppliedMenuOIDs[bIdx], AppliedKeywordLabel(bikiniArmors[bIdx]))
+                    EndIf
+                EndIf
+            EndIf
         EndIf
-    
+
     ElseIf 4 == pageId ; Plugins
 
         if option == filterOID
@@ -1062,11 +1104,11 @@ Event OnOptionMenuAccept(int option, int index)
         endIf
 
     EndIf
-    
+
 EndEvent
 
 Event OnOptionInputOpen(int option)
-    If option == registerKeywordOID || option == removeKeywordOID
+    If option == registerKeywordOID
         SetInputDialogStartText("")
         Return
     EndIf
@@ -1090,15 +1132,6 @@ Event OnOptionInputAccept(int option, string value)
             Return
         EndIf
         StorageUtil.StringListAdd(slaMain, "SLAroused.CustomKeywords", value, false)
-        ForcePageReset()
-        Return
-    ElseIf option == removeKeywordOID
-        Int idx = StorageUtil.StringListFind(slaMain, "SLAroused.CustomKeywords", value)
-        If idx < 0
-            ShowMessage("Keyword '" + value + "' is not in the registered list.", false, "$Accept")
-            Return
-        EndIf
-        StorageUtil.StringListRemoveAt(slaMain, "SLAroused.CustomKeywords", idx)
         ForcePageReset()
         Return
     EndIf
@@ -1234,6 +1267,12 @@ Event OnOptionSelect(int option)
         ElseIf option == exportKidFileOID
             ExportToKID()
 
+        ElseIf option == saveKeywordsOID
+            SaveRegisteredKeywordsToFile()
+
+        ElseIf option == loadKeywordsOID
+            LoadKeywordsFromFile()
+
         ElseIf option == nakedToggleOID
             nakedArmorValue = ToggleBodyArmorValue(nakedArmorValue, keyNakedArmor)
             SetToggleOptionValue(option, nakedArmorValue > 0)
@@ -1309,58 +1348,6 @@ Event OnOptionSelect(int option)
                 bikiniClothingValues[clothingBikiniIndex] = cval
                 SetToggleOptionValue(option, cval > 0)
                 UpdateWearableState(bikiniArmors[clothingBikiniIndex], keyClothingArmor, cval)
-            EndIf
-
-            If customKeywordCount > 0
-                Int kwIdx = customKeywordToggleOIDs.Find(option)
-                If kwIdx >= 0
-                    Int cval = customKeywordValues[kwIdx]
-                    If cval > 0
-                        cval = 0
-                    Else
-                        cval = 51
-                    EndIf
-                    customKeywordValues[kwIdx] = cval
-                    SetToggleOptionValue(option, cval > 0)
-                    If bodyItem
-                        String editorId = customKeywordIds[kwIdx]
-                        Keyword kw = Keyword.GetKeyword(editorId)
-                        If kw
-                            UpdateWearableState(bodyItem, "SLAroused.CKW." + editorId, cval)
-                            If cval > 0
-                                KeywordUtil.AddKeywordToForm(bodyItem, kw)
-                            Else
-                                KeywordUtil.RemoveKeywordFromForm(bodyItem, kw)
-                            EndIf
-                        EndIf
-                    EndIf
-                EndIf
-
-                Int flatIdx = bikiniCustomKeywordToggleOIDs.Find(option)
-                If flatIdx >= 0
-                    Int bii = flatIdx / customKeywordCount
-                    Int kwI = flatIdx - bii * customKeywordCount
-                    Int cval = bikiniCustomKeywordValues[flatIdx]
-                    If cval > 0
-                        cval = 0
-                    Else
-                        cval = 51
-                    EndIf
-                    bikiniCustomKeywordValues[flatIdx] = cval
-                    SetToggleOptionValue(option, cval > 0)
-                    If bii < bikiniArmors.Length
-                        String editorId = customKeywordIds[kwI]
-                        Keyword kw = Keyword.GetKeyword(editorId)
-                        If kw
-                            UpdateWearableState(bikiniArmors[bii], "SLAroused.CKW." + editorId, cval)
-                            If cval > 0
-                                KeywordUtil.AddKeywordToForm(bikiniArmors[bii], kw)
-                            Else
-                                KeywordUtil.RemoveKeywordFromForm(bikiniArmors[bii], kw)
-                            EndIf
-                        EndIf
-                    EndIf
-                EndIf
             EndIf
 
         EndIf
@@ -1673,26 +1660,38 @@ Event OnOptionHighlight(int option)
             infoText = "Mark this bikini-slot armor as clothing. It will no longer trigger the naked state. Saved permanently - no KID required."
 
         ElseIf option == registerKeywordOID
-            infoText = "Type the editor ID of an existing keyword (e.g. SLA_ArmorHalfNaked). It must exist in a loaded ESP. Once registered it appears as a toggle on all body-slot items."
+            infoText = "Type the editor ID of an existing keyword (e.g. SLA_ArmorHalfNaked). It must exist in a loaded ESP. Once registered it appears in every item's 'Add keyword' menu."
 
         ElseIf option == removeKeywordOID
-            infoText = "Type the editor ID of a registered custom keyword to remove it from the list."
+            infoText = "Select a registered custom keyword to unregister it (asks for confirmation). Keywords.json is not changed; per-armor assignments are kept and come back if you register it again."
+
+        ElseIf option == saveKeywordsOID
+            infoText = "Write your registered custom keywords to the TOP of the 'customkeywords' list in Data\\SKSE\\Plugins\\StorageUtilData\\SLAX\\Keywords.json. Keywords already in the file - in 'customkeywords' or 'copyuprespectlimit' - are skipped, never duplicated. Registering/removing keywords never writes the file - use this to persist your set, e.g. before a Load or for another character."
 
         ElseIf option == exportKidFileOID
             infoText = "Write Data\\SLArousedNG_Custom_KID.ini containing every currently-toggled (keyword, armor) pair. Requires PapyrusExtenderSSE. Re-export after merging or reordering plugins."
 
-        ElseIf customKeywordCount > 0
-            Int kwIdx = customKeywordToggleOIDs.Find(option)
-            If kwIdx >= 0
-                infoText = "Apply keyword '" + customKeywordIds[kwIdx] + "' to this armor. State is saved in StorageUtil and restored on every game reload - no KID required."
-            Else
-                Int flatIdx = bikiniCustomKeywordToggleOIDs.Find(option)
-                If flatIdx >= 0
-                    Int kwI = flatIdx - (flatIdx / customKeywordCount) * customKeywordCount
-                    infoText = "Apply keyword '" + customKeywordIds[kwI] + "' to this bikini-slot item. Saved permanently - no KID required."
-                EndIf
-            EndIf
+        ElseIf option == loadKeywordsOID
+            infoText = "REPLACE your registered custom keywords with the 'customkeywords' list in Data\\SKSE\\Plugins\\StorageUtilData\\SLAX\\Keywords.json (asks for confirmation first). Bypasses SkyUI's 30-char input cap. The file ships pre-filled with the Advanced Nudity Detection / Modesty set (exposure keywords in 'customkeywords', the rest in 'copyuprespectlimit' - move IDs up and Load again to change the set). Every loaded keyword is available in each item's Add/Remove keyword menus."
 
+        ElseIf option == bodyAppliedMenuOID
+            infoText = AppliedKeywordInfoText(bodyItem)
+
+        ElseIf option == bodyAddKeywordMenuOID
+            infoText = "Apply a registered custom keyword to this armor. State is saved in StorageUtil and restored on every game reload - no KID required."
+
+        ElseIf option == bodyRemoveKeywordMenuOID
+            infoText = "Remove an applied custom keyword from this armor."
+
+        Else
+            Int bIdx = bikiniAppliedMenuOIDs.Find(option)
+            If bIdx >= 0
+                infoText = AppliedKeywordInfoText(bikiniArmors[bIdx])
+            ElseIf bikiniAddKeywordMenuOIDs.Find(option) >= 0
+                infoText = "Apply a registered custom keyword to this bikini-slot item. Saved permanently - no KID required."
+            ElseIf bikiniRemoveKeywordMenuOIDs.Find(option) >= 0
+                infoText = "Remove an applied custom keyword from this bikini-slot item."
+            EndIf
         EndIf
         
     ElseIf 4 == pageId ; Plugins
@@ -1935,7 +1934,143 @@ Int Function ToggleBodyArmorValue(Int value, String keyTag)
     EndIf
     StorageUtil.SetIntValue(bodyItem, keyTag, value)
     Return value
-    
+
+EndFunction
+
+
+; Value text for the per-item "Applied" menu: just a count. A comma list overflows
+; the MCM value column and draws over the option label - the full list lives in the
+; hover info text and in the click-to-view dialog instead. Reads StorageUtil live.
+String Function AppliedKeywordLabel(Form item)
+    Int n = 0
+    Int i = 0
+    While i < customKeywordCount
+        If item && StorageUtil.GetIntValue(item, "SLAroused.CKW." + customKeywordIds[i]) > 0
+            n += 1
+        EndIf
+        i += 1
+    EndWhile
+    If n <= 0
+        Return "none"
+    EndIf
+    Return n + " set"
+EndFunction
+
+
+; Highlight info text for the "Applied" row: the FULL keyword list (the value column
+; truncates at ~60 chars; the bottom info bar has room for the whole thing).
+String Function AppliedKeywordInfoText(Form item)
+    String full = BuildAppliedKeywordList(item)
+    If full == ""
+        Return "No registered custom keywords are applied to this item. Use 'Add keyword...' to apply one."
+    EndIf
+    Return "Click to view this item's keywords as a list. Applied: " + full
+EndFunction
+
+
+; Full untruncated comma-separated applied-keyword list (empty string when none).
+String Function BuildAppliedKeywordList(Form item)
+    String[] applied = BuildKeywordSubset(item, True)
+    If !applied ; None or empty
+        Return ""
+    EndIf
+    Return PapyrusUtil.StringJoin(applied, ", ")
+EndFunction
+
+
+; Registered keywords currently applied (applied=True) or not applied (applied=False)
+; to the item - the entry list for the per-item Add/Remove menu dialogs. May be empty.
+; Two passes (count, then fill): PapyrusUtil's Push* recreates the whole array per call
+; and its own docs warn against building arrays that way in a loop.
+String[] Function BuildKeywordSubset(Form item, Bool applied)
+    Bool isSet = False ; hoisted: block-declared locals aren't visible past their While
+    Int matches = 0
+    Int i = 0
+    While i < customKeywordCount
+        isSet = item && StorageUtil.GetIntValue(item, "SLAroused.CKW." + customKeywordIds[i]) > 0
+        If isSet == applied
+            matches += 1
+        EndIf
+        i += 1
+    EndWhile
+
+    String[] result = Utility.CreateStringArray(matches)
+    Int outIdx = 0
+    i = 0
+    While i < customKeywordCount
+        isSet = item && StorageUtil.GetIntValue(item, "SLAroused.CKW." + customKeywordIds[i]) > 0
+        If isSet == applied
+            result[outIdx] = customKeywordIds[i]
+            outIdx += 1
+        EndIf
+        i += 1
+    EndWhile
+    Return result
+EndFunction
+
+
+; Present a keyword list in the option's menu dialog and remember the index->edid
+; mapping for OnOptionMenuAccept. SkyUI menu dialogs have no real cancel: backing
+; out fires OnOptionMenuAccept with the highlighted (start) index anyway. So index 0
+; is reserved for a do-nothing row and the dialog starts there - closing the dialog
+; untouched lands on it and nothing happens. Real entries arrive shifted by one;
+; PickedKeywordFromDialog undoes the shift. An empty list shows only the placeholder.
+Function SetKeywordDialogOptions(String[] entries, String placeholder)
+    keywordDialogIds = entries
+    Int n = 0
+    If entries ; array-to-bool: True only when non-None AND length > 0
+        n = entries.Length
+    EndIf
+    String[] display = Utility.CreateStringArray(n + 1)
+    If n > 0
+        display[0] = "(close)"
+    Else
+        display[0] = placeholder
+    EndIf
+    Int i = 0
+    While i < n
+        display[i + 1] = entries[i]
+        i += 1
+    EndWhile
+    SetMenuDialogOptions(display)
+    SetMenuDialogStartIndex(0)
+    SetMenuDialogDefaultIndex(0)
+EndFunction
+
+
+; Map an OnOptionMenuAccept index from a keyword dialog back to an editor ID.
+; Index 0 is the do-nothing/cancel row; "" means nothing was really picked.
+String Function PickedKeywordFromDialog(Int index)
+    If index < 1 || index > keywordDialogIds.Length
+        Return ""
+    EndIf
+    Return keywordDialogIds[index - 1]
+EndFunction
+
+
+; Apply or strip one registered keyword on an item - the exact call chain the old
+; per-keyword toggles used: StorageUtil int + player FormList bookkeeping via
+; UpdateWearableState (KID export / reload restore read those), then the immediate
+; KeywordUtil apply. No storage write when the keyword no longer resolves.
+Function ApplyKeywordChoice(Form item, String edid, Bool addIt)
+    If !item || edid == ""
+        Return
+    EndIf
+    Keyword kw = Keyword.GetKeyword(edid)
+    If !kw
+        slax.Warning("slaConfigScr: keyword " + edid + " no longer resolves to a loaded form; change ignored")
+        Return
+    EndIf
+    Int cval = 0
+    If addIt
+        cval = 51
+    EndIf
+    UpdateWearableState(item, "SLAroused.CKW." + edid, cval)
+    If addIt
+        KeywordUtil.AddKeywordToForm(item, kw)
+    Else
+        KeywordUtil.RemoveKeywordFromForm(item, kw)
+    EndIf
 EndFunction
 
 
@@ -2158,6 +2293,7 @@ function ExportSettings()
             JsonUtil.FloatListAdd(fileName, "PluginOptionValue", plugin.GetOptionValue(optionId))
         endIf
     endWhile
+
     if !jsonutil.Save(fileName, false)
         SetTextOptionValue(exportSettingsOID, "Error")
 		slax.Error("slaConfigScr export failed: " + jsonutil.GetErrors(fileName))
@@ -2211,6 +2347,171 @@ function ImportSettings()
 
     ForcePageReset()
 endFunction
+
+; Register one custom keyword by editor ID. Returns True only if it names a real
+; keyword in a loaded ESP and wasn't already registered. Shared by the keyword-file
+; loader so the validate/dedup rule lives in one place.
+Bool Function TryRegisterCustomKeyword(String edid)
+    If edid == "" || !Keyword.GetKeyword(edid)
+        Return False
+    EndIf
+    If StorageUtil.StringListFind(slaMain, "SLAroused.CustomKeywords", edid) >= 0
+        Return False
+    EndIf
+    StorageUtil.StringListAdd(slaMain, "SLAroused.CustomKeywords", edid, false)
+    slax.Info("slaConfigScr: registered custom keyword " + edid)
+    Return True
+EndFunction
+
+; ----- Custom keyword file loader --------------------------------------------
+; Register custom keywords from a JSON file so editor IDs longer than SkyUI's
+; 30-char "Register Custom Keyword" input box (e.g. AND_PelvicFlashRiskExtreme_Male)
+; can still be added. The file has two string lists: "customkeywords" (registered
+; on load) and "copyuprespectlimit" (the rest of the AND set, for reference - move
+; IDs into customkeywords to enable them). JSON KEY NAMES MUST STAY LOWERCASE:
+; PapyrusUtil lowercases key lookups but reads file keys verbatim, so a mixed-case
+; key like "CustomKeywords" parses fine yet is never found (list VALUES keep their
+; case). Sync with the file is MANUAL and explicit: "Load Keywords from File"
+; REPLACES the registered set from the file (confirmation first; unknown and
+; duplicate IDs are skipped), "Save Keywords to File" prepends the registered set
+; to the top of the file's list. Registering/removing keywords in the MCM changes
+; only the save, never the file. If the file is missing, Load reports that rather
+; than regenerating it; Save recreates it from the registered set.
+
+; JsonUtil name for the shipped file at Data\SKSE\Plugins\StorageUtilData\SLAX\
+; Keywords.json. NOTE: no "..\\" prefix here, unlike getFileName()'s Settings path -
+; JsonUtil resolves names relative to StorageUtilData\, and a leading "..\\" escapes
+; to Data\SKSE\Plugins\ (see the JsonUtil.psc header docs). The shipped file lives
+; INSIDE StorageUtilData, so the name must stay relative.
+String Function GetKeywordFileName()
+    Return "SLAX\\Keywords"
+EndFunction
+
+; Human-readable on-disk location, for MCM messages / info text.
+String Function GetKeywordDisplayPath()
+    Return "Data\\SKSE\\Plugins\\StorageUtilData\\SLAX\\Keywords.json"
+EndFunction
+
+; Fresh-read Keywords.json ahead of a write. JsonUtil.Load alone returns the cached
+; in-memory copy, so Unload first to force a real disk read - otherwise hand edits
+; made while the game runs would be silently clobbered by the next save. Returns
+; False (and logs) when the file exists but has JSON errors: saving over it would
+; replace the user's hand-edited file with the broken parse's leftovers. A missing
+; file is fine - the save after the change recreates it.
+Bool Function PrepareKeywordFileForWrite()
+    String fileName = GetKeywordFileName()
+    JsonUtil.Unload(fileName, false) ; discard cache; disk is the source of truth
+    Bool existed = JsonUtil.JsonExists(fileName)
+    JsonUtil.Load(fileName)
+    If existed && !JsonUtil.IsGood(fileName)
+        slax.Error("slaConfigScr: " + GetKeywordDisplayPath() + " has JSON errors; keyword change was NOT written to it. " + JsonUtil.GetErrors(fileName))
+        Return False
+    EndIf
+    Return True
+EndFunction
+
+; Save Keywords.json, logging instead of failing silently. On failure, discard the
+; modified in-memory copy: PapyrusUtil auto-writes any still-modified file when the
+; player saves the game, which would silently clobber hand edits made on disk after
+; the failed write. Dropping the cache loses this one unsaved change instead.
+Function SaveKeywordFile()
+    String fileName = GetKeywordFileName()
+    If !JsonUtil.Save(fileName, false)
+        slax.Error("slaConfigScr: failed to save " + GetKeywordDisplayPath() + ": " + JsonUtil.GetErrors(fileName))
+        JsonUtil.Unload(fileName, false)
+    EndIf
+EndFunction
+
+; "Save Keywords to File": prepend every registered keyword that's missing from
+; Keywords.json to the TOP of its customkeywords list, keeping the file's existing
+; entries, order and other keys. Keywords already present ANYWHERE in the file -
+; customkeywords or copyuprespectlimit - are skipped, so Save never duplicates an
+; ID across the two lists (a deliberately demoted keyword stays demoted). One
+; batched read + save. This is the ONLY path that writes the registered set to
+; the file - registering/removing keywords in the MCM changes just the save, so
+; click this before Load to keep hand-registered keywords, or before switching
+; characters to carry the set over.
+Function SaveRegisteredKeywordsToFile()
+    String display = GetKeywordDisplayPath()
+    If !PrepareKeywordFileForWrite()
+        SetTextOptionValue(saveKeywordsOID, "Error")
+        ShowMessage(display + " has JSON errors - nothing was written. Fix the file and try again.", false, "$Accept")
+        Return
+    EndIf
+    SetTextOptionValue(saveKeywordsOID, "$SLA_Working")
+    String fileName = GetKeywordFileName()
+    Int added = 0
+    Int r = StorageUtil.StringListCount(slaMain, "SLAroused.CustomKeywords")
+    While r > 0 ; backwards + prepend keeps the registered order at the top
+        r -= 1
+        String regId = StorageUtil.StringListGet(slaMain, "SLAroused.CustomKeywords", r)
+        Bool duplicate = JsonUtil.StringListFind(fileName, "customkeywords", regId) >= 0 || JsonUtil.StringListFind(fileName, "copyuprespectlimit", regId) >= 0
+        If regId != "" && !duplicate
+            If !JsonUtil.StringListInsertAt(fileName, "customkeywords", 0, regId)
+                JsonUtil.StringListAdd(fileName, "customkeywords", regId) ; empty-list fallback
+            EndIf
+            added += 1
+        EndIf
+    EndWhile
+    SetTextOptionValue(saveKeywordsOID, "$SLA_Done")
+    slax.Info("slaConfigScr: SaveRegisteredKeywordsToFile added " + added + " keyword(s) to " + display)
+    If added > 0
+        SaveKeywordFile()
+        ShowMessage("Added " + added + " keyword(s) to the top of 'customkeywords' in " + display + ". Keywords already in the file (in either list) were skipped.", false, "$Accept")
+    Else
+        ShowMessage("Nothing to add - all registered keywords are already in " + display + ".", false, "$Accept")
+    EndIf
+EndFunction
+
+Function LoadKeywordsFromFile()
+    String fileName = GetKeywordFileName()
+    String display = GetKeywordDisplayPath()
+    JsonUtil.Unload(fileName, false) ; force a real disk read so hand edits are picked up
+
+    If !JsonUtil.JsonExists(fileName)
+        ShowMessage(display + " was not found. Reinstall the mod or restore that file (it ships with the AND / Modesty keyword lists), then try again.", false, "$Accept")
+        Return
+    EndIf
+    JsonUtil.Load(fileName)
+    If !JsonUtil.IsGood(fileName)
+        ShowMessage(display + " has JSON errors and was not loaded - your registered keywords are unchanged. Fix the file and try again. " + JsonUtil.GetErrors(fileName), false, "$Accept")
+        Return
+    EndIf
+
+    Int count = JsonUtil.StringListCount(fileName, "customkeywords")
+    If count <= 0
+        ShowMessage(display + " has an empty 'customkeywords' list - your registered keywords are unchanged. Move editor IDs from 'copyuprespectlimit' into 'customkeywords', then Load again.", false, "$Accept")
+        Return
+    EndIf
+
+    ; Replace, not merge - warn first. The registered list is cleared and rebuilt
+    ; from the file's "customkeywords"; anything registered but not in the file is
+    ; dropped (per-armor assignments stay in StorageUtil and revive on re-register).
+    ; "Save Keywords to File" is the explicit way to push the registered set into
+    ; the file beforehand - registering/removing never writes the file by itself.
+    If !ShowMessage("Load from file will REPLACE your registered custom keywords with the 'customkeywords' list in " + display + ". Registered keywords that are not in the file will be dropped - use 'Save Keywords to File' first to keep them. Continue?")
+        Return
+    EndIf
+
+    SetTextOptionValue(loadKeywordsOID, "$SLA_Working")
+    StorageUtil.StringListClear(slaMain, "SLAroused.CustomKeywords")
+
+    Int added = 0
+    Int k = 0
+    While k < count
+        If TryRegisterCustomKeyword(JsonUtil.StringListGet(fileName, "customkeywords", k))
+            added += 1
+        EndIf
+        k += 1
+    EndWhile
+
+    ; no "$SLA_Done" here: the ForcePageReset below rebuilds the option with a blank
+    ; value anyway - the summary popup is the user feedback for Load.
+    slax.Info("slaConfigScr: LoadKeywordsFromFile replaced custom keywords with " + added + " from " + display)
+    ShowMessage("Replaced your custom keywords with " + added + " keyword(s) from the 'customkeywords' list in " + display + ". Unknown editor IDs (not in a loaded ESP) were skipped. Edit that file - move IDs from 'copyuprespectlimit' into 'customkeywords' - and Load again to change the set.", false, "$Accept")
+    ForcePageReset()
+EndFunction
+
 
 
 ; ----- KID export ------------------------------------------------------------
