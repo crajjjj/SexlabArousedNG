@@ -1,6 +1,6 @@
 # Export to KID File
 
-The **Export to KID file** button sits at the top of the *Current Armor List* page, next to *Register Custom Keyword* and *Remove Custom Keyword*. It turns the per-armor curation you've done in MCM (see [Armor Curation](armor-curation.md)) into a permanent, shareable file.
+The **Export to KID file** button sits at the top of the *Current Armor List* page, in the keyword-management block next to *Register/Remove Custom Keyword* and *Save/Load Keywords from File*. It turns the per-armor curation you've done in MCM (see [Armor Curation](armor-curation.md)) into a permanent, shareable file.
 
 !!! info "Requires PapyrusExtenderSSE"
     This button needs [PapyrusExtenderSSE](https://www.nexusmods.com/skyrimspecialedition/mods/22854) for its source-plugin lookup and ESL-safe FormIDs. Without it the button pops an error; the rest of the mod works normally. See [Troubleshooting](troubleshooting.md#the-export-to-kid-button-says-papyrusextendersse-is-required).
@@ -18,7 +18,7 @@ Writes a snapshot of every (keyword, armor) pair you've currently flagged to `Da
 ## What gets exported
 
 - All 8 built-in keyword toggles for every Armor in your `player`-bound FormList — your explicit clicks PLUS items where the mod auto-detected the keyword as already-baked-in by the source ESP.
-- All custom keyword toggles on both body-slot and bikini-slot items.
+- All custom keyword assignments (made via the per-item *Add keyword...* menus) on both body-slot and bikini-slot items.
 - Each entry uses **load-order-current FormIDs**, with ESL/ESL-FE plugin handling done correctly.
 
 ## What does NOT get exported
