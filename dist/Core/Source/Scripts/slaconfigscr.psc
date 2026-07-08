@@ -482,8 +482,8 @@ Event OnPageReset(String page)
         cellScanFreqOID = AddSliderOption("$SLA_CellScanFreq", cellScanFreq, "{0}")
         smallUpdateOID = AddSliderOption("$SLA_SmallUpdateCount", smallUpdatesPerFull, "{0}")
         
-		clearActorDataOID = AddTextOption("Clear selected actor", "")
-		clearAllDataOID = AddTextOption("Clear all data", "")
+		clearActorDataOID = AddTextOption("$SLA_ClearActorData", "")
+		clearAllDataOID = AddTextOption("$SLA_ClearAllData", "")
         
         AddHeaderOption("$SLA_PluginList")
         
@@ -694,13 +694,13 @@ Function DisplayArmorList()
 
         targetActorMenuOID = AddMenuOption("$SLA_SelectActor", targetActorNames[targetActorIndex])
         
-        registerKeywordOID = AddInputOption("Register Custom Keyword", "")
+        registerKeywordOID = AddInputOption("$SLA_RegisterKeyword", "")
         ; Live count read: this runs before DisplayWornItems refreshes the cached
         ; customKeywordCount, so don't trust the script variable for the flag here.
-        removeKeywordOID = AddMenuOption("Remove Custom Keyword", "", _getFlag(StorageUtil.StringListCount(slaMain, "SLAroused.CustomKeywords") > 0))
-        saveKeywordsOID = AddTextOption("Save Keywords to File", "", _getFlag(StorageUtil.StringListCount(slaMain, "SLAroused.CustomKeywords") > 0))
-        loadKeywordsOID = AddTextOption("Load Keywords from File", "")
-        exportKidFileOID = AddTextOption("Export to KID file", "")
+        removeKeywordOID = AddMenuOption("$SLA_UnregisterKeyword", "", _getFlag(StorageUtil.StringListCount(slaMain, "SLAroused.CustomKeywords") > 0))
+        saveKeywordsOID = AddTextOption("$SLA_SaveKeywordsToFile", "", _getFlag(StorageUtil.StringListCount(slaMain, "SLAroused.CustomKeywords") > 0))
+        loadKeywordsOID = AddTextOption("$SLA_LoadKeywordsFromFile", "")
+        exportKidFileOID = AddTextOption("$SLA_ExportKID", "")
         AddEmptyOption() ; pad the 7th control so the header row below starts in the LEFT column
 
         AddHeaderOption("$SLA_EquippedItems")
@@ -727,9 +727,9 @@ Function DisplayWornItems(Actor who)
         EndIf
         ; "Applied" is a view-only menu: its value shows how many keywords are set and
         ; opening it lists them; picking an entry changes nothing.
-        bodyAppliedMenuOID = AddMenuOption("Applied", AppliedKeywordLabel(bodyItem), _getFlag(customKeywordCount > 0))
-        bodyAddKeywordMenuOID = AddMenuOption("Add keyword...", "", _getFlag(customKeywordCount > 0))
-        bodyRemoveKeywordMenuOID = AddMenuOption("Remove keyword...", "", _getFlag(customKeywordCount > 0))
+        bodyAppliedMenuOID = AddMenuOption("$SLA_Applied", AppliedKeywordLabel(bodyItem), _getFlag(customKeywordCount > 0))
+        bodyAddKeywordMenuOID = AddMenuOption("$SLA_AddKeywordMenu", "", _getFlag(customKeywordCount > 0))
+        bodyRemoveKeywordMenuOID = AddMenuOption("$SLA_RemoveKeywordMenu", "", _getFlag(customKeywordCount > 0))
         AddEmptyOption()
         AddEmptyOption()
     Else
@@ -758,7 +758,7 @@ Function DisplayWornItems(Actor who)
     
     If bikiniArmors.Length > 0
     
-        AddHeaderOption("Items in bikini slots")
+        AddHeaderOption("$SLA_BikiniSlotItems")
         AddHeaderOption("")
     
         Int ii = 0
@@ -777,10 +777,10 @@ Function DisplayWornItems(Actor who)
 
             ; 6 options per item (even - no pad needed): [name | rating],
             ; [Applied | Counts as Clothing], [Add keyword | Remove keyword].
-            bikiniAppliedMenuOIDs[ii] = AddMenuOption("Applied", AppliedKeywordLabel(bikiniArmors[ii]), _getFlag(customKeywordCount > 0))
-            bikiniClothingToggleOIDs[ii] = AddToggleOption("Counts as Clothing", bikiniClothingValues[ii] > 0)
-            bikiniAddKeywordMenuOIDs[ii] = AddMenuOption("Add keyword...", "", _getFlag(customKeywordCount > 0))
-            bikiniRemoveKeywordMenuOIDs[ii] = AddMenuOption("Remove keyword...", "", _getFlag(customKeywordCount > 0))
+            bikiniAppliedMenuOIDs[ii] = AddMenuOption("$SLA_Applied", AppliedKeywordLabel(bikiniArmors[ii]), _getFlag(customKeywordCount > 0))
+            bikiniClothingToggleOIDs[ii] = AddToggleOption("$SLA_CountsAsClothing", bikiniClothingValues[ii] > 0)
+            bikiniAddKeywordMenuOIDs[ii] = AddMenuOption("$SLA_AddKeywordMenu", "", _getFlag(customKeywordCount > 0))
+            bikiniRemoveKeywordMenuOIDs[ii] = AddMenuOption("$SLA_RemoveKeywordMenu", "", _getFlag(customKeywordCount > 0))
 
             ii += 1
 
@@ -932,7 +932,7 @@ Function AddSlidersForBodyItem()
         illegalSliderOID = AddSliderOption("$SLA_Illegal", illegalArmorValue)
         poshSliderOID    = AddSliderOption("$SLA_Posh", poshArmorValue)
         raggedSliderOID  = AddSliderOption("$SLA_Ragged", raggedArmorValue)
-        clothingToggleOID = AddToggleOption("Counts as Clothing", clothingArmorValue > 0)
+        clothingToggleOID = AddToggleOption("$SLA_CountsAsClothing", clothingArmorValue > 0)
         ; Exactly 8 options (even). DisplayWornItems appends the Applied menu + the
         ; Add/Remove keyword menus + 2 empties, keeping the body block (14) even for
         ; LEFT_TO_RIGHT column parity.
@@ -948,7 +948,7 @@ Function AddTogglesForBodyItem()
         illegalToggleOID = AddToggleOption("$SLA_Illegal", illegalArmorValue > 0)
         poshToggleOID    = AddToggleOption("$SLA_Posh", poshArmorValue > 0)
         raggedToggleOID  = AddToggleOption("$SLA_Ragged", raggedArmorValue > 0)
-        clothingToggleOID = AddToggleOption("Counts as Clothing", clothingArmorValue > 0)
+        clothingToggleOID = AddToggleOption("$SLA_CountsAsClothing", clothingArmorValue > 0)
         ; Exactly 8 options (even). DisplayWornItems appends the Applied menu + the
         ; Add/Remove keyword menus + 2 empties, keeping the body block (14) even for
         ; LEFT_TO_RIGHT column parity.
@@ -982,29 +982,29 @@ Event OnOptionMenuOpen(int option)
             SetMenuDialogDefaultIndex(0)
 
         ElseIf option == removeKeywordOID
-            SetKeywordDialogOptions(customKeywordIds, "(none registered)")
+            SetKeywordDialogOptions(customKeywordIds, "$SLA_NoneRegistered")
 
         ElseIf option == bodyAppliedMenuOID
-            SetKeywordDialogOptions(BuildKeywordSubset(bodyItem, True), "(none applied)")
+            SetKeywordDialogOptions(BuildKeywordSubset(bodyItem, True), "$SLA_NoneApplied")
 
         ElseIf option == bodyAddKeywordMenuOID
-            SetKeywordDialogOptions(BuildKeywordSubset(bodyItem, False), "(all keywords applied)")
+            SetKeywordDialogOptions(BuildKeywordSubset(bodyItem, False), "$SLA_AllKeywordsApplied")
 
         ElseIf option == bodyRemoveKeywordMenuOID
-            SetKeywordDialogOptions(BuildKeywordSubset(bodyItem, True), "(none applied)")
+            SetKeywordDialogOptions(BuildKeywordSubset(bodyItem, True), "$SLA_NoneApplied")
 
         Else
             Int bIdx = bikiniAppliedMenuOIDs.Find(option)
             If bIdx >= 0
-                SetKeywordDialogOptions(BuildKeywordSubset(bikiniArmors[bIdx], True), "(none applied)")
+                SetKeywordDialogOptions(BuildKeywordSubset(bikiniArmors[bIdx], True), "$SLA_NoneApplied")
             Else
                 bIdx = bikiniAddKeywordMenuOIDs.Find(option)
                 If bIdx >= 0
-                    SetKeywordDialogOptions(BuildKeywordSubset(bikiniArmors[bIdx], False), "(all keywords applied)")
+                    SetKeywordDialogOptions(BuildKeywordSubset(bikiniArmors[bIdx], False), "$SLA_AllKeywordsApplied")
                 Else
                     bIdx = bikiniRemoveKeywordMenuOIDs.Find(option)
                     If bIdx >= 0
-                        SetKeywordDialogOptions(BuildKeywordSubset(bikiniArmors[bIdx], True), "(none applied)")
+                        SetKeywordDialogOptions(BuildKeywordSubset(bikiniArmors[bIdx], True), "$SLA_NoneApplied")
                     EndIf
                 EndIf
             EndIf
@@ -1645,7 +1645,7 @@ Event OnOptionHighlight(int option)
             infoText = "$SLA_RaggedToggleInfo"
 
         ElseIf option == clothingToggleOID
-            infoText = "Mark this armor as clothing. It will no longer trigger the naked state even if it has no ArmorCuirass or ClothingBody keyword. Saved permanently - no KID required."
+            infoText = "$SLA_CountsAsClothingInfo"
 
         ElseIf option == footItemOID
             infoText = "$SLA_FootItemInfo"
@@ -1657,40 +1657,40 @@ Event OnOptionHighlight(int option)
             infoText = "$SLA_HeelsToggleInfo"
 
         ElseIf bikiniClothingToggleOIDs.Find(option) >= 0
-            infoText = "Mark this bikini-slot armor as clothing. It will no longer trigger the naked state. Saved permanently - no KID required."
+            infoText = "$SLA_CountsAsClothingBikiniInfo"
 
         ElseIf option == registerKeywordOID
-            infoText = "Type the editor ID of an existing keyword (e.g. SLA_ArmorHalfNaked). It must exist in a loaded ESP. Once registered it appears in every item's 'Add keyword' menu."
+            infoText = "$SLA_RegisterKeywordInfo"
 
         ElseIf option == removeKeywordOID
-            infoText = "Select a registered custom keyword to unregister it (asks for confirmation). Keywords.json is not changed; per-armor assignments are kept and come back if you register it again."
+            infoText = "$SLA_UnregisterKeywordInfo"
 
         ElseIf option == saveKeywordsOID
-            infoText = "Write your registered custom keywords to the TOP of the 'customkeywords' list in Data\\SKSE\\Plugins\\StorageUtilData\\SLAX\\Keywords.json. Keywords already in the file - in 'customkeywords' or 'copyuprespectlimit' - are skipped, never duplicated. Registering/removing keywords never writes the file - use this to persist your set, e.g. before a Load or for another character."
+            infoText = "$SLA_SaveKeywordsInfo"
 
         ElseIf option == exportKidFileOID
-            infoText = "Write Data\\SLArousedNG_Custom_KID.ini containing every currently-toggled (keyword, armor) pair. Requires PapyrusExtenderSSE. Re-export after merging or reordering plugins."
+            infoText = "$SLA_ExportKIDInfo"
 
         ElseIf option == loadKeywordsOID
-            infoText = "REPLACE your registered custom keywords with the 'customkeywords' list in Data\\SKSE\\Plugins\\StorageUtilData\\SLAX\\Keywords.json (asks for confirmation first). Bypasses SkyUI's 30-char input cap. The file ships pre-filled with the Advanced Nudity Detection / Modesty set (exposure keywords in 'customkeywords', the rest in 'copyuprespectlimit' - move IDs up and Load again to change the set). Every loaded keyword is available in each item's Add/Remove keyword menus."
+            infoText = "$SLA_LoadKeywordsInfo"
 
         ElseIf option == bodyAppliedMenuOID
             infoText = AppliedKeywordInfoText(bodyItem)
 
         ElseIf option == bodyAddKeywordMenuOID
-            infoText = "Apply a registered custom keyword to this armor. State is saved in StorageUtil and restored on every game reload - no KID required."
+            infoText = "$SLA_AddKeywordInfo"
 
         ElseIf option == bodyRemoveKeywordMenuOID
-            infoText = "Remove an applied custom keyword from this armor."
+            infoText = "$SLA_RemoveKeywordInfo"
 
         Else
             Int bIdx = bikiniAppliedMenuOIDs.Find(option)
             If bIdx >= 0
                 infoText = AppliedKeywordInfoText(bikiniArmors[bIdx])
             ElseIf bikiniAddKeywordMenuOIDs.Find(option) >= 0
-                infoText = "Apply a registered custom keyword to this bikini-slot item. Saved permanently - no KID required."
+                infoText = "$SLA_AddKeywordBikiniInfo"
             ElseIf bikiniRemoveKeywordMenuOIDs.Find(option) >= 0
-                infoText = "Remove an applied custom keyword from this bikini-slot item."
+                infoText = "$SLA_RemoveKeywordBikiniInfo"
             EndIf
         EndIf
         
@@ -1951,9 +1951,11 @@ String Function AppliedKeywordLabel(Form item)
         i += 1
     EndWhile
     If n <= 0
-        Return "none"
+        Return "$SLA_NoKeywordsApplied"
     EndIf
-    Return n + " set"
+    ; Plain count: "n set" cannot translate (SkyUI only resolves a $token that is the
+    ; whole string), so the value column shows just the number of applied keywords.
+    Return "" + n
 EndFunction
 
 
@@ -1962,7 +1964,7 @@ EndFunction
 String Function AppliedKeywordInfoText(Form item)
     String full = BuildAppliedKeywordList(item)
     If full == ""
-        Return "No registered custom keywords are applied to this item. Use 'Add keyword...' to apply one."
+        Return "$SLA_NoKeywordsAppliedInfo"
     EndIf
     Return "Click to view this item's keywords as a list. Applied: " + full
 EndFunction
@@ -2023,7 +2025,7 @@ Function SetKeywordDialogOptions(String[] entries, String placeholder)
     EndIf
     String[] display = Utility.CreateStringArray(n + 1)
     If n > 0
-        display[0] = "(close)"
+        display[0] = "$SLA_CloseDialog"
     Else
         display[0] = placeholder
     EndIf
@@ -2195,7 +2197,7 @@ Function ResetConstants()
 EndFunction
 
 function ClearActorData()
-    if !ShowMessage("Do you want to reset all data for the selected actor (puppet actor)?")
+    if !ShowMessage("$SLA_ClearActorDataConfirm")
         return
     endIf
 
@@ -2220,7 +2222,7 @@ function ClearActorData()
 endFunction
 
 function ClearAllData()
-    if !ShowMessage("Do you really want to delete all actor data from the current save?")
+    if !ShowMessage("$SLA_ClearAllDataConfirm")
         return
     endIf
 
@@ -2308,7 +2310,7 @@ function ImportSettings()
         return
     endIf
     string fileName = getFileName()
-    SetTextOptionValue(exportSettingsOID, "SLA_Working")
+    SetTextOptionValue(exportSettingsOID, "$SLA_Working")
 
     ; Load main options (add slax.info for troubleshooting)
     IsDesireSpell         = JsonUtil.GetIntValue(fileName, "enableDesireSpell") as bool
@@ -2584,7 +2586,7 @@ Function ExportToKID()
     String probe = PO3_SKSEFunctions.GetFormModName(self As Form, False)
     If probe == ""
         SetTextOptionValue(exportKidFileOID, "Error")
-        ShowMessage("KID export requires PapyrusExtenderSSE (powerofthree's Papyrus Extender). Install it and try again.", false, "$Accept")
+        ShowMessage("$SLA_KIDNeedsPO3", false, "$Accept")
         Return
     EndIf
 

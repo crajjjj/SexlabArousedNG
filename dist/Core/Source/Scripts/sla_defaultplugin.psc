@@ -249,7 +249,7 @@ state Installed
 		AddOptionEx("$SLA_Effect_NakedCat", "$SLA_Effect_NakedHalfTime", "$SLA_Effect_NakedHalfTimeDesc", 1.0, 0.1, 24.0, 0.1, "{1} hours")
 		AddToggleOption("$SLA_Effect_TimedCat", "$SLA_Effect_TimedUseCycle", "$SLA_Effect_TimedUseCycleDesc", true)
 		AddOptionEx("$SLA_Effect_TimedCat", "$SLA_Effect_TimedRate", "$SLA_Effect_TimedRateDesc", 12.5, 0.1, 50.0, 0.5, "{1} arousal/day")
-		AddOption("$SLA_Effect_TimedCat", "$SLA_Effect_TimedMax", "$SLA_Effect_TimedMaxDesc.", 60.0)
+		AddOption("$SLA_Effect_TimedCat", "$SLA_Effect_TimedMax", "$SLA_Effect_TimedMaxDesc", 60.0)
 		AddOptionEx("$SLA_Effect_LegacyCat", "$SLA_Effect_LegacyMultiplier", "$SLA_Effect_LegacyMultiplierDesc", 1.0, 0.0, 10.0, 0.1, "x{1} Rate")
 		AddOptionEx("$SLA_Effect_LegacyCat", "$SLA_Effect_LegacyHalfTime", "$SLA_Effect_LegacyHalfTimeDesc", 1.0, 0.1, 24.0, 0.1, "{1} hours")
 		AddOptionEx("$SLA_Effect_SatisfactionCat", "$SLA_Effect_SatisfactionHalfTime", "$SLA_Effect_SatisfactionHalfTimeDesc", 1.0, 0.1, 24.0, 0.1, "{1} hours")
