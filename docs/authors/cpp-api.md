@@ -23,23 +23,42 @@ Consumers do **not** link against SLA NG. Resolve the exports at runtime with `G
 #include "ArousalAPI.h"    // declares SLA_GetArousal, ... and the SLA_Func enum
 
 // One holder for the exports you actually call. Each pointer's TYPE is taken
-// straight from the header via decltype(&SLA_Xxx) -- that is the whole point of
-// copying ArousalAPI.h: you never hand-retype a signature, and if ours ever
-// changed, your build would flag the mismatch instead of crashing at runtime.
+// straight from the header via decltype(&SLA_Xxx), so you never hand-retype a
+// signature. NOTE decltype catches a *signature* change in our API at compile
+// time; it does NOT catch a forgotten/unresolved export -- that stays a null
+// pointer and crashes at the first call. See the two guards against that below.
 // (decltype only inspects the declaration; it creates no link dependency.)
 struct SLA {
     decltype(&SLA_GetVersion)         GetVersion         = nullptr;
     decltype(&SLA_GetArousal)         GetArousal         = nullptr;
+    decltype(&SLA_GetArousalInt)      GetArousalInt      = nullptr;
     decltype(&SLA_AddDecayingEffect)  AddDecayingEffect  = nullptr;
     decltype(&SLA_ClearDynamicEffect) ClearDynamicEffect = nullptr;
-    // add only the exports you use
+    // Add only the exports you use. The rest of the API -- uncomment a line here AND
+    // its matching resolve line in LoadSLA() below (the two lists are hand-kept):
+    // decltype(&SLA_GetInterfaceVersion)   GetInterfaceVersion   = nullptr;
+    // decltype(&SLA_AddFlatEffect)         AddFlatEffect         = nullptr;
+    // decltype(&SLA_AddLinearEffect)       AddLinearEffect       = nullptr;
+    // decltype(&SLA_AddDelayedEffect)      AddDelayedEffect      = nullptr;
+    // decltype(&SLA_HasDynamicEffect)      HasDynamicEffect      = nullptr;
+    // decltype(&SLA_GetDynamicEffectValue) GetDynamicEffectValue = nullptr;
+    // decltype(&SLA_SetDynamicEffect)      SetDynamicEffect      = nullptr;
+    // decltype(&SLA_ModDynamicEffect)      ModDynamicEffect      = nullptr;
 
+    // "SLA installed & the version export resolved" -- NOT "every export resolved".
+    // An older SLA can resolve GetVersion yet lack a newer export, leaving that one
+    // pointer null, so null-check the SPECIFIC pointer before use (see usage below).
     bool available() const { return GetVersion != nullptr; }
 };
 
 // Call once, after SLA's DLL has loaded (see the tip below). If SLA isn't
 // installed every pointer stays null and available() returns false, so the
 // whole integration is opt-in with no hard dependency.
+//
+// !! Every member you added to `struct SLA` MUST get a matching resolve line here.
+// !! These are two hand-kept lists -- if a member is declared but never resolved,
+// !! it stays null and the first call to it crashes. When you add an export, add
+// !! it in BOTH places.
 inline SLA LoadSLA() {
     SLA sla;
     HMODULE h = GetModuleHandleA("SexlabArousedNG.dll");   // null => SLA absent
@@ -53,8 +72,18 @@ inline SLA LoadSLA() {
 #pragma warning(disable : 4191)
     sla.GetVersion         = reinterpret_cast<decltype(sla.GetVersion)>        (GetProcAddress(h, "SLA_GetVersion"));
     sla.GetArousal         = reinterpret_cast<decltype(sla.GetArousal)>        (GetProcAddress(h, "SLA_GetArousal"));
+    sla.GetArousalInt      = reinterpret_cast<decltype(sla.GetArousalInt)>     (GetProcAddress(h, "SLA_GetArousalInt"));
     sla.AddDecayingEffect  = reinterpret_cast<decltype(sla.AddDecayingEffect)> (GetProcAddress(h, "SLA_AddDecayingEffect"));
     sla.ClearDynamicEffect = reinterpret_cast<decltype(sla.ClearDynamicEffect)>(GetProcAddress(h, "SLA_ClearDynamicEffect"));
+    // Uncomment alongside the matching struct member above:
+    // sla.GetInterfaceVersion   = reinterpret_cast<decltype(sla.GetInterfaceVersion)>  (GetProcAddress(h, "SLA_GetInterfaceVersion"));
+    // sla.AddFlatEffect         = reinterpret_cast<decltype(sla.AddFlatEffect)>        (GetProcAddress(h, "SLA_AddFlatEffect"));
+    // sla.AddLinearEffect       = reinterpret_cast<decltype(sla.AddLinearEffect)>      (GetProcAddress(h, "SLA_AddLinearEffect"));
+    // sla.AddDelayedEffect      = reinterpret_cast<decltype(sla.AddDelayedEffect)>     (GetProcAddress(h, "SLA_AddDelayedEffect"));
+    // sla.HasDynamicEffect      = reinterpret_cast<decltype(sla.HasDynamicEffect)>     (GetProcAddress(h, "SLA_HasDynamicEffect"));
+    // sla.GetDynamicEffectValue = reinterpret_cast<decltype(sla.GetDynamicEffectValue)>(GetProcAddress(h, "SLA_GetDynamicEffectValue"));
+    // sla.SetDynamicEffect      = reinterpret_cast<decltype(sla.SetDynamicEffect)>     (GetProcAddress(h, "SLA_SetDynamicEffect"));
+    // sla.ModDynamicEffect      = reinterpret_cast<decltype(sla.ModDynamicEffect)>     (GetProcAddress(h, "SLA_ModDynamicEffect"));
 #pragma warning(pop)
     return sla;
 }
@@ -69,10 +98,18 @@ SLA sla = LoadSLA();
 if (sla.available() && sla.GetVersion() >= 30300000u) {   // installed AND new enough
     RE::Actor* player = RE::PlayerCharacter::GetSingleton();
 
-    float a = sla.GetArousal(player);                       // read
-    sla.AddDecayingEffect(player, "MyMod_Thrill", 40.0f, 2.0f);  // +40, halves every 2h
+    // Null-check the SPECIFIC pointer before each call. available() only means
+    // "SLA installed" -- an older SLA may not export every function you listed, so
+    // calling an unresolved (null) pointer would crash. This guard is the whole
+    // safety net; do not lean on available() to cover individual exports.
+    if (sla.GetArousal) {
+        float a = sla.GetArousal(player);                              // read
+    }
+    if (sla.AddDecayingEffect)
+        sla.AddDecayingEffect(player, "MyMod_Thrill", 40.0f, 2.0f);    // +40, halves every 2h
     // ... later ...
-    sla.ClearDynamicEffect(player, "MyMod_Thrill");         // remove
+    if (sla.ClearDynamicEffect)
+        sla.ClearDynamicEffect(player, "MyMod_Thrill");               // remove
 }
 ```
 
@@ -84,6 +121,9 @@ if (sla.available() && sla.GetVersion() >= 30300000u) {   // installed AND new e
 ## Version gating
 
 Gate on both presence and version before using any export — `sla.available() && sla.GetVersion() >= 30300000u`, as in the usage block above. `available()` catches "SLA not installed"; the version compare catches "installed but too old for the export you need".
+
+!!! warning "Neither guard proves a *specific* export resolved"
+    `available()` and the version compare only tell you SLA is present and new enough — they do **not** verify that any individual pointer resolved. An older SLA build can resolve `SLA_GetVersion` yet lack a newer export, leaving that one pointer null; calling it crashes. Always null-check the exact pointer first: `if (sla.GetArousalInt) …`. The *other* half of this trap is declaring a member in `struct SLA` but forgetting its `GetProcAddress` line in `LoadSLA()` — those are two hand-kept lists, so when you add an export, add it in **both** places (see the `!!` note on `LoadSLA` above).
 
 - **`SLA_GetVersion()`** — packed `MMmmppp` mod/DLL version (e.g. `30300000` for 3.3.0), the C++ counterpart of `SloangNative.GetVersion()`. Read from the DLL's own build version. See the header for the caveat about content-only releases.
 - **`SLA_GetInterfaceVersion()`** — the C API surface version, packed `MMmmpp` (`10000` == 1.0.0), bumped only when exports are added. Exports are append-only, so a value check is enough to feature-detect.
