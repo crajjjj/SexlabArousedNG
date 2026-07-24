@@ -44,13 +44,32 @@ namespace RE {
 //
 // ABI: strings cross as `const char*`; actors as `RE::Actor*`; everything else is POD.
 // All functions are null-safe. Reads create/track the actor (pull-based, as in Papyrus);
-// idle actors are reclaimed by the built-in cleanup. This header is self-contained; a
-// consumer including it directly can predefine SLA_API to nothing (they only need the
-// signatures for GetProcAddress casts).
+// idle actors are reclaimed by the built-in cleanup.
+//
+// -------------------------------------------------------------------------------------
+// WHAT THIS HEADER IS FOR (consumers)
+// -------------------------------------------------------------------------------------
+// It is a REFERENCE, not a link-time dependency: it gives you the SLA_Func enum, the
+// documented semantics, and the exact signatures to cast GetProcAddress results to. Copy
+// it into your project and include it freely - the declarations below carry no dllimport
+// and no dllexport in a consumer build, so including it can never make your plugin link
+// against (or load-time depend on) SLA NG.
+//
+// Do NOT call the SLA_* names directly - they are declarations of functions that live in
+// SLA's DLL, so a direct call is an unresolved external at link time. Always go through a
+// function pointer obtained from GetProcAddress, as shown above. That is what "consumers
+// do not link against SLA NG" means: resolve at runtime, keep the integration optional.
+//
+// Only SLA NG's own build defines SLA_BUILDING_DLL (see CMakeLists.txt) to turn these
+// declarations into actual exports.
 // ======================================================================================
 
 #ifndef SLA_API
-#    define SLA_API __declspec(dllexport)
+#    ifdef SLA_BUILDING_DLL
+#        define SLA_API __declspec(dllexport)
+#    else
+#        define SLA_API
+#    endif
 #endif
 
 // Timed-function IDs for SLA_SetDynamicEffect (mirror of SloangNative.FuncX()).

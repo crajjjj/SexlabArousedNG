@@ -6,7 +6,7 @@ message("Using toolchain file ${CMAKE_TOOLCHAIN_FILE}.")
 ########################################################################################################################
 project(
         SexlabArousedNG
-        VERSION 3.3.0
+        VERSION 3.3.2
         DESCRIPTION "Next generation arousal for Sexlab and Ostim"
         LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 23)
@@ -75,6 +75,13 @@ target_include_directories(${PROJECT_NAME}
 target_include_directories(${PROJECT_NAME}
         PUBLIC
         $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>)
+
+# Turns the SLA_* declarations in include/ArousalAPI.h into real exports. The header
+# defaults to NO storage class so consumers can copy and include it without their own
+# plugin re-exporting (or link-depending on) our symbols -- only this build exports.
+target_compile_definitions(${PROJECT_NAME}
+        PRIVATE
+        SLA_BUILDING_DLL)
 
 target_link_libraries(${PROJECT_NAME}
         PRIVATE
