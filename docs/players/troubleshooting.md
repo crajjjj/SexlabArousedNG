@@ -84,7 +84,7 @@ This specific split — the *Timed* and *Naked* effects frozen at `0.0` in Puppe
 
 ### "I see only the Naked toggle for one armor but I want all 8"
 
-- The 8 toggles only appear for the **body slot (32) armor** you're currently wearing. For items in other slots (foot, bikini slots), only the relevant subset shows up. See [Armor Curation](armor-curation.md#layout).
+- The 8 toggles only appear for the **body slot (32) armor** you're currently wearing. For items in other slots (foot, bikini slots), only the relevant subset shows up. See [Armor Curation](armor-curation.md#page-layout).
 
 ## Reporting a problem
 
