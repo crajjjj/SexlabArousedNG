@@ -25,15 +25,14 @@ Int Function GetNakedActors()
     
     Int ii = 0
     While ii < 12
-        
-        Actor aroused = slaNakedNpcs[ii].GetActorRef()
-        If aroused
-            nakedActors[nakedCount] = aroused
-            nakedCount += 1
+        If slaNakedNpcs[ii]
+            Actor aroused = slaNakedNpcs[ii].GetActorRef()
+            If aroused
+                nakedActors[nakedCount] = aroused
+                nakedCount += 1
+            EndIf
         EndIf
-        
         ii += 1
-        
     EndWhile
 	
 	Stop()
