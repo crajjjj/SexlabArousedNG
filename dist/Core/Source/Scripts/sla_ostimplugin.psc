@@ -37,7 +37,9 @@ float fatigueHalfTime = 0.5
 float fatigueBase = 5.0
 
 bool function CheckDependencies()
-    return Game.GetModByName("Ostim.esp") != 255
+    ; OStim Standalone 7.5+ ships OStim.esp ESL-flagged; GetModByName returns 255
+    ; for light plugins, so the light index must be checked too.
+    return Game.GetModByName("Ostim.esp") != 255 || Game.GetLightModByName("Ostim.esp") != 255
 endFunction
 
 Float Function GetLewd(Actor who)
@@ -102,7 +104,7 @@ function OnUpdateOption(int optionId, float value)
 endFunction
 
 int function registerOstimEventHandlers()
-    if (Game.GetModByName("Ostim.esp") == 255)
+    if (Game.GetModByName("Ostim.esp") == 255 && Game.GetLightModByName("Ostim.esp") == 255)
         return 0
     endif
 
