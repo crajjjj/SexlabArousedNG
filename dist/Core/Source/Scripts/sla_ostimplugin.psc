@@ -38,8 +38,9 @@ float fatigueBase = 5.0
 
 bool function CheckDependencies()
     ; OStim Standalone 7.5+ ships OStim.esp ESL-flagged; GetModByName returns 255
-    ; for light plugins, so the light index must be checked too.
-    return Game.GetModByName("Ostim.esp") != 255 || Game.GetLightModByName("Ostim.esp") != 255
+    ; for light plugins, so the light index must be checked too. GetLightModByName's
+    ; not-found sentinel is 0xFFFF (255 is a valid light index).
+    return Game.GetModByName("Ostim.esp") != 255 || Game.GetLightModByName("Ostim.esp") != 65535
 endFunction
 
 Float Function GetLewd(Actor who)
@@ -104,7 +105,8 @@ function OnUpdateOption(int optionId, float value)
 endFunction
 
 int function registerOstimEventHandlers()
-    if (Game.GetModByName("Ostim.esp") == 255 && Game.GetLightModByName("Ostim.esp") == 255)
+    ; 65535 = GetLightModByName's not-found sentinel (255 is a valid light index)
+    if (Game.GetModByName("Ostim.esp") == 255 && Game.GetLightModByName("Ostim.esp") == 65535)
         return 0
     endif
 
