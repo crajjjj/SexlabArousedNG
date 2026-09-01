@@ -8,6 +8,7 @@ Skyrim SE mod: persistent per-actor arousal system as an SKSE C++ plugin with Pa
 
 ```sh
 # C++ plugin (CMake 3.21+, MSVC v143 or Clang-CL, vcpkg) -- user-run only
+git submodule update --init --recursive   # CommonLibSSE-NG (alandtse fork) at lib/commonlibsse-ng
 cmake --preset build-release-msvc && cmake --build --preset release-msvc
 # Output: dist/Core/SKSE/Plugins/SexlabArousedNG.dll
 
@@ -236,4 +237,4 @@ External mods fire ModEvents -- no quest script needed:
 
 ## Version
 
-3.3.4 (canonical: `dist/fomod/info.xml`), cosave ID `SLAN`, Apache-2.0 license. `CMakeLists.txt` is bumped only on releases with C++ changes; it stays at `3.3.2` for 3.3.4 (script-only: OStim light-plugin sentinel fix) — see *Bumping the Version* above.
+3.3.5 (canonical: `dist/fomod/info.xml`), cosave ID `SLAN`, Apache-2.0 license. 3.3.5 includes C++ build changes (CommonLibSSE-NG 7.0.0 / Skyrim 1.7.99 support), so `CMakeLists.txt` is synced to `3.3.5` — see *Bumping the Version* above. The DLL depends on CommonLibSSE-NG (alandtse fork) vendored as a git submodule at `lib/commonlibsse-ng`, pinned to v7.0.0; its build deps (spdlog, rapidcsv, directxtk) come from vcpkg.

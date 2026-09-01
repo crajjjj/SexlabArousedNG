@@ -6,7 +6,7 @@ message("Using toolchain file ${CMAKE_TOOLCHAIN_FILE}.")
 ########################################################################################################################
 project(
         SexlabArousedNG
-        VERSION 3.3.2
+        VERSION 3.3.5
         DESCRIPTION "Next generation arousal for Sexlab and Ostim"
         LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 23)
@@ -60,8 +60,27 @@ message("\tTests: ${BUILD_TESTS}")
 ########################################################################################################################
 ## Configure target DLL
 ########################################################################################################################
-find_package(CommonLibSSE CONFIG REQUIRED)
-find_package(ryml CONFIG REQUIRED)
+# CommonLibSSE-NG (alandtse fork, https://github.com/alandtse/CommonLibSSE-NG) is
+# vendored as a git submodule pinned to v7.0.0 -- required for Skyrim 1.7.99, which
+# shipped Address Library format 5 (the plugin declaration's AddressLibraryV5 flag is
+# set automatically when building against NG >= 6.7.0). Its build dependencies
+# (spdlog, rapidcsv, directxtk) come from vcpkg -- see vcpkg.json.
+# Run `git submodule update --init --recursive` once before configuring.
+set(SKSE_SUPPORT_PATCH_SAFETY OFF) # trampoline patch validation; this plugin writes no
+                                   # hooks, and OFF avoids a configure-time FetchContent
+                                   # download of minhook's hde64.
+set(_sla_build_tests "${BUILD_TESTS}")
+set(BUILD_TESTS OFF) # never build CommonLibSSE-NG's own unit tests (would require Catch2)
+add_subdirectory(lib/commonlibsse-ng EXCLUDE_FROM_ALL)
+set(BUILD_TESTS "${_sla_build_tests}")
+unset(_sla_build_tests)
+
+# The source (non-prebuilt) build of CommonLibSSE-NG does not include its consumer
+# helper module itself (only the find_package config and prebuilt paths do) -- pull
+# in add_commonlibsse_plugin() explicitly.
+if(NOT COMMAND add_commonlibsse_plugin)
+    include(lib/commonlibsse-ng/cmake/CommonLibSSE.cmake)
+endif()
 
 add_commonlibsse_plugin(${PROJECT_NAME} SOURCES ${headers} ${sources})
 add_library("${PROJECT_NAME}::${PROJECT_NAME}" ALIAS "${PROJECT_NAME}")
@@ -82,10 +101,6 @@ target_include_directories(${PROJECT_NAME}
 target_compile_definitions(${PROJECT_NAME}
         PRIVATE
         SLA_BUILDING_DLL)
-
-target_link_libraries(${PROJECT_NAME}
-        PRIVATE
-        ryml::ryml)
 
 target_precompile_headers(${PROJECT_NAME}
         PRIVATE

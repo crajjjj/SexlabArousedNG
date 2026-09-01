@@ -24,10 +24,20 @@
             ]
         },
         "plugin": {
-            "description": "Build the SKSE plugin.",
+            "description": "Build the SKSE plugin. CommonLibSSE-NG itself is vendored as a git submodule (lib/commonlibsse-ng); these are its build dependencies.",
             "dependencies": [
-                "articuno",
-                "commonlibsse-ng"
+                {
+                    "name": "directxtk",
+                    "version>=": "2025-10-27"
+                },
+                {
+                    "name": "rapidcsv",
+                    "version>=": "8.90"
+                },
+                {
+                    "name": "spdlog",
+                    "version>=": "1.16.0"
+                }
             ]
         },
         "tests": {

@@ -12,11 +12,17 @@ For where everything lives in the tree, see the [repo layout](overview.md#repo-l
 
 ## Build steps
 
-1. **Clone the repository:**
+1. **Clone the repository (with submodules):**
 
    ```sh
-   git clone https://github.com/crajjjj/SexlabArousedNG.git
+   git clone --recurse-submodules https://github.com/crajjjj/SexlabArousedNG.git
    cd SexlabArousedNG
+   ```
+
+   [CommonLibSSE-NG](https://github.com/alandtse/CommonLibSSE-NG) (alandtse fork, pinned to v7.0.0 — required for Skyrim 1.7.99 / Address Library format 5) is vendored as a git submodule at `lib/commonlibsse-ng`. If you cloned without `--recurse-submodules`, run:
+
+   ```sh
+   git submodule update --init --recursive
    ```
 
 2. **Bootstrap vcpkg (Windows):**
