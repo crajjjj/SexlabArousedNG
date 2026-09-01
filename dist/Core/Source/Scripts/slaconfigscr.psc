@@ -102,6 +102,10 @@ Int customKeywordCount
 String[] keywordDialogIds
 Int kidLineCount ; transient: count of lines emitted during the most recent ExportToKID() run
 String kidNL ; transient: cached real LF newline (StringUtil.AsChar(10)) used during KID export
+; How many entries an export may silently drop before it asks for confirmation.
+; Un-toggling a few armors between exports is routine; losing more than this at
+; once means the snapshot is being built from an empty/foreign save (see ExportToKID).
+Int kidShrinkWarnLimit = 5
 ; FOLDEND - Variables
 
 ; FOLDSTART - OIDs
@@ -187,7 +191,7 @@ Armor[] emptyArmorArray
 
 
 Int Function GetVersion()
-    Return       30300004
+    Return       30300005
 	;	0.00.00000
     ; 1.0.0   -> 10000000
     ; 1.1.0   -> 10100000
@@ -197,7 +201,7 @@ Int Function GetVersion()
 EndFunction
 
 String Function GetVersionString()
-    Return "3.3.4"
+    Return "3.3.5"
 EndFunction
 
 
@@ -2522,6 +2526,14 @@ EndFunction
 ; applied automatically by po3_KeywordItemDistributor.dll at the next game
 ; start, before any save data is touched. Re-export after changing the load
 ; order or merging plugins, since formIDs in the file are load-order-current.
+;
+; The export is a one-way SNAPSHOT of save data, not a store: the toggles it
+; reads live in StorageUtil, so a new game or another character starts with an
+; empty set and a plain overwrite would discard an .ini built up over a whole
+; playthrough. ExportToKID therefore inspects the file it is about to replace,
+; copies it to <path>.bak whenever the export shrinks it, and asks before
+; dropping more than kidShrinkWarnLimit entries. (".bak" does not end in
+; "_KID.ini", so KID ignores the backup.)
 
 String Function GetKidFilePath()
     Return "Data\\SLArousedNG_Custom_KID.ini"
@@ -2577,6 +2589,21 @@ String Function BuildLinesFor(String edid, String storageKey)
     Return out
 EndFunction
 
+; Count the KID entries in an existing file body. Matches on "|Armor|" rather than
+; "Keyword" because StringUtil.Find is case-insensitive and the generated header
+; contains the word "keyword" - and because "|Armor|" is immune to the spacing a
+; hand-edited "Keyword=" line might use. Only Armor lines are ever written here, so
+; this can under-count a hand-extended file but never over-count our own output.
+Int Function CountKidEntries(String text)
+    Int count = 0
+    Int at = StringUtil.Find(text, "|Armor|", 0)
+    While at >= 0
+        count += 1
+        at = StringUtil.Find(text, "|Armor|", at + 7)
+    EndWhile
+    Return count
+EndFunction
+
 Function ExportToKID()
     SetTextOptionValue(exportKidFileOID, "$SLA_Working")
 
@@ -2618,6 +2645,31 @@ Function ExportToKID()
     EndWhile
 
     String path = GetKidFilePath()
+
+    ; Overwrite guard - see the block comment above GetKidFilePath().
+    If MiscUtil.FileExists(path)
+        String existing = MiscUtil.ReadFromFile(path)
+        Int existingCount = CountKidEntries(existing)
+        Int dropped = existingCount - kidLineCount
+        If dropped > 0
+            ; Back up only when the export actually destroys entries. Backing up on
+            ; every run would let a second export overwrite the good .bak with the
+            ; already-truncated file, which is exactly the loss we are preventing.
+            If !MiscUtil.WriteToFile(path + ".bak", existing, False, False)
+                slax.Error("slaConfigScr: KID export could not write backup " + path + ".bak")
+            Else
+                slax.Info("slaConfigScr: KID export backed up " + existingCount + " entries to " + path + ".bak")
+            EndIf
+            If dropped > kidShrinkWarnLimit
+                If !ShowMessage(path + " already contains " + existingCount + " entries, but this export has only " + kidLineCount + ". Armor toggles are stored in your SAVE, so a new game or a different character starts empty and overwriting would discard the other " + dropped + ". The current file has been copied to " + path + ".bak. Overwrite anyway?")
+                    SetTextOptionValue(exportKidFileOID, "")
+                    slax.Info("slaConfigScr: KID export cancelled - would have dropped " + dropped + " of " + existingCount + " entries")
+                    Return
+                EndIf
+            EndIf
+        EndIf
+    EndIf
+
     Bool ok = MiscUtil.WriteToFile(path, body, False, False)
     If ok
         SetTextOptionValue(exportKidFileOID, "$SLA_Done")
