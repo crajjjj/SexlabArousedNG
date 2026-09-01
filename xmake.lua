@@ -1,9 +1,8 @@
--- xmake build for the SKSE plugin -- alternative to the CMake + vcpkg build
--- (CMakeLists.txt); both consume the same CommonLibSSE-NG submodule at
--- lib/commonlibsse-ng (alandtse fork, pinned v7.0.0, Skyrim 1.7.99 capable).
--- NG's build deps (spdlog, directxtk, ...) come from xmake-repo here instead
--- of vcpkg. Papyrus tooling (bethesda-skyrim-scripts, skse scripts) is only
--- provided by the vcpkg manifest -- xmake builds just the DLL.
+-- Build for the SKSE plugin (xmake 3.0+, MSVC). CommonLibSSE-NG (alandtse fork,
+-- pinned v7.0.0, Skyrim 1.7.99 capable) is vendored as a git submodule at
+-- lib/commonlibsse-ng; its build deps (spdlog, directxtk, ...) come from
+-- xmake-repo. Papyrus scripts are compiled separately (skyrimse.ppj / Pyro) --
+-- this builds just the DLL.
 --
 --   xmake f -m releasedbg   # configure (first run compiles CommonLibSSE-NG)
 --   xmake                   # build; DLL is deployed to dist/Core/SKSE/Plugins
@@ -13,17 +12,18 @@
 
 set_xmakever("3.0.0")
 
-set_version("3.3.5") -- keep in sync with CMakeLists.txt project VERSION (see CLAUDE.md)
+set_version("3.3.5") -- the DLL's version resource + SKSEPluginInfo version (see CLAUDE.md, Bumping the Version)
 set_license("Apache-2.0")
 
 add_rules("mode.debug", "mode.releasedbg")
 
--- Match the CMake build's dynamic CRT (vcpkg triplet x64-windows-skse).
+-- Dynamic CRT: end users have the VC redist via Skyrim itself, and this keeps
+-- the DLL small and consistent with previous releases.
 if is_mode("debug") then
     set_runtimes("MDd")
 else
     set_runtimes("MD")
-    set_policy("build.optimization.lto", true) -- CMAKE_INTERPROCEDURAL_OPTIMIZATION equivalent
+    set_policy("build.optimization.lto", true)
 end
 
 includes("lib/commonlibsse-ng")
@@ -46,11 +46,12 @@ target("SexlabArousedNG", function()
     set_pcxxheader("src/PCH.h")
 
     -- SLA_BUILDING_DLL turns the SLA_* declarations in include/ArousalAPI.h into
-    -- real exports (see the note in CMakeLists.txt); the rest mirror the CMake
-    -- presets' platform defines.
+    -- real exports. The header defaults to NO storage class so consumers can copy
+    -- and include it without their own plugin re-exporting (or link-depending on)
+    -- our symbols -- only this build exports.
     add_defines("SLA_BUILDING_DLL", "WIN32_LEAN_AND_MEAN", "NOMINMAX", "UNICODE", "_UNICODE")
 
-    -- Same deployment as the CMake POST_BUILD step: ONLY the DLL to dist.
+    -- Deploy ONLY the DLL to the shippable mod tree.
     after_build(function(target)
         local dist = path.join(os.projectdir(), "dist", "Core", "SKSE", "Plugins")
         os.mkdir(dist)

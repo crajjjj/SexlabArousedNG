@@ -1,14 +1,13 @@
 # Building from Source
 
-This project uses **CMake** and **vcpkg** for dependency management. **MSVC or Clang-CL on Windows is required** — GCC and MinGW are not supported because SKSE plugins must be Windows DLLs built against the Windows SDK.
+This project builds with **[xmake](https://xmake.io/) 3.0+**. **MSVC on Windows is required** — GCC and MinGW are not supported because SKSE plugins must be Windows DLLs built against the Windows SDK.
 
 For where everything lives in the tree, see the [repo layout](overview.md#repo-layout) in the Author Overview.
 
 ## Prerequisites
 
-- [CMake 3.21+](https://cmake.org/download/)
-- [vcpkg](https://github.com/microsoft/vcpkg)
-- MSVC (Visual Studio 2022) or Clang-CL
+- [xmake 3.0+](https://xmake.io/#/guide/installation)
+- MSVC (Visual Studio 2022 Build Tools or newer)
 
 ## Build steps
 
@@ -25,60 +24,18 @@ For where everything lives in the tree, see the [repo layout](overview.md#repo-l
    git submodule update --init --recursive
    ```
 
-2. **Bootstrap vcpkg (Windows):**
-
-   ```bat
-   git clone https://github.com/microsoft/vcpkg.git
-   .\vcpkg\bootstrap-vcpkg.bat
-   .\vcpkg\vcpkg install --triplet x64-windows-skse
-   ```
-
-3. **Set `VCPKG_ROOT`:**
-
-   ```powershell
-   # PowerShell
-   $env:VCPKG_ROOT = "C:\path\to\vcpkg"
-   ```
-   ```cmd
-   :: Command Prompt
-   set VCPKG_ROOT=C:\path\to\vcpkg
-   ```
-
-4. **Configure and build:**
-
-   | Preset (configure) | Preset (build) | Compiler |
-   |-|-|-|
-   | `build-release-msvc` | `release-msvc` | MSVC |
-   | `build-debug-msvc` | `debug-msvc` | MSVC |
-   | `build-release-clang` | `release-clang` | Clang-CL |
-   | `build-debug-clang` | `debug-clang` | Clang-CL |
+2. **Configure and build:**
 
    ```sh
-   cmake --preset build-release-msvc
-   cmake --build --preset release-msvc
+   xmake f -m releasedbg   # configure; use -m debug for a debug build
+   xmake                   # build
    ```
 
-   The output DLL is placed under `build/<preset>/` and deployed to `dist/Core/SKSE/Plugins/SexlabArousedNG.dll`.
+   CommonLibSSE-NG's dependencies (spdlog, directxtk, …) are fetched from xmake-repo automatically. The first configure compiles CommonLibSSE-NG from source (~15 min, cached afterwards); set `COMMONLIB_PREBUILT=1` in the environment before configuring to download its prebuilt release bundle instead.
 
-## Alternative: building with xmake
+   The output DLL lands under `build/` and is deployed to `dist/Core/SKSE/Plugins/SexlabArousedNG.dll`.
 
-The DLL (only — no Papyrus tooling) can also be built with [xmake](https://xmake.io/) 3.0+, using the same CommonLibSSE-NG submodule; its dependencies come from xmake-repo instead of vcpkg:
-
-```sh
-xmake f -m releasedbg   # configure; first run compiles CommonLibSSE-NG (or set COMMONLIB_PREBUILT=1 to fetch NG's prebuilt release bundle)
-xmake                   # build + deploy the DLL to dist/Core/SKSE/Plugins
-```
-
-Use `-m debug` for a debug build. Both builds use a dynamic CRT and produce an equivalent multi-runtime DLL.
-
-## Tests
-
-The C++ math is covered by Catch2 tests in `test/ArousalMath.cpp`:
-
-```sh
-cmake --preset build-debug-msvc -DBUILD_TESTS=ON
-cmake --build --preset debug-msvc
-```
+> **Note:** up to 3.3.4 this project built with CMake + vcpkg; that path was removed in favor of xmake. If you have an old checkout, delete stale `build/` and `vcpkg_installed/` directories.
 
 ## Papyrus scripts
 
@@ -90,7 +47,7 @@ Three files hold version strings — keep them in sync:
 
 1. **`dist/fomod/info.xml`** — the FOMOD installer version shown in mod managers (`<Version>`). This is the canonical user-facing version.
 2. **`dist/Core/Source/Scripts/slaconfigscr.psc`** — `GetVersionString()` is the display string shown in MCM; `GetVersion()` is the integer form using the `MMmmppp` packing scheme documented in the function (e.g. `30100009` for 3.1.9). The **integer** also drives `OnVersionUpdate()` migration paths — only the integer triggers migrations, the string is display-only. Recompile `slaconfigscr.pex` after editing.
-3. **`CMakeLists.txt`** — `project(... VERSION X.Y.Z ...)` controls the DLL's resource version. Synced to the fomod version since 3.1.11; bump when cutting a release that includes C++ changes.
+3. **`xmake.lua`** — `set_version("X.Y.Z")` controls the DLL's resource version and the generated `SKSEPluginInfo` version. Synced to the fomod version; bump when cutting a release that includes C++ changes.
 
 !!! warning "Cosave ID is stable"
     The cosave ID `SLAN` (`0x4E414C53`) is stable across versions — do **not** change it without a save-compatibility strategy. On load, per-actor arousal is validated against the sum of its effects (a checksum), and Revert clears all data.

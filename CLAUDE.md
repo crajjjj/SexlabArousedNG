@@ -4,29 +4,24 @@ Skyrim SE mod: persistent per-actor arousal system as an SKSE C++ plugin with Pa
 
 ## Build
 
-**Do NOT compile. The user compiles Papyrus scripts and the C++ plugin themselves — never invoke `cmake`, `PapyrusCompiler.exe`, or any build tool to verify changes.** Edit `.psc` / C++ sources, then stop. Verify correctness by reading the code, not by building.
+**Do NOT compile. The user compiles Papyrus scripts and the C++ plugin themselves — never invoke `xmake`, `PapyrusCompiler.exe`, or any build tool to verify changes.** Edit `.psc` / C++ sources, then stop. Verify correctness by reading the code, not by building.
 
 ```sh
-# C++ plugin (CMake 3.21+, MSVC v143 or Clang-CL, vcpkg) -- user-run only
+# C++ plugin (xmake 3.0+, MSVC) -- user-run only
 git submodule update --init --recursive   # CommonLibSSE-NG (alandtse fork) at lib/commonlibsse-ng
-cmake --preset build-release-msvc && cmake --build --preset release-msvc
+xmake f -m releasedbg && xmake            # or -m debug
 # Output: dist/Core/SKSE/Plugins/SexlabArousedNG.dll
-
-# Tests (Catch2) -- user-run only
-cmake --preset build-debug-msvc -DBUILD_TESTS=ON && cmake --build --preset debug-msvc
-
-# Alternative DLL-only build via xmake 3.0+ (same submodule; deps from xmake-repo) -- user-run only
-xmake f -m releasedbg && xmake
 ```
+
+CommonLibSSE-NG's build deps (spdlog, rapidcsv, directxtk) come from xmake-repo automatically. There is no C++ test suite. (The CMake + vcpkg build was removed after 3.3.4 — xmake is the only build path.)
 
 ## Bumping the Version
 
-Four files hold version strings — keep them in sync:
+Three files hold version strings — keep them in sync:
 
 1. **`dist/fomod/info.xml`** — FOMOD installer version displayed in mod managers. Update `<Version>` (e.g. `3.1.9`). This is the canonical user-facing version.
 2. **`dist/Core/Source/Scripts/slaconfigscr.psc`** — `GetVersionString()` (e.g. `"3.1.9"`) is shown in MCM; `GetVersion()` is the integer form using the `MMmmppp` packing scheme documented in the function (e.g. `30100009` for 3.1.9). Bumping the integer also drives `OnVersionUpdate()` migration paths — only the **integer** triggers migrations, the string is display-only. Recompile `slaconfigscr.pex` after editing.
-3. **`CMakeLists.txt`** — `project(... VERSION X.Y.Z ...)` controls the DLL's resource version. Synced to the fomod version since 3.1.11; bump when cutting a release that includes C++ changes.
-4. **`xmake.lua`** — `set_version("X.Y.Z")` is the same DLL version for the alternative xmake build; bump together with `CMakeLists.txt`.
+3. **`xmake.lua`** — `set_version("X.Y.Z")` controls the DLL's resource version and the generated `SKSEPluginInfo` version. Synced to the fomod version (as `CMakeLists.txt` was, since 3.1.11); bump when cutting a release that includes C++ changes.
 
 Cosave ID `SLAN` is stable across versions — do not change it without a save-compat strategy.
 
@@ -94,7 +89,8 @@ dist/Core/
 dist/OAR/                         Open Animation Replacer meshes
 dist/Traditional/                 FNIS meshes
 dist/Patches/                     Optional patches (DummyESPs, SLEN, PAHE)
-test/                             Catch2 tests (ArousalMath.cpp)
+lib/commonlibsse-ng/              CommonLibSSE-NG submodule (alandtse fork, v7.0.0)
+xmake.lua                         DLL build (xmake 3.0+)
 ```
 
 ## Core Systems & Code Paths
@@ -149,7 +145,7 @@ Reads still **create/track** the actor on access (pull-based tracking, by design
 
 Deliberately **not** exported: the `SloangNative` functions backed by Papyrus quest scripts (`GetExposure`, exposure-based `ModArousal`/`SetArousal`, `IsActorNaked`, exhibitionist / arousal-locked / blocked / gender-preference flags, orgasm tracking) — those live in `slaFrameworkScr` / `slaMainScr` / `defaultPlugin`, not the DLL, so they can't be forwarded without the plugin calling back into Papyrus. Use the Papyrus `SloangNative` API for those.
 
-`include/ArousalAPI.h` is the shippable consumer header; keep it self-contained. `SLA_GetVersion` packs the DLL's own resource version (CMake `project VERSION`); the C-API-surface version is the separate `SLA_GetInterfaceVersion` — append new exports (never reorder/remove) and bump that.
+`include/ArousalAPI.h` is the shippable consumer header; keep it self-contained. `SLA_GetVersion` packs the DLL's own resource version (`xmake.lua` `set_version`); the C-API-surface version is the separate `SLA_GetInterfaceVersion` — append new exports (never reorder/remove) and bump that.
 
 ### 3. Plugin System (`sla_PluginBase`)
 
@@ -241,4 +237,4 @@ External mods fire ModEvents -- no quest script needed:
 
 ## Version
 
-3.3.5 (canonical: `dist/fomod/info.xml`), cosave ID `SLAN`, Apache-2.0 license. 3.3.5 includes C++ build changes (CommonLibSSE-NG 7.0.0 / Skyrim 1.7.99 support), so `CMakeLists.txt` is synced to `3.3.5` — see *Bumping the Version* above. The DLL depends on CommonLibSSE-NG (alandtse fork) vendored as a git submodule at `lib/commonlibsse-ng`, pinned to v7.0.0; its build deps (spdlog, rapidcsv, directxtk) come from vcpkg.
+3.3.5 (canonical: `dist/fomod/info.xml`), cosave ID `SLAN`, Apache-2.0 license. 3.3.5 includes C++ build changes (CommonLibSSE-NG 7.0.0 / Skyrim 1.7.99 support; build migrated from CMake + vcpkg to xmake), so `xmake.lua` is synced to `3.3.5` — see *Bumping the Version* above. The DLL depends on CommonLibSSE-NG (alandtse fork) vendored as a git submodule at `lib/commonlibsse-ng`, pinned to v7.0.0; its build deps (spdlog, rapidcsv, directxtk) come from xmake-repo.

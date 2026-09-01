@@ -66,7 +66,8 @@ SexlabArousedNG/
 │  └─ Interface/translations/          localized MCM strings (UTF-16 LE BOM).
 ├─ dist/Patches/                     optional compatibility patches (DummyESPs, SLEN, PAHE).
 ├─ dist/fomod/                       FOMOD installer (ModuleConfig.xml + info.xml version).
-├─ test/                             Catch2 tests (ArousalMath.cpp).
+├─ lib/commonlibsse-ng/              CommonLibSSE-NG submodule (alandtse fork, pinned v7.0.0).
+├─ xmake.lua                         DLL build (xmake 3.0+). See building.md.
 ├─ docs/                             this documentation site.
 └─ CLAUDE.md                         contributor/build notes.
 ```

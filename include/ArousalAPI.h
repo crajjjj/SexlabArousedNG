@@ -60,7 +60,7 @@ namespace RE {
 // function pointer obtained from GetProcAddress, as shown above. That is what "consumers
 // do not link against SLA NG" means: resolve at runtime, keep the integration optional.
 //
-// Only SLA NG's own build defines SLA_BUILDING_DLL (see CMakeLists.txt) to turn these
+// Only SLA NG's own build defines SLA_BUILDING_DLL (see xmake.lua) to turn these
 // declarations into actual exports.
 // ======================================================================================
 
@@ -91,7 +91,7 @@ extern "C" {
 // ------------------------------------------------------------------------------- Meta
 // Packed DLL version, MMmmppp (e.g. 30300000 for 3.3.0). Feature-gate with it:
 //   if (SLA_GetVersion() >= 30300000u) { ... }
-// Source is the DLL build version (CMakeLists project VERSION). It may lag the Papyrus
+// Source is the DLL build version (xmake.lua set_version). It may lag the Papyrus
 // SloangNative.GetVersion() on content-only releases; do not rely on exact equality.
 SLA_API uint32_t SLA_GetVersion();
 // Version of THIS C++ interface, packed MMmmpp (e.g. 10000 == 1.0.0). Independent of the

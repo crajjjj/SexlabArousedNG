@@ -28,7 +28,7 @@ Integrate with the arousal framework without touching its core scripts.
 - [Static Effects (Plugin Quests)](authors/static-effects.md) — `sla_PluginBase`, the plugin lifecycle, LOS updates, and MCM options
 - [Papyrus API Reference](authors/papyrus-api.md) — every `slaInternalModules` native function, plus effect groups
 - [Compatibility (OSL Aroused & SLA NG)](authors/compatibility.md) — a universal interface that works on every fork
-- [Building from Source](authors/building.md) — CMake/vcpkg, the build presets, and the repo layout
+- [Building from Source](authors/building.md) — xmake, the CommonLibSSE-NG submodule, and the repo layout
 
 ## At a glance
 

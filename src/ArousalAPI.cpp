@@ -18,7 +18,7 @@ extern "C" {
 // ------------------------------------------------------------------------------- Meta
 
 uint32_t SLA_GetVersion() {
-    // Packed from the DLL's own version resource (CMakeLists project VERSION), so it
+    // Packed from the DLL's own version resource (xmake.lua set_version), so it
     // tracks the release automatically. MMmmppp: major*1e7 + minor*1e5 + patch.
     const auto v = SKSE::PluginDeclaration::GetSingleton()->GetVersion();
     return static_cast<uint32_t>(v[0]) * 10000000u +
