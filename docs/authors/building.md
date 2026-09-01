@@ -60,6 +60,17 @@ For where everything lives in the tree, see the [repo layout](overview.md#repo-l
 
    The output DLL is placed under `build/<preset>/` and deployed to `dist/Core/SKSE/Plugins/SexlabArousedNG.dll`.
 
+## Alternative: building with xmake
+
+The DLL (only — no Papyrus tooling) can also be built with [xmake](https://xmake.io/) 3.0+, using the same CommonLibSSE-NG submodule; its dependencies come from xmake-repo instead of vcpkg:
+
+```sh
+xmake f -m releasedbg   # configure; first run compiles CommonLibSSE-NG (or set COMMONLIB_PREBUILT=1 to fetch NG's prebuilt release bundle)
+xmake                   # build + deploy the DLL to dist/Core/SKSE/Plugins
+```
+
+Use `-m debug` for a debug build. Both builds use a dynamic CRT and produce an equivalent multi-runtime DLL.
+
 ## Tests
 
 The C++ math is covered by Catch2 tests in `test/ArousalMath.cpp`:

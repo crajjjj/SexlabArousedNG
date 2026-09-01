@@ -14,15 +14,19 @@ cmake --preset build-release-msvc && cmake --build --preset release-msvc
 
 # Tests (Catch2) -- user-run only
 cmake --preset build-debug-msvc -DBUILD_TESTS=ON && cmake --build --preset debug-msvc
+
+# Alternative DLL-only build via xmake 3.0+ (same submodule; deps from xmake-repo) -- user-run only
+xmake f -m releasedbg && xmake
 ```
 
 ## Bumping the Version
 
-Three files hold version strings — keep them in sync:
+Four files hold version strings — keep them in sync:
 
 1. **`dist/fomod/info.xml`** — FOMOD installer version displayed in mod managers. Update `<Version>` (e.g. `3.1.9`). This is the canonical user-facing version.
 2. **`dist/Core/Source/Scripts/slaconfigscr.psc`** — `GetVersionString()` (e.g. `"3.1.9"`) is shown in MCM; `GetVersion()` is the integer form using the `MMmmppp` packing scheme documented in the function (e.g. `30100009` for 3.1.9). Bumping the integer also drives `OnVersionUpdate()` migration paths — only the **integer** triggers migrations, the string is display-only. Recompile `slaconfigscr.pex` after editing.
 3. **`CMakeLists.txt`** — `project(... VERSION X.Y.Z ...)` controls the DLL's resource version. Synced to the fomod version since 3.1.11; bump when cutting a release that includes C++ changes.
+4. **`xmake.lua`** — `set_version("X.Y.Z")` is the same DLL version for the alternative xmake build; bump together with `CMakeLists.txt`.
 
 Cosave ID `SLAN` is stable across versions — do not change it without a save-compat strategy.
 

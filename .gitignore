@@ -538,7 +538,7 @@ contrib/Distribution/**/*.dll
 contrib/Distribution/**/*.pdb
 contrib/Distribution/**/*.pex
 /vcpkg_installed
-xmake.lua
+.xmake/
 xmake-requires.lock
 dist/Core/skyrimse.ppj
 dist/Core/SkyrimSE.code-workspace
