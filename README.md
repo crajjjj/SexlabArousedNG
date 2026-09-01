@@ -40,7 +40,7 @@ Full documentation lives on the docs site: **https://crajjjj.github.io/SexlabAro
 See [Building from Source](https://crajjjj.github.io/SexlabArousedNG/authors/building/). In short, with [xmake](https://xmake.io/) 3.0+ and MSVC on Windows (clone with `--recurse-submodules` — CommonLibSSE-NG is a submodule):
 
 ```sh
-xmake f -m releasedbg
+xmake f -m release
 xmake
 # Output: dist/Core/SKSE/Plugins/SexlabArousedNG.dll
 ```

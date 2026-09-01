@@ -27,7 +27,7 @@ For where everything lives in the tree, see the [repo layout](overview.md#repo-l
 2. **Configure and build:**
 
    ```sh
-   xmake f -m releasedbg   # configure; use -m debug for a debug build
+   xmake f -m release   # configure; use -m debug for a debug build
    xmake                   # build
    ```
 

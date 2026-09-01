@@ -539,7 +539,6 @@ contrib/Distribution/**/*.pdb
 contrib/Distribution/**/*.pex
 /vcpkg_installed
 .xmake/
-xmake-requires.lock
 dist/Core/skyrimse.ppj
 dist/Core/SkyrimSE.code-workspace
 /dist/Core/.vscode

@@ -4,8 +4,8 @@
 -- xmake-repo. Papyrus scripts are compiled separately (skyrimse.ppj / Pyro) --
 -- this builds just the DLL.
 --
---   xmake f -m releasedbg   # configure (first run compiles CommonLibSSE-NG)
---   xmake                   # build; DLL is deployed to dist/Core/SKSE/Plugins
+--   xmake f -m release   # configure (first run compiles CommonLibSSE-NG)
+--   xmake                # build; DLL is deployed to dist/Core/SKSE/Plugins
 --
 -- Optional: set COMMONLIB_PREBUILT=1 to let NG fetch its prebuilt release
 -- bundle instead of compiling from source (see lib/commonlibsse-ng/xmake.lua).
@@ -15,14 +15,29 @@ set_xmakever("3.0.0")
 set_version("3.3.5") -- the DLL's version resource + SKSEPluginInfo version (see CLAUDE.md, Bumping the Version)
 set_license("Apache-2.0")
 
-add_rules("mode.debug", "mode.releasedbg")
+-- Root-scope settings from the included CommonLibSSE-NG xmake.lua apply only to
+-- ITS targets -- the language standard must be declared here for ours.
+set_arch("x64")
+set_languages("c++23")
+set_encodings("utf-8")
 
--- Dynamic CRT: end users have the VC redist via Skyrim itself, and this keeps
--- the DLL small and consistent with previous releases.
+add_rules("mode.debug", "mode.release")
+
+-- Reproducible package versions (xmake-requires.lock), as in AudioUtil.
+set_policy("package.requires_lock", true)
+
+-- Static CRT + release scheme mirrors AudioUtil's proven setup against the
+-- same CommonLibSSE-NG v7 submodule. (Note: releases up to 3.3.4 used the
+-- dynamic CRT via vcpkg; MT makes the DLL self-contained.)
 if is_mode("debug") then
-    set_runtimes("MDd")
+    add_defines("DEBUG")
+    set_optimize("none")
+    set_runtimes("MTd")
 else
-    set_runtimes("MD")
+    add_defines("NDEBUG")
+    set_optimize("fastest")
+    set_symbols("debug") -- keep a PDB next to the optimized DLL
+    set_runtimes("MT")
     set_policy("build.optimization.lto", true)
 end
 

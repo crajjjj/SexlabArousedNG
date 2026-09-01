@@ -9,7 +9,7 @@ Skyrim SE mod: persistent per-actor arousal system as an SKSE C++ plugin with Pa
 ```sh
 # C++ plugin (xmake 3.0+, MSVC) -- user-run only
 git submodule update --init --recursive   # CommonLibSSE-NG (alandtse fork) at lib/commonlibsse-ng
-xmake f -m releasedbg && xmake            # or -m debug
+xmake f -m release && xmake            # or -m debug
 # Output: dist/Core/SKSE/Plugins/SexlabArousedNG.dll
 ```
 
