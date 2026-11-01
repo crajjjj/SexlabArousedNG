@@ -4,16 +4,20 @@ Skyrim SE mod: persistent per-actor arousal system as an SKSE C++ plugin with Pa
 
 ## Build
 
-**Do NOT compile. The user compiles Papyrus scripts and the C++ plugin themselves — never invoke `xmake`, `PapyrusCompiler.exe`, or any build tool to verify changes.** Edit `.psc` / C++ sources, then stop. Verify correctness by reading the code, not by building.
+Build to verify changes: the DLL with xmake, the scripts with Pyro. Note that the CommonLibSSE-NG plugin rule copies the freshly built DLL to `%XSE_TES5_MODS_PATH%\SexlabArousedNG` when that variable is set (on the dev machine it is `E:\nefaram\mods`), so an xmake build already lands in that MO2 mod folder; Pyro deploys nothing, copy `dist\Core\scripts` there by hand when the scripts changed too.
 
 ```sh
-# C++ plugin (xmake 3.0+, MSVC) -- user-run only
+# C++ plugin (xmake 3.0+, MSVC)
 git submodule update --init --recursive   # CommonLibSSE-NG (alandtse fork) at lib/commonlibsse-ng
 xmake f -m release && xmake            # or -m debug
 # Output: dist/Core/SKSE/Plugins/SexlabArousedNG.dll
+
+# Papyrus scripts (Pyro, project file skyrimse.ppj; the VSCode default build task runs the same)
+"%USERPROFILE%\.vscode\extensions\joelday.papyrus-lang-vscode-<ver>\pyro\pyro.exe" -i skyrimse.ppj --game-path "C:\SteamLibrary\steamapps\common\Skyrim Special Edition"
+# Output: dist/Core/scripts/*.pex, plus dist/Release/SLO Aroused NG.zip (Zip="true" in the ppj)
 ```
 
-CommonLibSSE-NG's build deps (spdlog, rapidcsv, directxtk) come from xmake-repo automatically. There is no C++ test suite. (The CMake + vcpkg build was removed after 3.3.4 — xmake is the only build path.)
+The ppj imports the dependency sources (SexLab, OStim, PapyrusUtil, SkyUI, Devious Devices, ...) from absolute `C:\Playground\Skyrim\mods\build\...` paths; a missing import only breaks the scripts that use it. CommonLibSSE-NG's build deps (spdlog, rapidcsv, directxtk) come from xmake-repo automatically. There is no C++ test suite. (The CMake + vcpkg build was removed after 3.3.4 — xmake is the only build path.)
 
 ## Bumping the Version
 
@@ -48,6 +52,7 @@ Cosave ID `SLAN` is stable across versions — do not change it without a save-c
 ### States
 - Script can be in only one state at a time. `GotoState("")` returns to empty state.
 - State function signatures must exactly match the empty-state definition (see `isInScene` / `UpdateActor` overrides in `sla_OStimPlugin.psc`).
+- A **value-returning** function inherited from the parent and overridden only inside a state of the derived script does not compile (`cannot type-check return because function X is not on object Y`): give the derived script a script-level definition too, or override it only there (see `UsesAggregatedObservations` in the three LOS plugins). Void overrides inside states are fine.
 - State transitions fire `OnEndState()` → change → `OnBeginState()`.
 
 ### Threading
