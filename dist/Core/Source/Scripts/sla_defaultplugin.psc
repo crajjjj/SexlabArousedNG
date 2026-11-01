@@ -71,11 +71,13 @@ bool function RefreshExhibitionist(Actor who)
 	{Per-actor pre-pass, called by slaMainScr before the observer pass: mirrors AND's
 	modesty ranks into the exhibitionist faction (rank 1 = auto-managed, manual rank 0
 	is never touched -- see slaFrameworkScr.UpdateDynamicExhibitionist) and reports
-	whether the actor exhibits, so onlookers can be counted for them natively.}
+	whether the actor is exhibiting right now: an exhibitionist who shows something
+	(GetExposureLevel > 0). Only those make their pairs worth a raycast; UpdateActor
+	applies the same test before it uses the onlooker count.}
 	if useModestyRanks && main.IsANDInstalled
 		slaUtil.UpdateDynamicExhibitionist(who, modestyThreshold)
 	endIf
-	return slaUtil.IsActorExhibitionist(who)
+	return slaUtil.IsActorExhibitionist(who) && main.GetExposureLevel(who) > 0.0
 endFunction
 
 ; Script level, not in the Installed state: the Papyrus compiler cannot type-check a

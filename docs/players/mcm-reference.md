@@ -12,14 +12,14 @@ Home page. Key controls:
 - **Use LOS** ("Require Line of Sight for arousal") — whether actors need line-of-sight on a naked actor to gain exposure.
 - **Enable Notifications** — corner messages from the mod.
 - **Disabled** — full off switch.
-- **Verbose script log** — writes the mod's informational lines (one per tracked actor per cycle, every effect write) to `Logs\Script\User\SLOANG.log`. Warnings and errors are always written. Leave it OFF unless you are collecting a log for a report.
+- **Verbose script log**: writes the mod's informational lines (one per tracked actor per cycle, every effect write) to `Logs\Script\User\SLOANG.log`. Warnings and errors are always written. Leave it OFF unless you are collecting a log for a report.
 
 Under the **Arousal** header on the same page:
 
-- **Cell Scan Frequency** — seconds between update cycles (default 30).
-- **Scan radius** — how far from you actors are picked up, nearest first (default 1024 units, about 15 metres).
-- **Max tracked actors** — cap on actors updated per cycle, nearest first (default 25). Raise it in crowded cells; each tracked actor costs a little script time per cycle.
-- **Track creatures** — include creatures in the scan (default on). Off means NPCs only, so creatures are never seen as naked either.
+- **Cell Scan Frequency**: seconds between update cycles (default 30).
+- **Scan radius**: how far from you actors are picked up, nearest first (default 1024 units, about 15 metres). Only actors the game keeps fully active are found, so past that range a larger value changes nothing.
+- **Max tracked actors**: cap on actors updated per cycle, nearest first (default 25). Raise it in crowded cells; each tracked actor costs a little script time per cycle.
+- **Track creatures**: include creatures in the scan (default on). Off means NPCs only, so creatures are never seen as naked either.
 
 !!! note "Options removed in 3.4.0"
     *Naked Only*, *Small updates per full update* and *Use SexLab Gender* are gone. The first never reached the update loop, the second left the Naked effect decaying on every "small" cycle, and the third had no click handler and no reader (gender preference always falls back to SexLab's sexuality stats when SexLab is present). Every cycle is a full update now; the actor scan and the line-of-sight pass run natively, so there is nothing left to switch off.

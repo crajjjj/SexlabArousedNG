@@ -98,13 +98,16 @@ These two natives drive `slaMainScr.UpdateActorArousals` since 3.4.0. Plugins no
 ; mannequins, and creatures unless includeCreatures. An empty result arrives as None.
 Actor[] function ScanActors(Actor origin, float radius, int maxCount, bool includeCreatures) global native
 
-; One pass over every observer/observed pair of actors (LOS tested natively when useLOS).
-; flags per actor: 1 naked, 2 exhibiting, 4 in an OStim scene (SexLab is read from the
-; animating faction). exposure per actor (1.0 when not scaling), genderPref per actor
-; (0 male, 1 female, 2 both). Returns 8 floats per actor: [0] naked weight, [1] max
-; exposure seen, [2] sees naked, [3] sees naked of preferred gender, [4] exhibitionist
-; onlooker count, [5] sees SexLab scene, [6] sees OStim scene, [7] actors in view.
-float[] function ComputeObservations(Actor[] actors, int[] flags, float[] exposure, int[] genderPref, bool useLOS, Faction creatureLover, Faction animating) global native
+; One pass over the observer/observed pairs whose observer is actors[firstObserver] ..
+; actors[firstObserver + observerCount - 1]; everyone in actors can be observed (LOS tested
+; natively when useLOS). flags per actor: 1 naked, 2 exhibiting, 4 in an OStim scene
+; (SexLab is read from the animating faction). exposure per actor (1.0 when not scaling),
+; genderPref per actor (0 male, 1 female, 2 both). Returns 8 floats per requested observer,
+; row 0 = firstObserver: [0] naked weight, [1] max exposure seen, [2] sees naked, [3] sees
+; naked of preferred gender, [4] exhibitionist onlooker count, [5] sees SexLab scene,
+; [6] sees OStim scene, [7] actors in view. It runs on the main thread, so keep
+; observerCount x actors.Length small: the framework asks for about 128 pairs per call.
+float[] function ComputeObservations(Actor[] actors, int[] flags, float[] exposure, int[] genderPref, bool useLOS, Faction creatureLover, Faction animating, int firstObserver, int observerCount) global native
 ```
 
 ## Maintenance

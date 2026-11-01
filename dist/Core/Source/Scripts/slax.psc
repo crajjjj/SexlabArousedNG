@@ -3,10 +3,11 @@ import Debug
 
 Function WriteLog(String asMessage, Int aiPriority = 0) Global
 	String asModName = "SLOANG"
+	; Before OpenUserLog and on every written line, as before 3.4.0: the user log may need
+	; tracing on to open, and another mod can turn it back off mid-session. Only written
+	; lines pay for it, and with Info gated by the verbose toggle those are few.
+	Utility.SetINIBool("bEnableTrace:Papyrus", true)
 	if OpenUserLog(asModName)
-		; First line of the session: make sure tracing is on so the user log is written.
-		; (Before 3.4.0 this INI write ran on EVERY log line.)
-		Utility.SetINIBool("bEnableTrace:Papyrus", true)
 		Debug.Trace(asModName + " Debugging Started.")
 		Debug.TraceUser(asModName,"[---"+ asModName +" DEBUG LOG STARTED---]")
 	endif

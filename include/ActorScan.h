@@ -40,18 +40,25 @@ namespace SLA::Scan {
         kStride
     };
 
-    // One pass over every ordered (observer, observed) pair of a_actors. Implements the
-    // rules of sla_DefaultPlugin.UpdateObserver and the sex plugins' "sees sex" check:
+    // One pass over the ordered (observer, observed) pairs whose observer index lies in
+    // [a_firstObserver, a_firstObserver + a_observerCount); every actor of a_actors is a
+    // potential observed. Returns a_observerCount * kStride floats, row 0 = a_firstObserver.
+    // Implements the rules of sla_DefaultPlugin.UpdateObserver and the sex plugins' "sees
+    // sex" check:
     //   - a creature counts for an observer only if that observer is a creature or in
     //     a_creatureLover; nobody else sees creatures at all
     //   - exhibitionist onlookers are counted for non-creature observed actors only
-    //   - a_genderPref: 0 male, 1 female, 2 both (anything else = both), per actor
+    //   - a_genderPref: 0 male, 1 female, 2 both, per actor (any other value: not preferred)
     //   - a_exposure: the naked actor's exposure scale (1.0 when not scaling)
+    //   - actors no longer 3D-loaded or out of high process are skipped on both sides
     // LOS (Actor::HasLineOfSight) is only tested for pairs the rules care about, so a town
-    // with nobody naked costs no raycasts. a_useLOS false skips the test entirely.
+    // with nobody naked costs no raycasts. a_useLOS false skips the test entirely. The call
+    // runs on the main thread, so slaMainScr splits the observers into chunks to bound the
+    // raycasts done in any one frame (see UpdateActorArousals).
     std::vector<float> ComputeObservations(const std::vector<RE::Actor*>& a_actors,
                                            const std::vector<std::int32_t>& a_flags,
                                            const std::vector<float>& a_exposure,
                                            const std::vector<std::int32_t>& a_genderPref, bool a_useLOS,
-                                           RE::TESFaction* a_creatureLover, RE::TESFaction* a_animating);
+                                           RE::TESFaction* a_creatureLover, RE::TESFaction* a_animating,
+                                           std::int32_t a_firstObserver, std::int32_t a_observerCount);
 }

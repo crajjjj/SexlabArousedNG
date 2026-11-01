@@ -19,6 +19,7 @@ float[] previousModifiersThread9
 
 Actor currentObserver = none
 bool isSeeingSex = false
+Actor[] cycleSceneActors ; this cycle's OStim scene actors, set by GetSceneActors
 
 int sexEff = -1
 int fatigueEff = -1
@@ -469,7 +470,9 @@ state Installed
 			int oldState = GetArousalEffectFncAux(currentObserver, sexEff)
 			float lewd = GetLewd(currentObserver)
 			float rate
-			if isInScene(currentObserver)
+			; Scene membership from the list GetSceneActors gathered for this cycle, not
+			; isInScene, which walks every OStim thread again for each actor.
+			if cycleSceneActors && cycleSceneActors.Find(currentObserver) >= 0
 				rate = 20.0 * 24.0 * (1.0 + lewd)
 				SetLinearArousalEffect(currentObserver, sexEff, rate, sexEffMax, 2)
 			elseIf isSeeingSex
@@ -497,6 +500,7 @@ state Installed
     Actor[] function GetSceneActors()
         Actor[] result = PapyrusUtil.ActorArray(0)
         if OStim == none
+            cycleSceneActors = result
             return result
         endIf
         if OStim.GetAPIVersion() >= 29
@@ -511,14 +515,13 @@ state Installed
                     endIf
                 endWhile
             endIf
-            return result
-        endIf
-        if OStim.AnimationRunning()
+        elseIf OStim.AnimationRunning()
             Actor[] legacyActors = OStim.GetActors()
             if legacyActors
-                return legacyActors
+                result = legacyActors
             endIf
         endIf
+        cycleSceneActors = result ; read back by UpdateActor during the same cycle
         return result
     EndFunction
 

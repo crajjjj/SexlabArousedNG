@@ -158,6 +158,7 @@ namespace SLA {
         void UpdateGroup(ArousalEffectGroup& group, float timeDiff, RE::Actor* who);
         bool CalculateArousalEffect(ArousalEffectData& effect, float timeDiff, RE::Actor* who);
         bool UpdateArousalEffect(ArousalEffectData& effect, float timeDiff, RE::Actor* who);
+        static void FinishTimedEffect(ArousalEffectData& effect);
         float RecalculateArousal() const;
 
         std::unordered_set<int32_t> staticEffectsToUpdate;

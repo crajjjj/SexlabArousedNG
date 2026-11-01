@@ -154,8 +154,10 @@ namespace {
 
     std::vector<float> ComputeObservations(StaticFunctionTag*, std::vector<Actor*> actors, std::vector<int32_t> flags,
                                            std::vector<float> exposure, std::vector<int32_t> genderPref, bool useLOS,
-                                           RE::TESFaction* creatureLover, RE::TESFaction* animating) {
-        return SLA::Scan::ComputeObservations(actors, flags, exposure, genderPref, useLOS, creatureLover, animating);
+                                           RE::TESFaction* creatureLover, RE::TESFaction* animating,
+                                           int32_t firstObserver, int32_t observerCount) {
+        return SLA::Scan::ComputeObservations(actors, flags, exposure, genderPref, useLOS, creatureLover, animating,
+                                              firstObserver, observerCount);
     }
 
     std::vector<Actor*> DuplicateActorArray(StaticFunctionTag*, std::vector<Actor*> arr, int32_t count) {

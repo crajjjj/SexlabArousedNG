@@ -71,22 +71,36 @@ namespace SLA::Scan {
                                            const std::vector<std::int32_t>& a_flags,
                                            const std::vector<float>& a_exposure,
                                            const std::vector<std::int32_t>& a_genderPref, bool a_useLOS,
-                                           RE::TESFaction* a_creatureLover, RE::TESFaction* a_animating) {
+                                           RE::TESFaction* a_creatureLover, RE::TESFaction* a_animating,
+                                           std::int32_t a_firstObserver, std::int32_t a_observerCount) {
         const std::size_t n = a_actors.size();
-        std::vector<float> out(n * kStride, 0.f);
-        if (n == 0) return out;
+        const std::size_t first = static_cast<std::size_t>(std::max<std::int32_t>(a_firstObserver, 0));
+        const std::size_t last = std::min(n, first + static_cast<std::size_t>(std::max<std::int32_t>(a_observerCount, 0)));
+        // Always kStride values per REQUESTED observer, so the caller can index by position
+        // even when the range runs past the end (a non-empty array also never reaches Papyrus
+        // as None).
+        std::vector<float> out(static_cast<std::size_t>(std::max<std::int32_t>(a_observerCount, 1)) * kStride, 0.f);
+        if (first >= last) return out;
 
         const auto flag = [&](std::size_t i, std::int32_t bit) { return i < a_flags.size() && (a_flags[i] & bit) != 0; };
         const auto exposure = [&](std::size_t i) { return i < a_exposure.size() ? a_exposure[i] : 1.f; };
         const auto pref = [&](std::size_t i) { return i < a_genderPref.size() ? a_genderPref[i] : 2; };
-        const auto prefers = [](std::int32_t a_pref, int a_sex) { return a_pref == 2 || a_pref == a_sex || (a_pref != 0 && a_pref != 1); };
+        // Exactly the old sla_DefaultPlugin.UpdateObserver test: 2 (both) or the exact sex.
+        // Any other rank (an out-of-range faction rank, -2 for None) counts as not preferred.
+        const auto prefers = [](std::int32_t a_pref, int a_sex) { return a_pref == 2 || a_pref == a_sex; };
 
-        // Per-actor facts, read once instead of once per pair.
-        std::vector<std::uint8_t> creature(n, 0), inSexLab(n, 0), creatureLover(n, 0);
+        // Per-actor facts, read once per call instead of once per pair. An actor that lost its
+        // 3D or left high process since the scan (a load door during the Papyrus pre-pass, or
+        // a GetNearbyActors list up to 10 s old) is skipped on both sides: the engine LOS
+        // routine expects a loaded, high-process actor.
+        std::vector<std::uint8_t> usable(n, 0), creature(n, 0), inSexLab(n, 0), creatureLover(n, 0);
         std::vector<int> sex(n, -1);
         for (std::size_t i = 0; i < n; ++i) {
             const auto a = a_actors[i];
-            if (!a) continue;
+            if (!a || !a->Is3DLoaded()) continue;
+            const auto process = a->GetActorRuntimeData().currentProcess;  // SE/AE/VR layout-safe accessor
+            if (!process || !process->InHighProcess()) continue;
+            usable[i] = 1;
             creature[i] = IsCreature(a);
             sex[i] = SexOf(a);
             if (a_animating) inSexLab[i] = a->IsInFaction(a_animating);
@@ -94,17 +108,16 @@ namespace SLA::Scan {
                 creatureLover[i] = a->GetFactionRank(a_creatureLover, a == RE::PlayerCharacter::GetSingleton()) > -1;
         }
 
-        for (std::size_t i = 0; i < n; ++i) {
+        for (std::size_t i = first; i < last; ++i) {
+            if (!usable[i]) continue;
             const auto observer = a_actors[i];
-            if (!observer) continue;
-            float* o = &out[i * kStride];
+            float* o = &out[(i - first) * kStride];
             const bool observerExhibits = flag(i, kExhibiting);
             const bool observerSeesCreatures = creature[i] || creatureLover[i];
 
             for (std::size_t j = 0; j < n; ++j) {
-                if (j == i) continue;
+                if (j == i || !usable[j]) continue;
                 const auto observed = a_actors[j];
-                if (!observed) continue;
 
                 const bool naked = flag(j, kNaked);
                 const bool sexLab = inSexLab[j] != 0;

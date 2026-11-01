@@ -808,9 +808,10 @@ function UpdateActorArousals(bool fullUpdate)
       1. native scan of the actors around the player (GetAllActors)
       2. per-actor pre-pass: naked state (+ cached exposure), exhibitionist refresh,
          OStim scene membership, gender preference (only when something can be seen)
-      3. ONE native pass over every observer/observed pair (slaInternalModules.ComputeObservations:
-         relevance filter, LOS, creature visibility, naked weighting, onlooker counting). It
-         replaced the Papyrus pair loop in 3.4.0, which cost HasLOS plus up to three
+      3. a native pass over every observer/observed pair (slaInternalModules.ComputeObservations:
+         relevance filter, LOS, creature visibility, naked weighting, onlooker counting),
+         requested in chunks of about 128 pairs so its raycasts spread over several frames.
+         It replaced the Papyrus pair loop in 3.4.0, which cost HasLOS plus up to three
          UpdateObserver calls per pair per cycle.
       4. per actor: plugin.UpdateActor(actor), then plugin.ApplyObservations(actor, ...) for
          every LOS plugin that consumes aggregated observations. LOS plugins that still
@@ -849,6 +850,13 @@ function UpdateActorArousals(bool fullUpdate)
     ; --- per-actor pre-pass ---------------------------------------------------------------
     bool defaultActive = defaultPlugin && defaultPlugin.isEnabled
     bool scaleByExposure = defaultActive && defaultPlugin.ScaleNakedByExposure()
+    Keyword creatureKeyword = none
+    Faction creatureLover = none
+    if defaultActive
+        creatureKeyword = defaultPlugin.kActorTypeCreature
+        creatureLover = defaultPlugin.slaCreatureSexLoverFaction
+    endIf
+    Faction slAnimating = sexlabPlugin.getSLAnimatingFaction()
     Actor[] sceneActors = none
     if ostimPlugin && ostimPlugin.isEnabled
         sceneActors = ostimPlugin.GetSceneActors()
@@ -856,20 +864,28 @@ function UpdateActorArousals(bool fullUpdate)
     int[] flags = Utility.CreateIntArray(actorCount)
     float[] exposure = Utility.CreateFloatArray(actorCount)
     int[] genderPref = Utility.CreateIntArray(actorCount, 2)
-    Actor[] nakedActors = PapyrusUtil.ActorArray(0)
+    bool anyNakedNPC = false
+    bool anyNakedCreature = false
     bool anyExhibiting = false
+    float nakedScale
     Actor who
     i = actorCount
     while i > 0
         i -= 1
         who = updateActors[i]
         int f = 0
-        if IsActorNaked(who) ; also refreshes the sla_Naked faction rank and caches the exposure
+        nakedScale = RefreshNakedState(who) ; -1.0 = not naked; also refreshes the sla_Naked rank and the cached exposure
+        if nakedScale >= 0.0
             f = 1
-            nakedActors = PapyrusUtil.PushActor(nakedActors, who)
             exposure[i] = 1.0
             if scaleByExposure
-                exposure[i] = StorageUtil.GetFloatValue(who, "SLAroused.NakedExposure", 1.0)
+                exposure[i] = nakedScale
+            endIf
+            ; Creatures wear no body armor, so every tracked creature counts as naked.
+            if creatureKeyword && who.HasKeyword(creatureKeyword)
+                anyNakedCreature = true
+            else
+                anyNakedNPC = true
             endIf
         endIf
         if defaultActive && defaultPlugin.RefreshExhibitionist(who)
@@ -882,45 +898,72 @@ function UpdateActorArousals(bool fullUpdate)
         flags[i] = f
     endWhile
     ; Gender preference falls through to SexLab's sexuality stats for actors without a
-    ; faction rank (most NPCs), so only pay for it when something can be seen.
-    if nakedActors.Length > 0 || anyExhibiting
+    ; faction rank (most NPCs), so only pay for it when something can be seen, and only
+    ; for the actors who can see it: a naked creature is visible to creatures and creature
+    ; lovers alone, and one nearby horse must not cost a lookup for every tracked actor.
+    if anyNakedNPC || anyExhibiting
         i = actorCount
         while i > 0
             i -= 1
             genderPref[i] = slaUtil.GetGenderPreference(updateActors[i])
         endWhile
+    elseIf anyNakedCreature
+        i = actorCount
+        while i > 0
+            i -= 1
+            who = updateActors[i]
+            if who.HasKeyword(creatureKeyword) || (creatureLover && who.GetFactionRank(creatureLover) > -1)
+                genderPref[i] = slaUtil.GetGenderPreference(who)
+            endIf
+        endWhile
     endIf
 
-    ; --- observations: one native call ----------------------------------------------------
+    ; --- LOS plugins: snapshot once ------------------------------------------------------
+    ; The cycle makes many external calls, during which the MCM can unregister or re-slot a
+    ; plugin; the snapshot keeps every call of this cycle on the plugin it was planned for.
     bool useLOS = GetUseLOS() as bool
     int losCount = 0
     if losPlugins
         losCount = losPlugins.Length
     endIf
-    bool[] legacyLos = Utility.CreateBoolArray(losCount)
+    if losCount > 8
+        losCount = 8 ; losPlugins is created with 8 slots and never resized
+    endIf
+    sla_PluginBase[] aggPlugins = new sla_PluginBase[8]
+    sla_PluginBase[] legacyPlugins = new sla_PluginBase[8]
+    bool anyAggregated = false
     bool hasLegacyLos = false
-    float[] obs = none
-    int k = losCount
     sla_PluginBase losPlugin
+    int k = losCount
     if fullUpdate
         while k > 0
             k -= 1
             losPlugin = losPlugins[k]
-            if losPlugin && !losPlugin.UsesAggregatedObservations()
-                legacyLos[k] = true
-                hasLegacyLos = true
+            if losPlugin
+                if losPlugin.UsesAggregatedObservations()
+                    aggPlugins[k] = losPlugin
+                    anyAggregated = true
+                else
+                    legacyPlugins[k] = losPlugin
+                    hasLegacyLos = true
+                endIf
             endIf
         endWhile
-        Faction creatureLover = none
-        if defaultActive
-            creatureLover = defaultPlugin.slaCreatureSexLoverFaction
-        endIf
-        obs = slaInternalModules.ComputeObservations(updateActors, flags, exposure, genderPref, useLOS, creatureLover, sexlabPlugin.getSLAnimatingFaction())
-        if obs != none && obs.Length < actorCount * 8
-            slax.Warning("slaMainScr - ComputeObservations returned " + obs.Length + " values for " + actorCount + " actors; skipping observations this cycle")
-            obs = none
+    endIf
+
+    ; The observer pass runs on the main thread, so it is asked for in chunks of about 128
+    ; observer/observed pairs: a crowded scene spreads its raycasts over several frames
+    ; instead of stalling one. obs holds the rows of observers chunkStart .. chunkEnd.
+    int chunkSize = 1
+    if actorCount > 1
+        chunkSize = 128 / (actorCount - 1)
+        if chunkSize < 1
+            chunkSize = 1
         endIf
     endIf
+    float[] obs = none
+    int chunkStart = actorCount
+    int chunkCount
 
     ; --- per-actor plugin updates ---------------------------------------------------------
     Actor observer
@@ -942,16 +985,30 @@ function UpdateActorArousals(bool fullUpdate)
             EndIf
         endWhile
 
-        if obs != none
-            base = i * 8
-            k = losCount
-            while k > 0
-                k -= 1
-                losPlugin = losPlugins[k]
-                if losPlugin && !legacyLos[k]
-                    losPlugin.ApplyObservations(observer, obs[base], obs[base + 1], obs[base + 2] > 0.0, obs[base + 3] > 0.0, obs[base + 4] as int, obs[base + 5] > 0.0, obs[base + 6] > 0.0)
+        if anyAggregated
+            if i < chunkStart
+                ; Observers are walked downwards: fetch the chunk that ends at i.
+                chunkStart = i - chunkSize + 1
+                if chunkStart < 0
+                    chunkStart = 0
                 endIf
-            endWhile
+                chunkCount = i - chunkStart + 1
+                obs = slaInternalModules.ComputeObservations(updateActors, flags, exposure, genderPref, useLOS, creatureLover, slAnimating, chunkStart, chunkCount)
+                if obs != none && obs.Length < chunkCount * 8
+                    slax.Warning("slaMainScr - ComputeObservations returned " + obs.Length + " values for " + chunkCount + " observers; skipping them this cycle")
+                    obs = none
+                endIf
+            endIf
+            if obs != none
+                base = (i - chunkStart) * 8
+                k = losCount
+                while k > 0
+                    k -= 1
+                    if aggPlugins[k]
+                        aggPlugins[k].ApplyObservations(observer, obs[base], obs[base + 1], obs[base + 2] > 0.0, obs[base + 3] > 0.0, obs[base + 4] as int, obs[base + 5] > 0.0, obs[base + 6] > 0.0)
+                    endIf
+                endWhile
+            endIf
         endIf
 
         if hasLegacyLos
@@ -964,8 +1021,8 @@ function UpdateActorArousals(bool fullUpdate)
                         k = losCount
                         while k > 0
                             k -= 1
-                            if legacyLos[k]
-                                losPlugins[k].UpdateObserver(observer, observed)
+                            if legacyPlugins[k]
+                                legacyPlugins[k].UpdateObserver(observer, observed)
                             endIf
                         endWhile
                     endIf
@@ -984,8 +1041,10 @@ function UpdateActorArousals(bool fullUpdate)
     endWhile
 
     ; --- tick + bookkeeping ---------------------------------------------------------------
+    ; Starts at 0 so only an actor with arousal above 0 can win: with nobody aroused the
+    ; result is None, not whichever NPC happened to be scanned first.
     Actor mostAroused = none
-    int mostArousal = -1
+    int mostArousal = 0
     i = actorCount
     while i > 0
         i -= 1
@@ -999,9 +1058,6 @@ function UpdateActorArousals(bool fullUpdate)
     ; Feeds slaFrameworkScr.GetMostArousedActorInLocation and the MCM's "AROUSED:" target,
     ; which nothing had written since the original SLA.
     slaConfig.slaMostArousedActorInLocation = mostAroused
-    if mostArousal < 0
-        mostArousal = 0
-    endIf
     slaConfig.slaArousalOfMostArousedActorInLoc = mostArousal
 
     SendModEvent("sla_UpdateComplete", None, actorCount)
@@ -1045,13 +1101,21 @@ EndEvent
 
 ; Note to modders : do not call IsActorNaked() because it is expensive - check sla_Naked faction rank instead
 Bool Function IsActorNaked(Actor who)
+    Return RefreshNakedState(who) >= 0.0
+EndFunction
+
+; The body of IsActorNaked: refreshes the sla_Naked faction rank and the cached
+; "SLAroused.NakedExposure" value, and returns -1.0 when not naked, else the graded
+; exposure (GetNakedExposureScale, 1.0 without AND), so the update cycle gets it without
+; reading the cache back.
+Float Function RefreshNakedState(Actor who)
 
     If !who
-        Return False
+        Return -1.0
     EndIf
 
     Bool isNaked = IsActorNakedVanilla(who)
-    
+
     If !isNaked
         ; Consider 'naked armor for NPC' option
         If who == playerRef || slaConfig.IsExtendedNPCNaked
@@ -1061,15 +1125,15 @@ Bool Function IsActorNaked(Actor who)
 
     If isNaked
         who.SetFactionRank(slaNaked, 0)
-        ; Cache the graded exposure for the Naked effect here, where we already
-        ; pay the AND faction reads once per actor per cycle -- UpdateObserver
-        ; runs per observer/observed PAIR and must not re-read 8 factions.
-        StorageUtil.SetFloatValue(who, "SLAroused.NakedExposure", GetNakedExposureScale(who))
-    Else
-        who.SetFactionRank(slaNaked, -2)
+        ; Cache the graded exposure, where we already pay the AND faction reads once per
+        ; actor per cycle; other readers of the key (and pre-3.4.0 plugin code) use it.
+        Float scale = GetNakedExposureScale(who)
+        StorageUtil.SetFloatValue(who, "SLAroused.NakedExposure", scale)
+        Return scale
     EndIf
 
-    Return isNaked
+    who.SetFactionRank(slaNaked, -2)
+    Return -1.0
 
 EndFunction
 

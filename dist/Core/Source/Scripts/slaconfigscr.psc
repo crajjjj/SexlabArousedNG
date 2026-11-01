@@ -1187,7 +1187,7 @@ Event OnOptionInputAccept(int option, string value)
     if i >= 0
         float numeric = value as float
         slax.info("slaConfigScr: New static arousal value" + value + " numeric = " + numeric)
-        if numeric != 0.0 || StringUtil.Find(value, "0") >= 0 ; any spelling of zero counts as a real zero
+        if numeric != 0.0 || IsZeroText(value) ; "0", "0.0", "-0", ".00" ... count as a real zero; other text is ignored
             slaInternalModules.SetStaticArousalValue(puppetActor, i, numeric)
             slax.info("slaConfigScr: Setting static arousal value" + slaMain.GetEffectValue(puppetActor, i))
             SetInputOptionValue(option, slaMain.GetEffectValue(puppetActor, i))
@@ -2187,6 +2187,25 @@ Form[] Function GetEquippedArmors(Actor who)
 EndFunction
 
 
+; True for text that spells zero ("0", "0.0", "-0", ".00", " 0 "): at least one digit,
+; every digit a 0, otherwise only a sign, a point or spaces. Other text also casts to 0.0
+; ("abc0", "x10"), so OnOptionInputAccept must not read that as "set this effect to 0".
+Bool Function IsZeroText(String s)
+    Int n = StringUtil.GetLength(s)
+    Bool sawZero = False
+    Int i = 0
+    While i < n
+        String c = StringUtil.GetNthChar(s, i)
+        If c == "0"
+            sawZero = True
+        ElseIf c != "." && c != "-" && c != "+" && c != " "
+            Return False
+        EndIf
+        i += 1
+    EndWhile
+    Return sawZero
+EndFunction
+
 Function InitSlotMaskValues()
 
 	slaSlotMaskValues = new int[31]
@@ -2287,7 +2306,9 @@ function ClearActorData()
     if !who
         who = player
     endIf
-    slax.Info("slaConfigScr: clearing arousal data of " + who.GetLeveledActorBase().GetName())
+    if slax.IsVerbose()
+        slax.Info("slaConfigScr: clearing arousal data of " + who.GetLeveledActorBase().GetName())
+    endIf
 
 	int i = slaMain.GetEffectCount()
 	while i > 0

@@ -162,10 +162,10 @@ namespace SLA {
             case 1:
                 if (effect.param == 0.f) {
                     // A zero half-life has no finite rate (and 0/0 is NaN when dt is 0 too, which
-                    // would poison the actor's arousal for good): land on the limit at once by
-                    // handing the clamp below a value just past it in the direction of travel.
-                    checkLimit = effect.value < effect.limit ? LimitCheck::UpperBound : LimitCheck::LowerBound;
-                    value = checkLimit == LimitCheck::UpperBound ? effect.limit + 1.f : effect.limit - 1.f;
+                    // would poison the actor's arousal for good): land exactly on the caller's
+                    // limit at once. Set() stored it raised by the decay offset; the limit clamp
+                    // below must not run, its upper branch would add the offset a second time.
+                    value = effect.limit - GetEffectLimitOffset(effect.function);
                     break;
                 }
                 value = effect.value * std::pow(0.5f, timeDiff / effect.param);
@@ -211,6 +211,14 @@ namespace SLA {
         effect.value = value;
         return isDone;
     }
+    void ArousalData::FinishTimedEffect(ArousalEffectData& effect) {
+        // The effect becomes a plain value. Drop the decay offset Set() folded into the limit
+        // first, so GetStaticEffectLimit keeps returning what the caller passed (it subtracts
+        // the offset of the CURRENT function, which is 0 from here on).
+        effect.limit -= GetEffectLimitOffset(static_cast<uint32_t>(effect.function));
+        effect.function = 0;
+    }
+
     bool ArousalData::UpdateArousalEffect(ArousalEffectData& effect, float timeDiff, RE::Actor* who) {
         float oldValue = effect.value;
         bool isDone = CalculateArousalEffect(effect, timeDiff, who);
@@ -249,7 +257,7 @@ namespace SLA {
             else {
                 ArousalEffectData& effect = staticEffects[*itr];
                 if (UpdateArousalEffect(effect, diff, who)) {
-                    effect.function = 0;
+                    FinishTimedEffect(effect);
                     itr = staticEffectsToUpdate.erase(itr);
                 } else
                     ++itr;
@@ -259,7 +267,7 @@ namespace SLA {
         for (auto itr = dynamicEffectsToUpdate.begin(); itr != dynamicEffectsToUpdate.end();) {
             ArousalEffectData& effect = dynamicEffects[*itr];
             if (UpdateArousalEffect(effect, diff, who)) {
-                effect.function = 0;
+                FinishTimedEffect(effect);
                 RemoveDynamicEffectIfNeeded(*itr, effect);
                 itr = dynamicEffectsToUpdate.erase(itr);
             } else

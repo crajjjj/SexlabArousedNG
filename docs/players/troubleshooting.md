@@ -27,7 +27,7 @@ The paths below use the SE folder; swap in `Skyrim VR` if you are on VR.
 
 ## Enabling Papyrus logging
 
-The mod's own `SLOANG.log` always receives warnings and errors; switch **Verbose script log** ON (MCM General page) to get the informational lines as well. The engine-wide `Papyrus.0.log` is only written when Papyrus logging is enabled — turn it on while diagnosing, then turn it back off.
+The mod's own `SLOANG.log` always receives warnings and errors; switch **Verbose script log** ON (MCM General page) to get the informational lines as well. The engine-wide `Papyrus.0.log` is only written when Papyrus logging is enabled: turn it on while diagnosing, then turn it back off.
 
 Edit **`Skyrim.ini`** (in the My Games folder above) and add or update this section:
 
