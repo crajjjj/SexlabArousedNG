@@ -22,7 +22,7 @@ Under the **Arousal** header on the same page:
 - **Track creatures** — include creatures in the scan (default on). Off means NPCs only, so creatures are never seen as naked either.
 
 !!! note "Options removed in 3.4.0"
-    *Naked Only* and *Small updates per full update* are gone. The first never reached the update loop, and the second left the Naked effect decaying on every "small" cycle. Every cycle is a full update now; the actor scan and the line-of-sight pass run natively, so there is nothing left to switch off.
+    *Naked Only*, *Small updates per full update* and *Use SexLab Gender* are gone. The first never reached the update loop, the second left the Naked effect decaying on every "small" cycle, and the third had no click handler and no reader (gender preference always falls back to SexLab's sexuality stats when SexLab is present). Every cycle is a full update now; the actor scan and the line-of-sight pass run natively, so there is nothing left to switch off.
 
 At the bottom is the **Plugin List** showing which integrations are active. The four built-in ones:
 

@@ -18,7 +18,7 @@ Bool Property isDesireSpell Auto
 Bool Property isUseSOS Auto
 Bool Property isExtendedNPCNaked Auto
 Bool Property wantsPurging = false Auto Hidden
-Bool Property MBonUsesSLGender = True Auto Hidden
+Bool Property MBonUsesSLGender = True Auto Hidden ; retired in 3.4.0: its toggle had no click handler and nothing read it; kept for save compat
 Int Property notificationKey = 49 Auto Hidden
 Float Property cellScanFreq = 30.00 Auto Hidden
 Int Property smallUpdatesPerFull = 1 Auto Hidden ; retired in 3.4.0 (every cycle is a full update); kept for save/JSON compat
@@ -117,7 +117,6 @@ Int exbitionistOID
 Int extendedNPCNakedOID
 Int blockArousalOID
 Int lockArousalOID
-Int MBonUsesSLGenderOID
 Int notificationKeyOID
 Int genderPreferenceOID
 int cellScanFreqOID
@@ -430,6 +429,7 @@ Event OnConfigClose()
 	slaMain.setUpdateFrequency(cellScanFreq)
     
     StorageUtil.ClearObjIntValuePrefix(self, "SLAroused.MCM.OID.")
+    StorageUtil.ClearObjStringValuePrefix(self, "SLAroused.MCM.OID.")
 
 EndEvent
 
@@ -439,6 +439,7 @@ Event OnPageReset(String page)
         slaMain = Quest.GetQuest("sla_Main") as slaMainScr
     endif
     StorageUtil.ClearObjIntValuePrefix(self, "SLAroused.MCM.OID.")
+    StorageUtil.ClearObjStringValuePrefix(self, "SLAroused.MCM.OID.")
 
     pageName = page
 	; Load custom logo in DDS format
@@ -490,10 +491,6 @@ Event OnPageReset(String page)
 
 		AddHeaderOption("$SLA_Arousal")
         
-        if(!slaMain.sexlabplugin.IsInterfaceActive())
-           MBonUsesSLGender = false
-        endif
-        MBonUsesSLGenderOID = AddToggleOption("$SLA_MBonUsesSLGender", MBonUsesSLGender, _getFlag(slaMain.sexlabplugin.IsInterfaceActive()))
         
         
         cellScanFreqOID = AddSliderOption("$SLA_CellScanFreq", cellScanFreq, "{0}")
@@ -735,6 +732,36 @@ EndFunction
 
 Function DisplayWornItems(Actor who)
 
+    ; Option IDs are page positions, and every row below exists only when the actor
+    ; has that item. Reset the per-item OIDs first, or one left over from a build WITH
+    ; a body item matches whatever now sits at that position: with no body item the
+    ; stale Illegal toggle's position is the High Heels toggle, so clicking the heels
+    ; flipped Illegal on a None item and the heels never changed.
+    bodyItemOID = -1
+    noBodyItemOID = -1
+    footItemOID = -1
+    noFootItemOID = -1
+    heelsSliderOID = -1
+    heelsToggleOID = -1
+    nakedSliderOID = -1
+    bikiniSliderOID = -1
+    sexySliderOID = -1
+    slootySliderOID = -1
+    illegalSliderOID = -1
+    poshSliderOID = -1
+    raggedSliderOID = -1
+    nakedToggleOID = -1
+    bikiniToggleOID = -1
+    sexyToggleOID = -1
+    slootyToggleOID = -1
+    illegalToggleOID = -1
+    poshToggleOID = -1
+    raggedToggleOID = -1
+    clothingToggleOID = -1
+    bodyAppliedMenuOID = -1
+    bodyAddKeywordMenuOID = -1
+    bodyRemoveKeywordMenuOID = -1
+
     UpdateWornItemStates(who) ; we only care about body and shoes.
 
     If bodyItem
@@ -901,14 +928,14 @@ Function GetBikiniArmorsForTargetActor(Actor who)
         ii += 1
     EndWhile
     
-    bikiniSliderOIDs = Utility.CreateIntArray(bikiniArmors.Length)
-    bikiniToggleOIDs = Utility.CreateIntArray(bikiniArmors.Length)
+    bikiniSliderOIDs = Utility.CreateIntArray(bikiniArmors.Length, -1)
+    bikiniToggleOIDs = Utility.CreateIntArray(bikiniArmors.Length, -1)
     bikiniSliderValues = Utility.CreateIntArray(bikiniArmors.Length)
     bikiniClothingValues = Utility.CreateIntArray(bikiniArmors.Length)
-    bikiniClothingToggleOIDs = Utility.CreateIntArray(bikiniArmors.Length)
-    bikiniAppliedMenuOIDs = Utility.CreateIntArray(bikiniArmors.Length)
-    bikiniAddKeywordMenuOIDs = Utility.CreateIntArray(bikiniArmors.Length)
-    bikiniRemoveKeywordMenuOIDs = Utility.CreateIntArray(bikiniArmors.Length)
+    bikiniClothingToggleOIDs = Utility.CreateIntArray(bikiniArmors.Length, -1)
+    bikiniAppliedMenuOIDs = Utility.CreateIntArray(bikiniArmors.Length, -1)
+    bikiniAddKeywordMenuOIDs = Utility.CreateIntArray(bikiniArmors.Length, -1)
+    bikiniRemoveKeywordMenuOIDs = Utility.CreateIntArray(bikiniArmors.Length, -1)
 
     ii = bikiniArmors.Length
     slax.info("slaConfigScr: Got " + ii + " bikini items ")
@@ -1160,7 +1187,7 @@ Event OnOptionInputAccept(int option, string value)
     if i >= 0
         float numeric = value as float
         slax.info("slaConfigScr: New static arousal value" + value + " numeric = " + numeric)
-        if numeric != 0.0 || value == "0" || value == "0.0"
+        if numeric != 0.0 || StringUtil.Find(value, "0") >= 0 ; any spelling of zero counts as a real zero
             slaInternalModules.SetStaticArousalValue(puppetActor, i, numeric)
             slax.info("slaConfigScr: Setting static arousal value" + slaMain.GetEffectValue(puppetActor, i))
             SetInputOptionValue(option, slaMain.GetEffectValue(puppetActor, i))
@@ -1596,6 +1623,8 @@ Event OnOptionHighlight(int option)
             infoText = "$SLA_EnableFemaleAnimationDesc"
         ElseIf option == useLOSOID
             infoText = "$SLA_UseLOSDesc"
+        ElseIf option == enableNotificationsOID
+            infoText = "$SLA_EnableNotificationsDesc"
         ElseIf option == bDisabledOID
             infoText = "$SLA_DisabledDesc"
         ElseIf option == extendedNPCNakedOID
@@ -1614,6 +1643,14 @@ Event OnOptionHighlight(int option)
             infoText = "$SLA_VerboseLogDesc"
         ElseIf option == statusNotSplashOID
             infoText = "$SLA_StatusNotSplashInfo"
+        ElseIf option == importSettingsOID
+            infoText = "$SLA_ImportInfo"
+        ElseIf option == exportSettingsOID
+            infoText = "$SLA_ExportInfo"
+        ElseIf option == clearActorDataOID
+            infoText = "$SLA_ClearActorDataInfo"
+        ElseIf option == clearAllDataOID
+            infoText = "$SLA_ClearAllDataInfo"
         EndIf
     
     ElseIf 1 == pageId ; Status
@@ -1806,13 +1843,13 @@ Event OnOptionDefault(int option)
             isUseSOS = False
             SetToggleOptionValue(useSOSOID, isUseSOS)
             
-        ElseIf (option == MBonUsesSLGenderOID)
-            MBonUsesSLGender = True
-            SetToggleOptionValue(MBonUsesSLGenderOID, MBonUsesSLGender)
-            
         ElseIf (option == cellScanFreqOID)
             cellScanFreq = 30.0
-            SetSliderOptionValue(cellScanFreqOID, cellScanFreq, "{1}")
+            SetSliderOptionValue(cellScanFreqOID, cellScanFreq, "{0}")
+
+        ElseIf (option == statusNotSplashOID)
+            statusNotSplash = False
+            SetToggleOptionValue(statusNotSplashOID, statusNotSplash)
 
         EndIf
     
@@ -2243,7 +2280,14 @@ function ClearActorData()
         return
     endIf
 
-    Actor who = slaPuppetActor
+    ; The Puppet Master selection: the player by default, the actor pinned with the
+    ; status key, or whoever was picked in that page's dropdown. Before 3.4.0 this read
+    ; the pinned actor only, so with nobody pinned a confirmed click cleared nothing.
+    Actor who = puppetActor
+    if !who
+        who = player
+    endIf
+    slax.Info("slaConfigScr: clearing arousal data of " + who.GetLeveledActorBase().GetName())
 
 	int i = slaMain.GetEffectCount()
 	while i > 0
