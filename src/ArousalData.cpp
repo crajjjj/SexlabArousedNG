@@ -160,6 +160,14 @@ namespace SLA {
         float value;
         switch (effect.function) {
             case 1:
+                if (effect.param == 0.f) {
+                    // A zero half-life has no finite rate (and 0/0 is NaN when dt is 0 too, which
+                    // would poison the actor's arousal for good): land on the limit at once by
+                    // handing the clamp below a value just past it in the direction of travel.
+                    checkLimit = effect.value < effect.limit ? LimitCheck::UpperBound : LimitCheck::LowerBound;
+                    value = checkLimit == LimitCheck::UpperBound ? effect.limit + 1.f : effect.limit - 1.f;
+                    break;
+                }
                 value = effect.value * std::pow(0.5f, timeDiff / effect.param);
                 checkLimit = effect.param * effect.value < 0.f ? LimitCheck::UpperBound : LimitCheck::LowerBound;
                 break;

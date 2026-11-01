@@ -1,4 +1,5 @@
 #include "Papyrus.h"
+#include "ActorScan.h"
 #include "ArousalManager.h"
 
 using namespace RE;
@@ -71,6 +72,16 @@ namespace {
         return ArousalManager::GetSingleton().GetStaticEffectAux(who, effectIdx);
     }
 
+    float GetStaticEffectLimit(StaticFunctionTag*, Actor* who, int32_t effectIdx) {
+        VALIDATE_ACTOR_OR_RETURN(who, 0.f);
+        return ArousalManager::GetSingleton().GetStaticEffectLimit(who, effectIdx);
+    }
+
+    float GetStaticEffectAuxFloat(StaticFunctionTag*, Actor* who, int32_t effectIdx) {
+        VALIDATE_ACTOR_OR_RETURN(who, 0.f);
+        return ArousalManager::GetSingleton().GetStaticEffectAuxFloat(who, effectIdx);
+    }
+
     void SetStaticArousalEffect(StaticFunctionTag*, Actor* who, int32_t effectIdx, int32_t functionId, float param,
                                 float limit, int32_t auxilliary) {
         if (!who) return;
@@ -136,6 +147,17 @@ namespace {
 
     void Unlock(StaticFunctionTag*, int32_t lock) { ArousalManager::GetSingleton().Unlock(lock); }
 
+    std::vector<Actor*> ScanActors(StaticFunctionTag*, Actor* origin, float radius, int32_t maxCount,
+                                   bool includeCreatures) {
+        return SLA::Scan::ScanActors(origin, radius, maxCount, includeCreatures);
+    }
+
+    std::vector<float> ComputeObservations(StaticFunctionTag*, std::vector<Actor*> actors, std::vector<int32_t> flags,
+                                           std::vector<float> exposure, std::vector<int32_t> genderPref, bool useLOS,
+                                           RE::TESFaction* creatureLover, RE::TESFaction* animating) {
+        return SLA::Scan::ComputeObservations(actors, flags, exposure, genderPref, useLOS, creatureLover, animating);
+    }
+
     std::vector<Actor*> DuplicateActorArray(StaticFunctionTag*, std::vector<Actor*> arr, int32_t count) {
         std::vector<Actor*> result;
         int32_t maxCount = std::min<int32_t>(count, static_cast<int32_t>(arr.size()));
@@ -199,6 +221,8 @@ bool SLA::RegisterFunctions(IVirtualMachine* vm) {
     vm->RegisterFunction("GetStaticEffectValue", PapyrusClass, GetStaticEffectValue);
     vm->RegisterFunction("GetStaticEffectParam", PapyrusClass, GetStaticEffectParam);
     vm->RegisterFunction("GetStaticEffectAux", PapyrusClass, GetStaticEffectAux);
+    vm->RegisterFunction("GetStaticEffectLimit", PapyrusClass, GetStaticEffectLimit);
+    vm->RegisterFunction("GetStaticEffectAuxFloat", PapyrusClass, GetStaticEffectAuxFloat);
     vm->RegisterFunction("SetStaticArousalEffect", PapyrusClass, SetStaticArousalEffect);
     vm->RegisterFunction("SetDynamicArousalEffect", PapyrusClass, SetDynamicArousalEffect);
     vm->RegisterFunction("ModDynamicArousalEffect", PapyrusClass, ModDynamicArousalEffect);
@@ -217,6 +241,8 @@ bool SLA::RegisterFunctions(IVirtualMachine* vm) {
     vm->RegisterFunction("TryLock", PapyrusClass, TryLock);
     vm->RegisterFunction("Unlock", PapyrusClass, Unlock);
     vm->RegisterFunction("DuplicateActorArray", PapyrusClass, DuplicateActorArray);
+    vm->RegisterFunction("ScanActors", PapyrusClass, ScanActors);
+    vm->RegisterFunction("ComputeObservations", PapyrusClass, ComputeObservations);
 
     vm->RegisterFunction("AddKeywordToForm", KWDPapyrusClass, AddKeywordToForm);
     vm->RegisterFunction("AddKeywordToForms", KWDPapyrusClass, AddKeywordToForms);

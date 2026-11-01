@@ -77,9 +77,11 @@ src/                              C++ SKSE plugin source
   Main.cpp                        Entry point, SKSE registration, cosave setup
   ArousalManager.cpp              Singleton: effect registry, arousal calculation, serialization
   ArousalData.cpp                 Per-actor data: static/dynamic effects, groups, timed functions
+  ActorScan.cpp                   Native nearby-actor scan + observer/observed pass (3.4.0)
   Papyrus.cpp                     Native function bindings (slaInternalModules)
   SerializationHelper.cpp         Cosave read/write templates
 include/                          C++ headers
+  ActorScan.h                     Flags / result layout of the scan and observation natives
   CosSin.h                        Pre-computed sine/cosine table (512 entries)
 dist/Core/
   Source/Scripts/                  Papyrus source files (.psc)
@@ -98,10 +100,10 @@ xmake.lua                         DLL build (xmake 3.0+)
 ### 1. SKSE Plugin Load (`Main.cpp`)
 
 `SKSEPluginLoad()` ->
-- spdlog init (file + MSVC debugger)
+- `SKSE::Init()` (which also sets up the `SexlabArousedNG.log` logger; do not add a spdlog init of our own, CommonLibSSE-NG v7+ replaces it)
 - Random engine init (mt19937)
 - Cosave registration (ID `SLAN` / 0x4E414C53): Save/Load/Revert callbacks on ArousalManager
-- Papyrus native function registration (21 functions on `slaInternalModules`)
+- Papyrus native function registration (32 functions on `slaInternalModules`, 4 on `KeywordUtil`)
 
 (The sine/cosine lookup table in `CosSin.h` is a shared `inline` variable built at static initialization, not in `SKSEPluginLoad`.)
 
@@ -152,10 +154,9 @@ Deliberately **not** exported: the `SloangNative` functions backed by Papyrus qu
 Two-state machine: `""` (not installed) / `"Installed"`.
 - `CheckDependencies()` -> `EnablePlugin()` / `DisablePlugin()`
 - Plugins register static effects via `RegisterEffect(id, name, desc)`
-- `Update(actors[], nakedActors[])` called on timer
-- `UpdateActor(who, fullUpdate)` per-actor logic
+- `UpdateActor(who, fullUpdate)` per-actor logic (then once with `none` to close the cycle; `fullUpdate` is always true since 3.4.0). `Update(actors[], nakedActors[])` is declared but never called by the framework.
+- LOS plugins (`RegisterForLOSUpdates()`): `UsesAggregatedObservations()` true -> `ApplyObservations(observer, nakedWeight, nakedMaxExposure, seesNaked, seesNakedPref, exhibitionistCount, seesSexLab, seesOStim)` once per actor from the native pass; false (legacy / third-party) -> `UpdateObserver(observer, observed)` per LOS pair, run in Papyrus for that plugin only
 - `ClearActor(who)` on tracking removal
-- LOS updates via `RegisterForLOSUpdates()`
 - MCM options via `AddOptions()` / `OnUpdateOption()`
 
 ### 4. Built-in Plugins
@@ -192,9 +193,11 @@ External mods fire ModEvents -- no quest script needed:
 
 ### 6. Actor Scanning & Tracking
 
-- `slanakedscript` / `slascanallscript` / `slascanallnpcscript` -- NPC discovery
+- `slaInternalModules.ScanActors` (`ActorScan.cpp`) -- native discovery since 3.4.0: loaded, AI-active actors (`ProcessLists::ForEachHighActor`) within the MCM **scan radius** of the player, nearest first, capped at **max tracked actors**; skips children, dead/disabled/unloaded actors, chickens and mannequins, creatures unless **Track creatures**. Called from `slaMainScr.GetAllActors` (10 s rescan guard, `TryLock` lanes 1/2 unchanged).
+- `slaInternalModules.ComputeObservations` -- the observer/observed pair pass, one native call per cycle: relevance filter first (a pair only matters when the observed is naked / in a scene, or the observer exhibits), then `Actor::HasLineOfSight` when LOS is on, then the `sla_DefaultPlugin.UpdateObserver` rules (creatures visible only to creatures and the creature-lover faction, exposure-weighted naked weight with x2 for the preferred gender, onlooker counting). Returns 8 floats per actor (layout in `ActorScan.h`). Per-actor inputs come from a Papyrus pre-pass in `UpdateActorArousals`: `IsActorNaked` (+ cached exposure), `sla_DefaultPlugin.RefreshExhibitionist`, `sla_OStimPlugin.GetSceneActors`, and `GetGenderPreference` only when something can be seen (it falls through to SexLab's sexuality stats). Both natives are plain (not tasklet-callable), so they run on the game thread.
+- `slascanallscript` / `slascanallnpcscript` / `slanakedscript` and their quests (`slaScanAll`, `slaScanAllNPC`, `slaNakedNPC`) are retired; they stay in the ESM and the scripts folder because the quest properties on `slaMainScr` are CK-filled.
 - `slaplayeraliasscr` -- player reference tracking
-- `slamainscr` -- main quest, plugin lifecycle, tracked actor list
+- `slamainscr` -- main quest, plugin lifecycle, tracked actor list, `UpdateActorArousals` (the cycle, documented in its header comment)
 - `slaFrameworkScr` -- gender preferences, faction helpers, utility wrappers
 
 ### 7. MCM Configuration (`slaConfigScr`)
@@ -228,13 +231,17 @@ External mods fire ModEvents -- no quest script needed:
 
 ## C++ Native Functions (`Papyrus.cpp`)
 
-21 functions registered on `slaInternalModules`:
+32 functions registered on `slaInternalModules` (every declaration in `slaInternalModules.psc` must have a binding here, or the VM aborts the call with "unbound native function" -- `GetStaticEffectLimit` / `GetStaticEffectAuxFloat` were declared but unbound until 3.4.0):
 - Arousal: `GetArousal`, `UpdateSingleActorArousal`
-- Static effects: `RegisterStaticEffect`, `GetStaticEffectId`, `UnregisterStaticEffect`, `GetStaticEffectCount`, `GetStaticEffectValue`, `SetStaticArousalValue`, `ModStaticArousalValue`, `SetStaticArousalEffect`, `GetStaticEffectParam`, `GetStaticEffectAux`, `IsStaticEffectActive`, `SetStaticAuxillaryFloat`, `SetStaticAuxillaryInt`
+- Static effects: `RegisterStaticEffect`, `GetStaticEffectId`, `UnregisterStaticEffect`, `GetStaticEffectCount`, `GetStaticEffectValue`, `SetStaticArousalValue`, `ModStaticArousalValue`, `SetStaticArousalEffect`, `GetStaticEffectParam`, `GetStaticEffectLimit`, `GetStaticEffectAux`, `GetStaticEffectAuxFloat`, `IsStaticEffectActive`, `SetStaticAuxillaryFloat`, `SetStaticAuxillaryInt`
 - Dynamic effects: `SetDynamicArousalEffect`, `ModDynamicArousalEffect`, `GetDynamicEffectCount`, `GetDynamicEffect`, `GetDynamicEffectValue`, `GetDynamicEffectValueByName`
 - Maintenance: `CleanUpActors`
 - Groups: `GroupEffects`, `RemoveEffectGroup`
+- Scan (3.4.0, `ActorScan.cpp`): `ScanActors`, `ComputeObservations`
+- Misc: `TryLock`, `Unlock`, `DuplicateActorArray`, `FormatHex`; `KeywordUtil`: `AddKeywordToForm(s)`, `RemoveKeywordFromForm(s)`
+
+Logging on the Papyrus side goes through `slax`: `Info` is written only while the MCM **Verbose script log** toggle is on (`slax.SetVerbose` / `IsVerbose`, re-applied on every load because the flag lives in StorageUtil); `Warning` / `Error` always write. Guard an `Info` whose message costs external calls (`GetName()` etc.) with `if slax.IsVerbose()`.
 
 ## Version
 
-3.3.5 (canonical: `dist/fomod/info.xml`), cosave ID `SLAN`, Apache-2.0 license. 3.3.5 includes C++ build changes (CommonLibSSE-NG 7.0.0 / Skyrim 1.7.99 support; build migrated from CMake + vcpkg to xmake), so `xmake.lua` is synced to `3.3.5` — see *Bumping the Version* above. The DLL depends on CommonLibSSE-NG (alandtse fork) vendored as a git submodule at `lib/commonlibsse-ng`, pinned to v7.0.0; its build deps (spdlog, rapidcsv, directxtk) come from xmake-repo.
+3.4.0 (canonical: `dist/fomod/info.xml`), cosave ID `SLAN`, Apache-2.0 license. 3.4.0 includes C++ changes (the native actor scan and observer pass, the two previously unbound natives), so `xmake.lua` is synced to `3.4.0` — see *Bumping the Version* above. 3.3.5 was the build-system release (CommonLibSSE-NG 7.0.0 / Skyrim 1.7.99 support; CMake + vcpkg replaced by xmake). The DLL depends on CommonLibSSE-NG (alandtse fork) vendored as a git submodule at `lib/commonlibsse-ng`, pinned to v7.0.0; its build deps (spdlog, rapidcsv, directxtk) come from xmake-repo.

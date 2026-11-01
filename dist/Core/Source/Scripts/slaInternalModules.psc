@@ -33,4 +33,18 @@ bool function TryLock(int lockID) global native
 function Unlock(int lockID) global native
 Actor[] function DuplicateActorArray(Actor[] actors, int count) global native
 
+; 3.4.0 -- native actor discovery and observer pass (see slaMainScr.UpdateActorArousals).
+; Loaded, AI-active actors within radius units of origin, nearest first, at most maxCount
+; (1..127); origin itself, children, dead, disabled and unloaded actors, chickens and
+; mannequins are skipped, creatures too unless includeCreatures. An empty result arrives
+; as None in Papyrus.
+Actor[] function ScanActors(Actor origin, float radius, int maxCount, bool includeCreatures) global native
+; One pass over every observer/observed pair. flags per actor: 1 naked, 2 exhibiting,
+; 4 in an OStim scene (SexLab is read from the animating faction). exposure per actor
+; (1.0 when not scaling), genderPref per actor (0 male, 1 female, 2 both). Returns 8
+; floats per actor: [0] naked weight, [1] max exposure seen, [2] sees naked, [3] sees
+; naked of preferred gender, [4] exhibitionist onlooker count, [5] sees SexLab scene,
+; [6] sees OStim scene, [7] actors in view that passed the relevance filter.
+float[] function ComputeObservations(Actor[] actors, int[] flags, float[] exposure, int[] genderPref, bool useLOS, Faction creatureLover, Faction animating) global native
+
 String function FormatHex(int formId) global native

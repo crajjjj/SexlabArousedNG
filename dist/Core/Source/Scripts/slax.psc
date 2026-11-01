@@ -3,8 +3,10 @@ import Debug
 
 Function WriteLog(String asMessage, Int aiPriority = 0) Global
 	String asModName = "SLOANG"
-	Utility.SetINIBool("bEnableTrace:Papyrus", true)
 	if OpenUserLog(asModName)
+		; First line of the session: make sure tracing is on so the user log is written.
+		; (Before 3.4.0 this INI write ran on EVERY log line.)
+		Utility.SetINIBool("bEnableTrace:Papyrus", true)
 		Debug.Trace(asModName + " Debugging Started.")
 		Debug.TraceUser(asModName,"[---"+ asModName +" DEBUG LOG STARTED---]")
 	endif
@@ -67,6 +69,26 @@ Function EnableDebugSpam(Bool enable) Global
     StorageUtil.SetIntValue(None, "slax_EnableDebugSpam", enable as Int)
 EndFunction
 
+; Verbose logging switch (3.4.0). slax.Info lines are written only while it is on;
+; Warning and Error always write. Owned by the MCM "Verbose script log" toggle
+; (slaConfigScr.verboseLog), which re-applies it on every game load, so callers
+; building an expensive message should test IsVerbose() first:
+;     if slax.IsVerbose()
+;         slax.Info("..." + who.GetLeveledActorBase().GetName() + "...")
+;     endIf
+Bool Function IsVerbose() Global
+    Return StorageUtil.GetIntValue(None, "slax_TraceSpamSeverity", 127) <= 0
+EndFunction
+
+Function SetVerbose(Bool enable) Global
+    If enable
+        StorageUtil.SetIntValue(None, "slax_TraceSpamSeverity", 0)
+    Else
+        StorageUtil.SetIntValue(None, "slax_TraceSpamSeverity", 1)
+    EndIf
+    StorageUtil.SetIntValue(None, "slax_EnableDebugSpam", enable as Int)
+EndFunction
+
 Function Notify(String txtMsg) Global
 	If StorageUtil.GetIntValue(None, "slax_EnableDebugSpam")
 		Debug.Notification(txtMsg)
@@ -101,10 +123,12 @@ EndFunction
 ; Yes, I know these messages are severity filtered twice as implemented. (tdt?)
 ; This allows Debug.Trace to be swapped for direct file logging, or a text buffer, or anything you like without changing the callers.
 Function Info(String txtMsg) Global
-	; If StorageUtil.GetIntValue(None, "slax_TraceSpamSeverity", 127) <= 0
-    ;     WriteLog(txtMsg)
-    ; EndIf
-    WriteLog(txtMsg)
+    ; Gated since 3.4.0: see IsVerbose / SetVerbose above. Before that every Info line
+    ; (one per tracked actor per cycle, one per effect write) hit the user log on every
+    ; install, with an INI write and an OpenUserLog call in front of each.
+    If StorageUtil.GetIntValue(None, "slax_TraceSpamSeverity", 127) <= 0
+        WriteLog(txtMsg)
+    EndIf
 EndFunction
 
 Function InfoConditional(String txtMsg, Bool condition) Global

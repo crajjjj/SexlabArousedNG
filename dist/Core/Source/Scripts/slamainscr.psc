@@ -38,16 +38,16 @@ sla_OStimPlugin Property ostimPlugin Auto
 
 Int previousPlayerArousal = 0;
 Float lastNotificationTime = 0.0;
-int updateCounter = 0;
 Actor crosshairRef = None
 
 Bool Property wasPlayerRaped Auto
 Bool bWasInitialized = False
 Bool bUseLOS = False
-Bool bNakedOnly = True
+Bool bNakedOnly = False ; retired in 3.4.0 (the MCM toggle never reached the update loop); kept for the Get/SetNakedOnly API
 Bool bDisabled = False
 
 Actor[] theActors
+Actor[] scannedActors ; last native scan, nearest first, player excluded
 Int _Internal_actorCount
 Float lastActorScanTime
 
@@ -480,7 +480,9 @@ function SetDynamicArousalEffect(Form whoF, string effectId, float initialValue,
     if who == none
         return
     endIf
-    slax.Info("slaMainScr - SetDynamicArousalEffect(" + who.GetLeveledActorBase().GetName() + ", " + effectId + ", " + initialValue + ", " + functionId + ", "+ param+ "," + limit + ")")
+    if slax.IsVerbose()
+        slax.Info("slaMainScr - SetDynamicArousalEffect(" + who.GetLeveledActorBase().GetName() + ", " + effectId + ", " + initialValue + ", " + functionId + ", "+ param+ "," + limit + ")")
+    endIf
     slaInternalModules.SetDynamicArousalEffect(who, effectId, initialValue, functionId, param, limit)
 endFunction
 
@@ -489,7 +491,9 @@ function ModDynamicArousalEffect(Form whoF, string effectId, float modifier, flo
     if who == none
         return
     endIf
-    slax.Info("slaMainScr - ModDynamicArousalEffect(" + who.GetLeveledActorBase().GetName() + ", " + effectId + ", " + modifier + "," + limit + ")")
+    if slax.IsVerbose()
+        slax.Info("slaMainScr - ModDynamicArousalEffect(" + who.GetLeveledActorBase().GetName() + ", " + effectId + ", " + modifier + "," + limit + ")")
+    endIf
     slaInternalModules.ModDynamicArousalEffect(who, effectId, modifier, limit)
 endFunction
 
@@ -505,37 +509,53 @@ function OnOrgasmEvent(Form whoF, float enjoyment)
     if who == none
         return
     endIf
-    slax.Info("slaMainScr - OnOrgasmEvent(" + who.GetLeveledActorBase().GetName() + ", " + enjoyment + ")")
+    if slax.IsVerbose()
+        slax.Info("slaMainScr - OnOrgasmEvent(" + who.GetLeveledActorBase().GetName() + ", " + enjoyment + ")")
+    endIf
     defaultPlugin.OnOrgasm(who, enjoyment)
 endFunction
 
 float function ModEffectValue(Actor who, int effectIdx, float diff, float limit) 
-    slax.Info("slaMainScr - ModEffectValue(" + who.GetLeveledActorBase().GetName() + ", " + GetEffectTitle(effectIdx) + ", " + diff + ", " + limit + ")")
+    if slax.IsVerbose()
+        slax.Info("slaMainScr - ModEffectValue(" + who.GetLeveledActorBase().GetName() + ", " + GetEffectTitle(effectIdx) + ", " + diff + ", " + limit + ")")
+    endIf
     return slaInternalModules.ModStaticArousalValue(who, effectIdx, diff, limit)
 endFunction
 
 function SetEffectValue(Actor who, int effectIdx, float value) 
-    slax.Info("slaMainScr - SetEffectValue(" + who.GetLeveledActorBase().GetName() + ", " + GetEffectTitle(effectIdx) + ", " + value + ")")
+    if slax.IsVerbose()
+        slax.Info("slaMainScr - SetEffectValue(" + who.GetLeveledActorBase().GetName() + ", " + GetEffectTitle(effectIdx) + ", " + value + ")")
+    endIf
     slaInternalModules.SetStaticArousalValue(who, effectIdx, value)
 endFunction
 
 function SetTimedEffectFunction(Actor who, int effectIdx, int functionId, float param, float limit, int auxilliary) 
-    slax.Info("slaMainScr - SetTimedEffect(" + who.GetLeveledActorBase().GetName() + ", " + GetEffectTitle(effectIdx) + ", " + functionId + ", " + param + ")")
+    if slax.IsVerbose()
+        slax.Info("slaMainScr - SetTimedEffect(" + who.GetLeveledActorBase().GetName() + ", " + GetEffectTitle(effectIdx) + ", " + functionId + ", " + param + ")")
+    endIf
     slaInternalModules.SetStaticArousalEffect(who, effectIdx, functionId, param, limit, auxilliary)
 endFunction
 
 bool function GroupEffects(Actor who, int effIdx1, int effIdx2)
-    slax.Info("slaMainScr - GroupEffects(" + who.GetLeveledActorBase().GetName() + ", " + GetEffectTitle(effIdx1) + ", " + GetEffectTitle(effIdx2) + ")")
+    if slax.IsVerbose()
+        slax.Info("slaMainScr - GroupEffects(" + who.GetLeveledActorBase().GetName() + ", " + GetEffectTitle(effIdx1) + ", " + GetEffectTitle(effIdx2) + ")")
+    endIf
     return slaInternalModules.GroupEffects(who, effIdx1, effIdx2)
 endFunction
 
 bool function RemoveEffectGroup(Actor who, int effIdx)
-    slax.Info("slaMainScr - RemoveEffectGroup(" + who.GetLeveledActorBase().GetName() + ", " + GetEffectTitle(effIdx) + ")")
+    if slax.IsVerbose()
+        slax.Info("slaMainScr - RemoveEffectGroup(" + who.GetLeveledActorBase().GetName() + ", " + GetEffectTitle(effIdx) + ")")
+    endIf
     return slaInternalModules.RemoveEffectGroup(who, effIdx)
 endFunction
 
-function UpdateSingleActorArousal(Actor who)
-    slax.Info("slaMainScr - UpdateArousal(" + who.GetLeveledActorBase().GetName() + ")")
+int function UpdateSingleActorArousal(Actor who)
+    {Ticks the native arousal of one actor and publishes it (SLP+ statistic, player
+    notifications, SOS, the sla_Arousal faction rank). Returns the clamped 0-100 value.}
+    if slax.IsVerbose()
+        slax.Info("slaMainScr - UpdateArousal(" + who.GetLeveledActorBase().GetName() + ")")
+    endIf
     slaInternalModules.UpdateSingleActorArousal(who, GameDaysPassed.GetValue())
 
     int arousal = slaUtil.GetActorArousal(who)
@@ -557,6 +577,7 @@ function UpdateSingleActorArousal(Actor who)
 	EndIf
 
 	who.SetFactionRank(slaArousal, arousal)
+	return arousal
 endFunction
 
 event OnPlayerLoadGame()
@@ -715,44 +736,40 @@ Function StartCleaning()
 EndFunction
 
 
-; This handles the locking - callers should NO LONGER TRY TO pre-LOCK, that WAS A BROKEN PATTERN.
+; Fills theActors with the actors around the player (nearest first, player excluded) and
+; returns their count, or -1 while another caller holds the lock. The scan is native since
+; 3.4.0 (slaInternalModules.ScanActors: loaded, AI-active actors within the MCM scan radius;
+; no children, dead or disabled actors; creatures unless the MCM excludes them). It replaced
+; the 25-alias slaScanAll quest, which cost a quest Start/Stop plus a 0.3 s wait per cycle
+; and silently dropped every actor past the 25th.
+; This handles the locking - callers should NOT pre-lock.
 Int Function GetAllActors(Int lockID)
-    slax.EnableDebugSpam(True)
-    slax.DebugSpam_SetInfo()
-    slax.Info("slaMainScr - GetAllActors(" + lockID + ")")
-    
-    ; Fails if ANY lock already taken
+    ; Fails if the lock is already taken
     If(!slaInternalModules.TryLock(lockID))
         slax.Info("slaMainScr - GetAllActors(" + lockID + ") - LOCK NOT TAKEN")
-        ;Debug.Trace("Was locked, returning lock failed indicator")
         Return -1 ; Lock not taken
     EndIf
-    
-    ; TODO: can add feature here to never process creatures for arousal ... some might find it useful (use slaScanAllNpcs)
-    slaScanAllScript scanner = slaScanAll As slaScanAllScript
+
     Float now = Utility.GetCurrentRealTime()    ; In seconds
-    
-    slax.Info("slaMainScr - GetAllActors(" + lockID + ") - start scan at " + now)
-    
-    If now - lastActorScanTime > 10.0           ; Don't rescan actors if not enough time passed
-    
-        _Internal_actorCount = scanner.GetArousedActors()
-        slax.Info("slaMainScr - GetAllActors - scanned " + _Internal_actorCount + " local actors")
-
+    If now - lastActorScanTime > 10.0 || scannedActors == None  ; Don't rescan actors if not enough time passed
+        scannedActors = slaInternalModules.ScanActors(playerRef, slaConfig.scanRadius, slaConfig.maxTrackedActors, slaConfig.includeCreatures)
+        If scannedActors == None ; an empty native array arrives as None
+            scannedActors = PapyrusUtil.ActorArray(0)
+        EndIf
+        _Internal_actorCount = scannedActors.Length
         lastActorScanTime = now
-        
+        If slax.IsVerbose()
+            slax.Info("slaMainScr - GetAllActors(" + lockID + ") - scanned " + _Internal_actorCount + " actors in " + (Utility.GetCurrentRealTime() - now) + " seconds")
+        EndIf
     EndIf
-    
+
     ; Each theActors array is a unique array - so if another instance modifies it, it's completely safe.
-    theActors = slaInternalModules.DuplicateActorArray(scanner.arousedActors, _Internal_actorCount)
+    theActors = slaInternalModules.DuplicateActorArray(scannedActors, _Internal_actorCount)
+    If theActors == None
+        theActors = PapyrusUtil.ActorArray(0)
+    EndIf
 
-    ; Note lock got taken above, and must be released at some point.
     slaInternalModules.Unlock(lockID)
-
-    Float final = Utility.GetCurrentRealTime()
-    slax.Info("slaMainScr - GetAllActors(" + lockID + ") - end scan at " + now + " = " + (final - now) + " seconds")
-    slax.Info("slaMainScr - got " + theActors.Length + " actors")
-    
     Return theActors.Length
 
 EndFunction
@@ -776,16 +793,10 @@ Event OnUpdate()
         Return
     EndIf
     
-    bool fullUpdate = true
-    if slaConfig.smallUpdatesPerFull > 0
-        if updateCounter >= slaConfig.smallUpdatesPerFull
-            updateCounter = 0
-        else
-            fullUpdate = false
-        endIf
-        updateCounter += 1
-    endIf
-    UpdateActorArousals(fullUpdate)
+    ; Always a full update since 3.4.0: the old "small update" cycles skipped the observer
+    ; pass, which left the naked effect decaying on each of them (and the default slider
+    ; value made every cycle full anyway). The pass is native now, so there is nothing to save.
+    UpdateActorArousals(true)
 
     ; Subtle difference - sends mod event before scheduling update - SLAR did the opposite, which could lead to re-entrance.
     RegisterForSingleUpdate(updateFrequency) ; default is 120 seconds, but may vary.
@@ -793,90 +804,208 @@ Event OnUpdate()
 EndEvent
 
 function UpdateActorArousals(bool fullUpdate)
-    { Updates arousal values for all nearby actors. Every actor update works in two steps: 
-    First plugin.UpdateActor(...) will be called for every plugin. Then plugin.UpdateObserver(...) 
-    will be called for every actor in line of sight to the actor being updated. The second 
-    step will be skipped if fullUpdate is false.
-    At the end plugin.UpdateActor(none) for each plugin to indicate the end of the update cycle. }
+    { Updates arousal values for all nearby actors. One cycle:
+      1. native scan of the actors around the player (GetAllActors)
+      2. per-actor pre-pass: naked state (+ cached exposure), exhibitionist refresh,
+         OStim scene membership, gender preference (only when something can be seen)
+      3. ONE native pass over every observer/observed pair (slaInternalModules.ComputeObservations:
+         relevance filter, LOS, creature visibility, naked weighting, onlooker counting). It
+         replaced the Papyrus pair loop in 3.4.0, which cost HasLOS plus up to three
+         UpdateObserver calls per pair per cycle.
+      4. per actor: plugin.UpdateActor(actor), then plugin.ApplyObservations(actor, ...) for
+         every LOS plugin that consumes aggregated observations. LOS plugins that still
+         implement the per-pair UpdateObserver hook (third-party) get the old pair loop, for
+         themselves only.
+      5. plugin.UpdateActor(none) closes the cycle; every actor's arousal is ticked; the
+         sla_UpdateComplete mod event fires with the actor count.
+      fullUpdate is always true since 3.4.0; the parameter stays for the plugin API. }
     int actorCount = GetAllActors(2) ; LOCK THE ACTORS
     if actorCount < 0
         Debug.Trace("UpdateActorArousals - GetAllActors already locked")
         return
     endIf
-    
+
     Actor[] updateActors = PapyrusUtil.PushActor(theActors, playerRef)
     actorCount += 1
 
+    ; Drop blocked actors, compacting from the end.
     int i = 0
     while i < actorCount
-
         if slaUtil.IsActorArousalBlocked(updateActors[i])
             updateActors[i] = updateActors[actorCount - 1]
             actorCount -= 1
-        ;elseIf updateActors[i].IsChild() ; GetAllActors should not find child actors anyway
-        ;    slaUtil.SetActorArousalBlocked(updateActors[i], true)
         else
-            ; updates naked state for actor
-            IsActorNaked(updateActors[i])
             i += 1
         endIf
-
     endWhile
-    ;int updPluginsAmount = slax.CountNonNullElements(updatePlugins)
-    ;int losPluginsAmount = slax.CountNonNullElements(losPlugins)
+    if actorCount < 1
+        SendModEvent("sla_UpdateComplete", None, 0)
+        return
+    endIf
+    if updateActors.Length != actorCount
+        updateActors = PapyrusUtil.ResizeActorArray(updateActors, actorCount)
+    endIf
+
+    ; --- per-actor pre-pass ---------------------------------------------------------------
+    bool defaultActive = defaultPlugin && defaultPlugin.isEnabled
+    bool scaleByExposure = defaultActive && defaultPlugin.ScaleNakedByExposure()
+    Actor[] sceneActors = none
+    if ostimPlugin && ostimPlugin.isEnabled
+        sceneActors = ostimPlugin.GetSceneActors()
+    endIf
+    int[] flags = Utility.CreateIntArray(actorCount)
+    float[] exposure = Utility.CreateFloatArray(actorCount)
+    int[] genderPref = Utility.CreateIntArray(actorCount, 2)
+    Actor[] nakedActors = PapyrusUtil.ActorArray(0)
+    bool anyExhibiting = false
+    Actor who
     i = actorCount
     while i > 0
         i -= 1
-        Actor observer = updateActors[i]
-       
-		;int j = updPluginsAmount
-        int j = updatePlugins.Length
+        who = updateActors[i]
+        int f = 0
+        if IsActorNaked(who) ; also refreshes the sla_Naked faction rank and caches the exposure
+            f = 1
+            nakedActors = PapyrusUtil.PushActor(nakedActors, who)
+            exposure[i] = 1.0
+            if scaleByExposure
+                exposure[i] = StorageUtil.GetFloatValue(who, "SLAroused.NakedExposure", 1.0)
+            endIf
+        endIf
+        if defaultActive && defaultPlugin.RefreshExhibitionist(who)
+            f += 2
+            anyExhibiting = true
+        endIf
+        if sceneActors != none && sceneActors.Find(who) >= 0
+            f += 4
+        endIf
+        flags[i] = f
+    endWhile
+    ; Gender preference falls through to SexLab's sexuality stats for actors without a
+    ; faction rank (most NPCs), so only pay for it when something can be seen.
+    if nakedActors.Length > 0 || anyExhibiting
+        i = actorCount
+        while i > 0
+            i -= 1
+            genderPref[i] = slaUtil.GetGenderPreference(updateActors[i])
+        endWhile
+    endIf
+
+    ; --- observations: one native call ----------------------------------------------------
+    bool useLOS = GetUseLOS() as bool
+    int losCount = 0
+    if losPlugins
+        losCount = losPlugins.Length
+    endIf
+    bool[] legacyLos = Utility.CreateBoolArray(losCount)
+    bool hasLegacyLos = false
+    float[] obs = none
+    int k = losCount
+    sla_PluginBase losPlugin
+    if fullUpdate
+        while k > 0
+            k -= 1
+            losPlugin = losPlugins[k]
+            if losPlugin && !losPlugin.UsesAggregatedObservations()
+                legacyLos[k] = true
+                hasLegacyLos = true
+            endIf
+        endWhile
+        Faction creatureLover = none
+        if defaultActive
+            creatureLover = defaultPlugin.slaCreatureSexLoverFaction
+        endIf
+        obs = slaInternalModules.ComputeObservations(updateActors, flags, exposure, genderPref, useLOS, creatureLover, sexlabPlugin.getSLAnimatingFaction())
+        if obs != none && obs.Length < actorCount * 8
+            slax.Warning("slaMainScr - ComputeObservations returned " + obs.Length + " values for " + actorCount + " actors; skipping observations this cycle")
+            obs = none
+        endIf
+    endIf
+
+    ; --- per-actor plugin updates ---------------------------------------------------------
+    Actor observer
+    Actor observed
+    sla_PluginBase plugin
+    int j
+    int base
+    i = actorCount
+    while i > 0
+        i -= 1
+        observer = updateActors[i]
+
+        j = updatePlugins.Length
         while j > 0
             j -= 1
-            sla_PluginBase plugin = updatePlugins[j]
+            plugin = updatePlugins[j]
             If (plugin)
                 plugin.UpdateActor(observer, fullUpdate)
             EndIf
         endWhile
 
-        if fullUpdate
+        if obs != none
+            base = i * 8
+            k = losCount
+            while k > 0
+                k -= 1
+                losPlugin = losPlugins[k]
+                if losPlugin && !legacyLos[k]
+                    losPlugin.ApplyObservations(observer, obs[base], obs[base + 1], obs[base + 2] > 0.0, obs[base + 3] > 0.0, obs[base + 4] as int, obs[base + 5] > 0.0, obs[base + 6] > 0.0)
+                endIf
+            endWhile
+        endIf
+
+        if hasLegacyLos
             j = actorCount
             while j > 0
                 j -= 1
-                Actor observed = updateActors[j]
+                observed = updateActors[j]
                 if observer != observed
-                    if !GetUseLOS() || observer.HasLOS(observed)
-                        int k = losPlugins.Length
+                    if !useLOS || observer.HasLOS(observed)
+                        k = losCount
                         while k > 0
                             k -= 1
-                            sla_PluginBase plugin = losPlugins[k]
-                            If (plugin)
-                                 plugin.UpdateObserver(observer, observed)
-                            endif
+                            if legacyLos[k]
+                                losPlugins[k].UpdateObserver(observer, observed)
+                            endIf
                         endWhile
                     endIf
                 endIf
             endWhile
         endIf
     endWhile
-	
-	i = updatePlugins.Length
-	while i > 0
-		i -= 1
-		sla_PluginBase plugin = updatePlugins[i]
+
+    i = updatePlugins.Length
+    while i > 0
+        i -= 1
+        plugin = updatePlugins[i]
         If (plugin)
            plugin.UpdateActor(none, fullUpdate)
         endif
-	endWhile
-    
+    endWhile
+
+    ; --- tick + bookkeeping ---------------------------------------------------------------
+    Actor mostAroused = none
+    int mostArousal = -1
     i = actorCount
     while i > 0
         i -= 1
-		UpdateSingleActorArousal(updateActors[i])
+        who = updateActors[i]
+        int arousal = UpdateSingleActorArousal(who)
+        if who != playerRef && arousal > mostArousal
+            mostArousal = arousal
+            mostAroused = who
+        endIf
     endWhile
+    ; Feeds slaFrameworkScr.GetMostArousedActorInLocation and the MCM's "AROUSED:" target,
+    ; which nothing had written since the original SLA.
+    slaConfig.slaMostArousedActorInLocation = mostAroused
+    if mostArousal < 0
+        mostArousal = 0
+    endIf
+    slaConfig.slaArousalOfMostArousedActorInLoc = mostArousal
 
     SendModEvent("sla_UpdateComplete", None, actorCount)
-endFunction
+endfunction
 
 function ForceUpdateActor(Actor who)
     if who == none
@@ -1272,11 +1401,10 @@ Function CleanActorStorage()
     else
         days = 10.0
     endif
-    int removedCount = slaInternalModules.CleanUpActors(gameDaysPassed.GetValue() - days)
+    ; Runs asynchronously on the game thread; the count lands in SexlabArousedNG.log.
+    slaInternalModules.CleanUpActors(gameDaysPassed.GetValue() - days)
 
-    ;Debug.Trace("Removed " + removedCount + " unused settings.  Finished at " + Utility.GetCurrentRealTime());
-
-    slax.info("slaMainScr: Actor cleaning complete. Removed: " + removedCount)
+    slax.info("slaMainScr: Actor cleaning scheduled (older than " + days + " days)")
 
 EndFunction
 

@@ -100,7 +100,27 @@ function UpdateActor(Actor who, bool fullUpdate)
 endFunction
 
 function UpdateObserver(Actor observer, Actor observed)
-	{To be implemented by plugin}
+	{Per observer/observed pair in line of sight. Only called for LOS plugins whose
+	UsesAggregatedObservations() returns false (the legacy path): it costs one HasLOS
+	plus one call per pair per cycle, so prefer ApplyObservations.}
+endFunction
+
+bool function UsesAggregatedObservations()
+	{Return true to receive ApplyObservations (one call per actor per cycle, computed
+	natively) instead of per-pair UpdateObserver calls. The shipped plugins do.}
+	return false
+endFunction
+
+function ApplyObservations(Actor observer, float nakedWeight, float nakedMaxExposure, bool seesNaked, bool seesNakedPref, int exhibitionistCount, bool seesSexLab, bool seesOStim)
+	{Totals over every actor the observer can see this cycle (LOS respected when the
+	MCM asks for it), called right after UpdateActor(observer, ...):
+	  nakedWeight        sum over naked actors in view of exposure x 2 (preferred gender) or x 1
+	  nakedMaxExposure   most exposed naked actor in view, 0.0 .. 1.0
+	  seesNaked          any naked actor (or, for creature lovers, any creature) in view
+	  seesNakedPref      one of them is of the observer's preferred gender
+	  exhibitionistCount onlookers in view while the observer exhibits (2 per attracted onlooker)
+	  seesSexLab         an actor in a SexLab scene is in view
+	  seesOStim          an actor in an OStim scene is in view}
 endFunction
 
 function ClearActor(Actor who)

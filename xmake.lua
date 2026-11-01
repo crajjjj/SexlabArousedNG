@@ -12,7 +12,7 @@
 
 set_xmakever("3.0.0")
 
-set_version("3.3.5") -- the DLL's version resource + SKSEPluginInfo version (see CLAUDE.md, Bumping the Version)
+set_version("3.4.0") -- the DLL's version resource + SKSEPluginInfo version (see CLAUDE.md, Bumping the Version)
 set_license("Apache-2.0")
 
 -- Root-scope settings from the included CommonLibSSE-NG xmake.lua apply only to

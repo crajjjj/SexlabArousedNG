@@ -71,6 +71,7 @@ function SetStaticArousalEffect(Actor who, int effectIdx, int functionId, float 
 
 ; Read function parameters back:
 float function GetStaticEffectParam(Actor who, int effectIdx) global native
+float function GetStaticEffectLimit(Actor who, int effectIdx) global native  ; the limit as passed in (bound since 3.4.0)
 int   function GetStaticEffectAux(Actor who, int effectIdx) global native
 
 ; Check if a timed function is currently running on this slot:
@@ -82,7 +83,28 @@ bool function IsStaticEffectActive(Actor who, int effectIdx) global native
 ```papyrus
 function SetStaticAuxillaryFloat(Actor who, int effectIdx, float value) global native
 function SetStaticAuxillaryInt(Actor who, int effectIdx, int value) global native
-; Read the int back with GetStaticEffectAux.
+; Read them back:
+int   function GetStaticEffectAux(Actor who, int effectIdx) global native
+float function GetStaticEffectAuxFloat(Actor who, int effectIdx) global native  ; bound since 3.4.0
+```
+
+## Actor scan and observations (framework internals)
+
+These two natives drive `slaMainScr.UpdateActorArousals` since 3.4.0. Plugins normally never call them: the framework hands plugins the results through `ApplyObservations` (see [Static Effects](static-effects.md#los-line-of-sight-updates)). They are documented for completeness and for mods that want their own nearby-actor list without a quest alias scan.
+
+```papyrus
+; Loaded, AI-active actors within radius units of origin, nearest first, at most maxCount
+; (1..127). Skips origin itself, children, dead/disabled/unloaded actors, chickens and
+; mannequins, and creatures unless includeCreatures. An empty result arrives as None.
+Actor[] function ScanActors(Actor origin, float radius, int maxCount, bool includeCreatures) global native
+
+; One pass over every observer/observed pair of actors (LOS tested natively when useLOS).
+; flags per actor: 1 naked, 2 exhibiting, 4 in an OStim scene (SexLab is read from the
+; animating faction). exposure per actor (1.0 when not scaling), genderPref per actor
+; (0 male, 1 female, 2 both). Returns 8 floats per actor: [0] naked weight, [1] max
+; exposure seen, [2] sees naked, [3] sees naked of preferred gender, [4] exhibitionist
+; onlooker count, [5] sees SexLab scene, [6] sees OStim scene, [7] actors in view.
+float[] function ComputeObservations(Actor[] actors, int[] flags, float[] exposure, int[] genderPref, bool useLOS, Faction creatureLover, Faction animating) global native
 ```
 
 ## Maintenance

@@ -11,16 +11,9 @@ Your quest script extends `sla_PluginBase` and overrides the lifecycle functions
 ```papyrus
 Scriptname MyMod_SLAPlugin extends sla_PluginBase
 
-; Called on every periodic update. actors = all tracked actors, nakedActors = subset that are naked.
-function Update(Actor[] actors, Actor[] nakedActors)
-    int i = actors.Length - 1
-    while i >= 0
-        UpdateActor(actors[i], true)
-        i -= 1
-    endWhile
-endFunction
-
-; Called per-actor. fullUpdate = true means a complete recalculation is expected.
+; Called per tracked actor on every periodic update (needs RegisterForPerodicUpdates), then
+; once more with who = none to close the cycle. fullUpdate is always true since 3.4.0.
+; (The base class also declares Update(actors, nakedActors); the framework never calls it.)
 function UpdateActor(Actor who, bool fullUpdate)
     float exposure = ComputeExposure(who)
     SetArousalEffectValue(who, _exposureEffectIdx, exposure)
@@ -121,7 +114,7 @@ int state = slaInternalModules.GetStaticEffectAux(who, effectIdx)
 
 ## LOS (line-of-sight) updates
 
-If your plugin needs to react when an actor sees another, register for LOS events:
+If your plugin needs to know what each actor can see, register for LOS updates and consume the per-actor totals the framework computes natively once per cycle (3.4.0+):
 
 ```papyrus
 function EnablePlugin()
@@ -134,11 +127,28 @@ function ReassertSubscriptions()
     RegisterForLOSUpdates()  ; re-assert on load alongside RegisterForPerodicUpdates()
 endFunction
 
-; Called when observer gains LOS on observed:
-function UpdateObserver(Actor observer, Actor observed)
-    ModArousalEffectValue(observer, _exposureEffectIdx, 2.0, 50.0)
+bool function UsesAggregatedObservations()
+    return true
+endFunction
+
+; Called right after UpdateActor(observer, ...) with totals over every actor the observer
+; can see (line of sight respected when the MCM asks for it):
+;   nakedWeight        sum over naked actors in view of exposure x 2 (preferred gender) or x 1
+;   nakedMaxExposure   most exposed naked actor in view, 0.0 .. 1.0
+;   seesNaked          any naked actor (or, for creature lovers, any creature) in view
+;   seesNakedPref      one of them is of the observer's preferred gender
+;   exhibitionistCount onlookers in view while the observer exhibits (2 per attracted onlooker)
+;   seesSexLab         an actor in a SexLab scene is in view
+;   seesOStim          an actor in an OStim scene is in view
+function ApplyObservations(Actor observer, float nakedWeight, float nakedMaxExposure, bool seesNaked, bool seesNakedPref, int exhibitionistCount, bool seesSexLab, bool seesOStim)
+    if seesNaked
+        ModArousalEffectValue(observer, _exposureEffectIdx, 2.0 * nakedWeight, 50.0)
+    endIf
 endFunction
 ```
+
+!!! note "Legacy per-pair hook"
+    A plugin that leaves `UsesAggregatedObservations()` at its default `false` keeps receiving `UpdateObserver(Actor observer, Actor observed)` once per observer/observed pair in line of sight. That path costs one `HasLOS` plus one script call per pair per cycle, which is exactly what 3.4.0 removed for the shipped plugins, so prefer `ApplyObservations`.
 
 The base `DisablePlugin()` calls `UnregisterForLOSUpdates()` (and stops periodic updates) for you — but Papyrus does **not** chain to the parent automatically, so your override must call `parent.DisablePlugin()` (as shown in the lifecycle example above) for that teardown to run.
 

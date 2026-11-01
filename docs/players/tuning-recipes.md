@@ -16,7 +16,6 @@ Pick the sources you want to lean on.
 - **Maximum Naked (Non-Preferred)** (default `15`) — same cap for non-preferred-gender exposure. Raise if you want the "wrong" gender to also contribute meaningfully.
 - **Naked Half-Time** (default `1` hour) — decay speed once nudity is no longer in view. Raise to `4–8` hours if you want exposure to linger after the naked NPC walks away.
 - **Use LOS** (General page, default ON) — turn OFF if you want every nearby naked actor to count whether or not the player can see them.
-- **Naked Only** (General page, "Require naked actors to change arousal") — leave OFF (the default). When ON it's a performance switch that skips *all* arousal updates unless a naked actor is nearby, which suppresses passive gains.
 
 ### Faster passive buildup (Timed Effect category) — the OSL analogue
 
@@ -54,7 +53,7 @@ If you just want the OSL-style passive-rise behavior without micromanaging the r
 1. **Default plugin → Timed Effect:** *Timed Rate* `30/day`, *Maximum Timed arousal* `100`, *Use timed cycle* OFF.
 2. **Default plugin → Sleep Effect:** *Sleep Min Time* `1` hour, *Sleep Minimum* `10`, *Sleep Maximum* `25`.
 3. **Default plugin → Satisfaction:** *Satisfaction Half-Time* `0.5` hours so post-orgasm penalty fades fast.
-4. **General page:** *Naked Only* OFF (so updates run even with no naked actor around), and optionally *Use LOS* OFF (makes nudity easier to trigger).
+4. **General page:** optionally *Use LOS* OFF (makes nudity easier to trigger).
 
 You should see ~1–2 arousal/hour even fully clothed and alone, climbing to ~100 after a day or two without orgasm, with bumps from nudity / sleep / sex on top.
 

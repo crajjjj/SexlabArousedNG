@@ -192,6 +192,33 @@ namespace SLA {
         }
     }
 
+    float ArousalManager::GetStaticEffectLimit(RE::Actor* who, int32_t effectIdx) {
+        std::scoped_lock lock(_lock);
+        auto data = TryGetArousalData(who);
+        if (!data) return 0.0f;
+        try {
+            ArousalEffectData& effect = data->GetStaticArousalEffect(effectIdx);
+            // Set() folds the per-function offset into the stored limit; hand back what the caller passed.
+            return effect.limit - GetEffectLimitOffset(static_cast<uint32_t>(effect.function));
+        } catch (std::exception& e) {
+            SKSE::log::warn("GetStaticEffectLimit: {}", e.what());
+            return 0.0f;
+        }
+    }
+
+    float ArousalManager::GetStaticEffectAuxFloat(RE::Actor* who, int32_t effectIdx) {
+        std::scoped_lock lock(_lock);
+        auto data = TryGetArousalData(who);
+        if (!data) return 0.0f;
+        try {
+            ArousalEffectData& effect = data->GetStaticArousalEffect(effectIdx);
+            return effect.floatAux;
+        } catch (std::exception& e) {
+            SKSE::log::warn("GetStaticEffectAuxFloat: {}", e.what());
+            return 0.0f;
+        }
+    }
+
     ArousalEffectData& ArousalManager::GetStaticArousalEffect(RE::Actor* who, int32_t effectIdx) {
         std::scoped_lock lock(_lock);
         ArousalData* data = GetArousalData(who);

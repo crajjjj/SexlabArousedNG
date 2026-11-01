@@ -345,7 +345,13 @@ EndFunction
 
 bool function isInScene(Actor act)
     return false
-EndFunction  
+EndFunction
+
+Actor[] function GetSceneActors()
+    {Every actor currently in an OStim scene (all threads), read once per cycle by
+    slaMainScr so the native observer pass can flag them. Empty when not Installed.}
+    return PapyrusUtil.ActorArray(0)
+EndFunction
 
 state Installed
     event OnBeginState()
@@ -476,11 +482,43 @@ state Installed
 
 	endFunction
 
-	function UpdateObserver(Actor observer, Actor observed)
-		if isInScene(observed)
-			isSeeingSex = true
-		endIf
+	bool function UsesAggregatedObservations()
+		return true
 	endFunction
+
+	function ApplyObservations(Actor observer, float nakedWeight, float nakedMaxExposure, bool seesNaked, bool seesNakedPref, int exhibitionistCount, bool seesSexLab, bool seesOStim)
+		; "Sees sex" = an actor of GetSceneActors() in view; slaMainScr flags those once
+		; per cycle and the pair pass runs natively since 3.4.0.
+		isSeeingSex = seesOStim
+	endFunction
+
+    Actor[] function GetSceneActors()
+        Actor[] result = PapyrusUtil.ActorArray(0)
+        if OStim == none
+            return result
+        endIf
+        if OStim.GetAPIVersion() >= 29
+            int[] threadIds = OThread.GetAllThreadIDs()
+            if threadIds
+                int i = threadIds.Length
+                while i > 0
+                    i -= 1
+                    Actor[] threadActors = OThread.GetActors(threadIds[i])
+                    if threadActors
+                        result = PapyrusUtil.MergeActorArray(result, threadActors, true)
+                    endIf
+                endWhile
+            endIf
+            return result
+        endIf
+        if OStim.AnimationRunning()
+            Actor[] legacyActors = OStim.GetActors()
+            if legacyActors
+                return legacyActors
+            endIf
+        endIf
+        return result
+    EndFunction
 
     bool function isInScene(Actor act)
         if act == none || OStim == none

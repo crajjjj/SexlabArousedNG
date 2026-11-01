@@ -9,28 +9,6 @@ using namespace SKSE::log;
 using namespace SKSE::stl;
  
 namespace {
-    void InitializeLogging() {
-        auto path = log_directory();
-        if (!path) {
-            report_and_fail("Unable to lookup SKSE logs directory.");
-        }
-        *path /= PluginDeclaration::GetSingleton()->GetName();
-        *path += L".log";
-
-        std::shared_ptr<spdlog::logger> log;
-        if (IsDebuggerPresent()) {
-            log = std::make_shared<spdlog::logger>("Global", std::make_shared<spdlog::sinks::msvc_sink_mt>());
-        } else {
-            log = std::make_shared<spdlog::logger>(
-                "Global", std::make_shared<spdlog::sinks::basic_file_sink_mt>(path->string(), true));
-        }
-        log->set_level(spdlog::level::from_str("info"));
-        log->flush_on(spdlog::level::from_str("trace"));
-
-        spdlog::set_default_logger(std::move(log));
-        spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%e] [%n] [%l] [%t] [%s:%#] %v");
-    }
-
     void InitializePapyrus() {
         log::trace("Initializing Papyrus binding...");
         if (GetPapyrusInterface()->Register(SLA::RegisterFunctions)) {
@@ -52,13 +30,12 @@ namespace {
 }
 
 SKSEPluginLoad(const LoadInterface* skse) {
-    InitializeLogging();
-
-    auto* plugin = PluginDeclaration::GetSingleton();
-    auto version = plugin->GetVersion();
-    log::info("{} {} is loading...", plugin->GetName(), version);
-
+    // Init() sets up the <SKSE logs>\SexlabArousedNG.log logger itself (CommonLibSSE-NG v7+)
+    // and prints the "<name> v<version>" line; a plugin-side spdlog setup before it was
+    // replaced by it and never took effect.
     Init(skse);
+    auto* plugin = PluginDeclaration::GetSingleton();
+    log::info("{} {} is loading...", plugin->GetName(), plugin->GetVersion());
     SLA::InitializeRandomEngine();
     InitializeSerialization();
     InitializePapyrus();

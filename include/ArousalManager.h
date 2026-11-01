@@ -21,6 +21,8 @@ namespace SLA {
         float GetStaticEffectValue(RE::Actor* who, int32_t number);
         float GetStaticEffectParam(RE::Actor* who, int32_t effectIdx);
         int32_t GetStaticEffectAux(RE::Actor* who, int32_t effectIdx);
+        float GetStaticEffectLimit(RE::Actor* who, int32_t effectIdx);
+        float GetStaticEffectAuxFloat(RE::Actor* who, int32_t effectIdx);
         void SetStaticArousalEffect(RE::Actor* who, int32_t effectIdx, int32_t functionId,
                                     float param, float limit, int32_t auxilliary);
         void SetDynamicArousalEffect(RE::Actor* who, std::string effectId, float initialValue,

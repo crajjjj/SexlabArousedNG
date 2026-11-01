@@ -145,11 +145,19 @@ Pre-release checklist. Each scenario should be verified in-game or by code inspe
 
 | # | P | Scenario | Expected | Code |
 |---|---|----------|----------|------|
-| 12.1 | P0 | Nearby actors discovered | Scan scripts populate tracked actor list | slanakedscript, slascanallscript |
+| 12.1 | P0 | Nearby actors discovered | `ScanActors` returns loaded actors within the MCM scan radius, nearest first, at most "Max tracked actors"; no children, dead, disabled, chickens or mannequins; player excluded (pushed by the caller) | ActorScan.cpp, slamainscr |
 | 12.2 | P1 | Player tracked | `slaplayeraliasscr` keeps player in tracked list | slaplayeraliasscr |
 | 12.3 | P1 | Actor leaves area | `ClearActor` called on all plugins, data optionally pruned | slamainscr |
 | 12.4 | P1 | Naked detection | Armor keyword/slot checks correctly identify naked actors | slaConfigScr, slaFrameworkScr |
 | 12.5 | P2 | Gender preference | Male/female/both preference applied per actor | slaFrameworkScr |
+| 12.6 | P0 | Observer pass: naked actor in view | With one naked NPC in LOS, the observer's Naked effect gets the linear function (aux state != 0) within one cycle; out of LOS or Use LOS off behaves as before 3.4.0 | ActorScan.cpp ComputeObservations, sla_defaultplugin ApplyObservations |
+| 12.7 | P1 | Observer pass: creatures | A creature in view counts only for creature observers or members of the creature-lover faction; "Track creatures" off removes creatures from the scan entirely | ActorScan.cpp |
+| 12.8 | P1 | Observer pass: exhibitionist | A naked exhibitionist gains the Exhibitionist effect per onlooker in view (x2 for attracted onlookers); AND modesty ranks are mirrored by `RefreshExhibitionist` before the pass | sla_defaultplugin RefreshExhibitionist, ActorScan.cpp |
+| 12.9 | P1 | Observer pass: sees sex | An onlooker of a SexLab (animating faction) or OStim (`GetSceneActors`) scene gets the Sex / OSex "sees sex" state | sla_sexlabplugin, sla_OStimPlugin, ActorScan.cpp |
+| 12.10 | P1 | Third-party LOS plugin | A plugin with `UsesAggregatedObservations()` false still receives per-pair `UpdateObserver` calls; shipped plugins receive none | slamainscr UpdateActorArousals |
+| 12.11 | P2 | Empty scan | Alone in a cell: `ScanActors` returns None/empty, the cycle still ticks the player and fires `sla_UpdateComplete` with count 1 | slamainscr GetAllActors |
+| 12.12 | P2 | Most aroused actor | `GetMostArousedActorInLocation` returns the highest-arousal non-player actor of the last cycle (was always None before 3.4.0) | slamainscr, slaFrameworkScr |
+| 12.13 | P1 | Verbose log toggle | Default OFF: `SLOANG.log` receives only warnings/errors; ON: per-actor lines appear; a pre-3.4.0 save (which forced verbose every cycle) is quiet after one load | slax, slaConfigScr OnGameReload |
 
 ## 13. MCM Configuration
 
@@ -160,6 +168,7 @@ Pre-release checklist. Each scenario should be verified in-game or by code inspe
 | 13.3 | P1 | Plugin options | Each plugin's `AddOptions` contributes to MCM | sla_PluginBase, slaConfigScr |
 | 13.4 | P2 | Armor keyword config | Naked detection keywords configurable | slaConfigScr |
 | 13.5 | P2 | Scan frequency setting | Changing frequency affects update timer | slaConfigScr |
+| 13.6 | P2 | Scan radius / max tracked actors / track creatures | Sliders and toggle on the General page are read by the next scan (10 s rescan guard); export/import round-trips them | slaConfigScr, slamainscr GetAllActors |
 
 ## 14. ModEvent API (External Mods)
 
@@ -222,4 +231,4 @@ These areas are architecturally sensitive and should receive extra attention dur
 
 ---
 
-*Last updated: 2026-05-01*
+*Last updated: 2026-11-01*

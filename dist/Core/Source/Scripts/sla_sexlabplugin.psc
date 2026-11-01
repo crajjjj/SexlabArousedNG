@@ -320,10 +320,14 @@ state Installed
 		
 	endFunction
 	
-	function UpdateObserver(Actor observer, Actor observed)
-		if (SexLab.IsActorActive(observed))
-			isSeeingSex = true
-		endIf
+	bool function UsesAggregatedObservations()
+		return true
+	endFunction
+
+	function ApplyObservations(Actor observer, float nakedWeight, float nakedMaxExposure, bool seesNaked, bool seesNakedPref, int exhibitionistCount, bool seesSexLab, bool seesOStim)
+		; "Sees sex" = an actor in SexLab's animating faction in view; the faction test
+		; runs natively per pair since 3.4.0 (slaMainScr passes getSLAnimatingFaction()).
+		isSeeingSex = seesSexLab
 	endFunction
 
     event OnStageStart(int tid, bool hasPlayer)

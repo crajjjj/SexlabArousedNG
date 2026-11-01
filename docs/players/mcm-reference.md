@@ -10,9 +10,19 @@ Home page. Key controls:
 - **Enable Desire Spell** — gives you a power that displays your own arousal as a buff/debuff.
 - **Enable for Male/Female Animation** — whether arousal animations play for each gender.
 - **Use LOS** ("Require Line of Sight for arousal") — whether actors need line-of-sight on a naked actor to gain exposure.
-- **Naked Only** ("Require naked actors to change arousal") — when ON, an actor's arousal is only updated while at least one naked actor is nearby. It's a **performance switch**, not a keyword filter — turning it ON skips updates (including passive/timed gains) when no naked actor is present. Some mods require it OFF.
 - **Enable Notifications** — corner messages from the mod.
 - **Disabled** — full off switch.
+- **Verbose script log** — writes the mod's informational lines (one per tracked actor per cycle, every effect write) to `Logs\Script\User\SLOANG.log`. Warnings and errors are always written. Leave it OFF unless you are collecting a log for a report.
+
+Under the **Arousal** header on the same page:
+
+- **Cell Scan Frequency** — seconds between update cycles (default 30).
+- **Scan radius** — how far from you actors are picked up, nearest first (default 1024 units, about 15 metres).
+- **Max tracked actors** — cap on actors updated per cycle, nearest first (default 25). Raise it in crowded cells; each tracked actor costs a little script time per cycle.
+- **Track creatures** — include creatures in the scan (default on). Off means NPCs only, so creatures are never seen as naked either.
+
+!!! note "Options removed in 3.4.0"
+    *Naked Only* and *Small updates per full update* are gone. The first never reached the update loop, and the second left the Naked effect decaying on every "small" cycle. Every cycle is a full update now; the actor scan and the line-of-sight pass run natively, so there is nothing left to switch off.
 
 At the bottom is the **Plugin List** showing which integrations are active. The four built-in ones:
 

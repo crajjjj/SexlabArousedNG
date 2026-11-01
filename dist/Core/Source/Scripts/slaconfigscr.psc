@@ -21,7 +21,13 @@ Bool Property wantsPurging = false Auto Hidden
 Bool Property MBonUsesSLGender = True Auto Hidden
 Int Property notificationKey = 49 Auto Hidden
 Float Property cellScanFreq = 30.00 Auto Hidden
-Int Property smallUpdatesPerFull = 1 Auto Hidden
+Int Property smallUpdatesPerFull = 1 Auto Hidden ; retired in 3.4.0 (every cycle is a full update); kept for save/JSON compat
+; 3.4.0 -- native actor scan settings, read by slaMainScr.GetAllActors every scan.
+Float Property scanRadius = 1024.0 Auto Hidden
+Int Property maxTrackedActors = 25 Auto Hidden
+Bool Property includeCreatures = true Auto Hidden
+; 3.4.0 -- slax.Info lines only reach SLOANG.log while this is on (slax.SetVerbose).
+Bool Property verboseLog = false Auto Hidden
 bool Property enableNotifications = true Auto Hidden
 bool Property maleAnimation = false Auto Hidden
 bool Property femaleAnimation = false Auto Hidden
@@ -115,12 +121,14 @@ Int MBonUsesSLGenderOID
 Int notificationKeyOID
 Int genderPreferenceOID
 int cellScanFreqOID
-int smallUpdateOID
+int scanRadiusOID
+int maxTrackedActorsOID
+int includeCreaturesOID
+int verboseLogOID
 int wantsPurgingOID
 int maleAnimationOID
 int femaleAnimationOID
 int useLOSOID
-int nakedOnlyOID
 int enableNotificationsOID
 int bDisabledOID
 Int[] currentArmorListOID
@@ -187,7 +195,7 @@ Armor[] emptyArmorArray
 
 
 Int Function GetVersion()
-    Return       30300005
+    Return       30400000
 	;	0.00.00000
     ; 1.0.0   -> 10000000
     ; 1.1.0   -> 10100000
@@ -197,13 +205,14 @@ Int Function GetVersion()
 EndFunction
 
 String Function GetVersionString()
-    Return "3.3.5"
+    Return "3.4.0"
 EndFunction
 
 
 Event OnConfigInit()
 	ModName="SLO Aroused NG"
 	ResetConstants()
+	slax.SetVerbose(verboseLog)
     Debug.Notification("SLO Aroused NG: MCM menu initialized")
 EndEvent
 
@@ -283,6 +292,9 @@ EndEvent
 
 
 Event OnGameReload()
+    ; Re-apply the verbose switch first: it lives in StorageUtil (per save) and older
+    ; builds forced it on every cycle, so a save from before 3.4.0 arrives verbose.
+    slax.SetVerbose(verboseLog)
     slax.Info("slaConfigScr - OnGameReload")
     ResetConstants()
     RestoreKeywords(keyNakedArmor,   wordNakedArmor)
@@ -327,6 +339,11 @@ Function ResetToDefault()
     MBonUsesSLGender = True
 	notificationKey = 49
 	cellScanFreq = 30
+	scanRadius = 1024.0
+	maxTrackedActors = 25
+	includeCreatures = True
+	verboseLog = False
+	slax.SetVerbose(False)
     
     sliderMode = False
     statusNotSplash = False
@@ -458,13 +475,13 @@ Event OnPageReset(String page)
 		maleAnimationOID = AddToggleOption("$SLA_EnableMaleAnimation", maleAnimation)
 		femaleAnimationOID = AddToggleOption("$SLA_EnableFemaleAnimation", femaleAnimation)
 		useLOSOID = AddToggleOption("$SLA_UseLOS", useLOS)
-        nakedOnlyOID = AddToggleOption("$SLA_IsNakedOnly", isNakedOnly)
         enableNotificationsOID = AddToggleOption("$SLA_EnableNotifications", enableNotifications)
 		bDisabledOID = AddToggleOption("$SLA_Disabled", bDisabled)
 		extendedNPCNakedOID = AddToggleOption("$SLA_ExtendedNPCNaked", isExtendedNPCNaked)
 		useSOSOID = AddToggleOption("$SLA_EnableSOS", isUseSOS)
         statusNotSplashOID = AddToggleOption("$SLA_StatusNotSplash", statusNotSplash)
-		
+        verboseLogOID = AddToggleOption("$SLA_VerboseLog", verboseLog)
+
 		SetCursorPosition(3) ; Move cursor to top right position (almost)
         AddHeaderOption("$SLA_ExportImport")
         
@@ -480,7 +497,9 @@ Event OnPageReset(String page)
         
         
         cellScanFreqOID = AddSliderOption("$SLA_CellScanFreq", cellScanFreq, "{0}")
-        smallUpdateOID = AddSliderOption("$SLA_SmallUpdateCount", smallUpdatesPerFull, "{0}")
+        scanRadiusOID = AddSliderOption("$SLA_ScanRadius", scanRadius, "{0}")
+        maxTrackedActorsOID = AddSliderOption("$SLA_MaxTrackedActors", maxTrackedActors, "{0}")
+        includeCreaturesOID = AddToggleOption("$SLA_IncludeCreatures", includeCreatures)
         
 		clearActorDataOID = AddTextOption("$SLA_ClearActorData", "")
 		clearAllDataOID = AddTextOption("$SLA_ClearAllData", "")
@@ -1182,10 +1201,14 @@ Event OnOptionSelect(int option)
             SetToggleOptionValue(useLOSOID, useLOS)
             slaMain.SetUseLOS(useLOS As Int)
 
-        ElseIf option == nakedOnlyOID
-            isNakedOnly = !isNakedOnly
-            SetToggleOptionValue(option, IsNakedOnly)
-            slaMain.SetNakedOnly(isNakedOnly As Int)
+        ElseIf option == includeCreaturesOID
+            includeCreatures = !includeCreatures
+            SetToggleOptionValue(option, includeCreatures)
+
+        ElseIf option == verboseLogOID
+            verboseLog = !verboseLog
+            SetToggleOptionValue(option, verboseLog)
+            slax.SetVerbose(verboseLog)
 
         ElseIf option == enableNotificationsOID
             enableNotifications = !enableNotifications
@@ -1380,10 +1403,15 @@ Event OnOptionSliderOpen(int option)
             SetSliderDialogDefaultValue(30.0)
             SetSliderDialogRange(15.0, 300.0)
             SetSliderDialogInterval(5.0)
-        ElseIf option == smallUpdateOID
-            SetSliderDialogStartValue(smallUpdatesPerFull)
-            SetSliderDialogDefaultValue(1)
-            SetSliderDialogRange(0, 20)
+        ElseIf option == scanRadiusOID
+            SetSliderDialogStartValue(scanRadius)
+            SetSliderDialogDefaultValue(1024.0)
+            SetSliderDialogRange(256.0, 8192.0)
+            SetSliderDialogInterval(128.0)
+        ElseIf option == maxTrackedActorsOID
+            SetSliderDialogStartValue(maxTrackedActors)
+            SetSliderDialogDefaultValue(25)
+            SetSliderDialogRange(1, 127)
             SetSliderDialogInterval(1.0)
         EndIf
         
@@ -1449,8 +1477,11 @@ Event OnOptionSliderAccept(Int option, Float value)
         If option == cellScanFreqOID
             cellScanFreq = value As Int
             SetSliderOptionValue(option, value, "{0}")
-        ElseIf option == smallUpdateOID
-            smallUpdatesPerFull = value As Int
+        ElseIf option == scanRadiusOID
+            scanRadius = value
+            SetSliderOptionValue(option, value, "{0}")
+        ElseIf option == maxTrackedActorsOID
+            maxTrackedActors = value As Int
             SetSliderOptionValue(option, value, "{0}")
         EndIf
 
@@ -1565,8 +1596,6 @@ Event OnOptionHighlight(int option)
             infoText = "$SLA_EnableFemaleAnimationDesc"
         ElseIf option == useLOSOID
             infoText = "$SLA_UseLOSDesc"
-        ElseIf option == nakedOnlyOID
-            infoText = "$SLA_IsNakedOnlyDesc"
         ElseIf option == bDisabledOID
             infoText = "$SLA_DisabledDesc"
         ElseIf option == extendedNPCNakedOID
@@ -1575,8 +1604,14 @@ Event OnOptionHighlight(int option)
             infoText = "$SLA_InfoEnableSOS"
         ElseIf option == cellScanFreqOID
             infoText = "$SLA_InfoCellScanFreq"
-        ElseIf option == smallUpdateOID
-            infoText = "$SLA_SmallUpdateDesc"
+        ElseIf option == scanRadiusOID
+            infoText = "$SLA_ScanRadiusDesc"
+        ElseIf option == maxTrackedActorsOID
+            infoText = "$SLA_MaxTrackedActorsDesc"
+        ElseIf option == includeCreaturesOID
+            infoText = "$SLA_IncludeCreaturesDesc"
+        ElseIf option == verboseLogOID
+            infoText = "$SLA_VerboseLogDesc"
         ElseIf option == statusNotSplashOID
             infoText = "$SLA_StatusNotSplashInfo"
         EndIf
@@ -1737,11 +1772,23 @@ Event OnOptionDefault(int option)
             SetToggleOptionValue(useLOSOID, useLOS)
             slaMain.setUseLOS(useLOS as Int)
             
-        ElseIf (option == nakedOnlyOID)
-            isNakedOnly = false
-            SetToggleOptionValue(nakedOnlyOID, isNakedOnly)
-            slaMain.setNakedOnly(isNakedOnly as Int)
-            
+        ElseIf (option == includeCreaturesOID)
+            includeCreatures = True
+            SetToggleOptionValue(includeCreaturesOID, includeCreatures)
+
+        ElseIf (option == verboseLogOID)
+            verboseLog = False
+            SetToggleOptionValue(verboseLogOID, verboseLog)
+            slax.SetVerbose(verboseLog)
+
+        ElseIf (option == scanRadiusOID)
+            scanRadius = 1024.0
+            SetSliderOptionValue(scanRadiusOID, scanRadius, "{0}")
+
+        ElseIf (option == maxTrackedActorsOID)
+            maxTrackedActors = 25
+            SetSliderOptionValue(maxTrackedActorsOID, maxTrackedActors, "{0}")
+
         ElseIf (option == enableNotificationsOID)
             enableNotifications = true
             SetToggleOptionValue(enableNotificationsOID, enableNotifications)
@@ -1766,11 +1813,6 @@ Event OnOptionDefault(int option)
         ElseIf (option == cellScanFreqOID)
             cellScanFreq = 30.0
             SetSliderOptionValue(cellScanFreqOID, cellScanFreq, "{1}")
-        
-        ElseIf (option == smallUpdateOID)
-
-            smallUpdatesPerFull = 1
-            SetSliderOptionValue(smallUpdateOID, smallUpdatesPerFull, "{0}")
 
         EndIf
     
@@ -2269,14 +2311,16 @@ function ExportSettings()
     JsonUtil.SetIntValue(fileName, "maleAnimation", maleAnimation as int)
     JsonUtil.SetIntValue(fileName, "femaleAnimation", femaleAnimation as int)
     JsonUtil.SetIntValue(fileName, "useLOS", useLOS as int)
-    JsonUtil.SetIntValue(fileName, "isNakedOnly", isNakedOnly as int)
     JsonUtil.SetIntValue(fileName, "enableNotifications", enableNotifications as int)
     JsonUtil.SetIntValue(fileName, "bDisabled", bDisabled as int)
     JsonUtil.SetIntValue(fileName, "isExtendedNPCNaked", isExtendedNPCNaked as int)
     JsonUtil.SetIntValue(fileName, "isUseSOS", isUseSOS as int)
     JsonUtil.SetIntValue(fileName, "statusNotSplash", statusNotSplash as int)
     JsonUtil.SetFloatValue(fileName, "cellScanFreq", cellScanFreq)
-    JsonUtil.SetIntValue(fileName, "smallUpdatesPerFull", smallUpdatesPerFull)
+    JsonUtil.SetFloatValue(fileName, "scanRadius", scanRadius)
+    JsonUtil.SetIntValue(fileName, "maxTrackedActors", maxTrackedActors)
+    JsonUtil.SetIntValue(fileName, "includeCreatures", includeCreatures as int)
+    JsonUtil.SetIntValue(fileName, "verboseLog", verboseLog as int)
     JsonUtil.SetIntValue(fileName, "notificationKey", notificationKey)
     
     JsonUtil.FormListClear(fileName, "PluginOption")
@@ -2318,14 +2362,17 @@ function ImportSettings()
     maleAnimation         = JsonUtil.GetIntValue(fileName, "maleAnimation") as bool
     femaleAnimation       = JsonUtil.GetIntValue(fileName, "femaleAnimation") as bool
     useLOS                = JsonUtil.GetIntValue(fileName, "useLOS") as bool
-    isNakedOnly           = JsonUtil.GetIntValue(fileName, "isNakedOnly") as bool
     enableNotifications   = JsonUtil.GetIntValue(fileName, "enableNotifications") as bool
     bDisabled             = JsonUtil.GetIntValue(fileName, "bDisabled") as bool
     isExtendedNPCNaked    = JsonUtil.GetIntValue(fileName, "isExtendedNPCNaked") as bool
     isUseSOS              = JsonUtil.GetIntValue(fileName, "isUseSOS") as bool
     statusNotSplash       = JsonUtil.GetIntValue(fileName, "statusNotSplash") as bool
     cellScanFreq          = JsonUtil.GetFloatValue(fileName, "cellScanFreq")
-    smallUpdatesPerFull   = JsonUtil.GetIntValue(fileName, "smallUpdatesPerFull")
+    scanRadius            = JsonUtil.GetFloatValue(fileName, "scanRadius", 1024.0)
+    maxTrackedActors      = JsonUtil.GetIntValue(fileName, "maxTrackedActors", 25)
+    includeCreatures      = JsonUtil.GetIntValue(fileName, "includeCreatures", 1) as bool
+    verboseLog            = JsonUtil.GetIntValue(fileName, "verboseLog", 0) as bool
+    slax.SetVerbose(verboseLog)
     notificationKey       = JsonUtil.GetIntValue(fileName, "notificationKey")
 
     ; Debug output for checking import

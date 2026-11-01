@@ -61,6 +61,23 @@ float sleepMinHours = 3.0
 
 float sleepStartTime = 0.0
 
+bool function ScaleNakedByExposure()
+	{slaMainScr reads this once per cycle: when true the native observer pass weighs
+	each naked actor by the exposure cached by IsActorNaked, else everyone counts 1.0.}
+	return scaleNakedByExposure
+endFunction
+
+bool function RefreshExhibitionist(Actor who)
+	{Per-actor pre-pass, called by slaMainScr before the observer pass: mirrors AND's
+	modesty ranks into the exhibitionist faction (rank 1 = auto-managed, manual rank 0
+	is never touched -- see slaFrameworkScr.UpdateDynamicExhibitionist) and reports
+	whether the actor exhibits, so onlookers can be counted for them natively.}
+	if useModestyRanks && main.IsANDInstalled
+		slaUtil.UpdateDynamicExhibitionist(who, modestyThreshold)
+	endIf
+	return slaUtil.IsActorExhibitionist(who)
+endFunction
+
 function UpdateDenialModifier(Actor who)
 	float denialInc = timedBaseRate * ddPlugin.GetBeltAndPlugModifier(who)
 	SetLinearArousalEffect(who, timedEff, denialInc, timedMax)
@@ -367,12 +384,8 @@ state Installed
 		currentSeesNakedPref = false
 		currentExhibitionistCount = 0
 		currentExhibitionistExposure = 0.0
-		; Dynamic exhibitionism: mirror AND's modesty ranks into the exhibitionist
-		; faction (rank 1 = auto-managed; manual rank-0 flags are never touched)
-		; before reading it -- see slaFrameworkScr.UpdateDynamicExhibitionist.
-		if useModestyRanks && main.IsANDInstalled
-			slaUtil.UpdateDynamicExhibitionist(who, modestyThreshold)
-		endIf
+		; Dynamic exhibitionism (AND modesty ranks) was already mirrored into the
+		; faction by RefreshExhibitionist in slaMainScr's per-actor pre-pass.
 		; Only exhibitionists feed the exposure check (avoids ~8 faction reads per
 		; non-exhibitionist). Exposure is graduated via Advanced Nudity Detection
 		; when present, else the binary naked flag -- see slaMainScr.GetExposureLevel.
@@ -383,49 +396,22 @@ state Installed
 		endIf
 	endFunction
 	
-	function UpdateObserver(Actor observer, Actor observed)
-		; Exhibitionism: a naked exhibitionist (the observer) gains arousal from each
-		; nearby onlooker (the observed) who is attracted to them. Counted before the
-		; nudity checks below so it does not depend on the onlooker being naked.
-		if currentObserverExhibiting && !observed.HasKeyword(kActorTypeCreature)
-			int audiencePreference = slaUtil.GetGenderPreference(observed)
-			if audiencePreference == 2 || audiencePreference == observer.GetLeveledActorBase().GetSex()
-				currentExhibitionistCount += 2
-			else
-				currentExhibitionistCount += 1
-			endIf
-		endIf
+	bool function UsesAggregatedObservations()
+		return true
+	endFunction
 
-		if observed.HasKeyword(kActorTypeCreature)
-			if observer.HasKeyword(kActorTypeCreature) || observer.GetFactionRank(slaCreatureSexLoverFaction) > -1
-				currentSeesNaked = true
-			else
-				return
-			endIf
-		endIf
-
-		bool observedIsNaked = observed.GetFactionRank(slaNaked) > -2
-		if !observedIsNaked
-			return
-		endIf
-
-		; Graded exposure of the observed actor, cached once per cycle by
-		; slaMainScr.IsActorNaked (1.0 without AND / for pre-cache saves).
-		float exposureScale = 1.0
-		if scaleNakedByExposure
-			exposureScale = StorageUtil.GetFloatValue(observed, "SLAroused.NakedExposure", 1.0)
-		endIf
-
-		currentSeesNaked = true
-		if exposureScale > currentNakedMaxExposure
-			currentNakedMaxExposure = exposureScale
-		endIf
-		int genderPreference = slaUtil.GetGenderPreference(observer)
-		if genderPreference == 2 || genderPreference == observed.GetLeveledActorBase().GetSex()
-			currentSeesNakedPref = true
-			currentNakedWeight += 2.0 * exposureScale
-		else
-			currentNakedWeight += 1.0 * exposureScale
+	function ApplyObservations(Actor observer, float nakedWeight, float nakedMaxExposure, bool seesNaked, bool seesNakedPref, int exhibitionistCount, bool seesSexLab, bool seesOStim)
+		; The per-pair rules this plugin used to evaluate in UpdateObserver (creatures
+		; count only for creatures and creature lovers, the sla_Naked faction, the
+		; exposure cached by IsActorNaked, gender preference x2 weighting, onlookers
+		; of an exhibiting observer) run natively in one pass per cycle since 3.4.0,
+		; see ActorScan.cpp ComputeObservations. These are the totals for currentObserver.
+		currentNakedWeight = nakedWeight
+		currentNakedMaxExposure = nakedMaxExposure
+		currentSeesNaked = seesNaked
+		currentSeesNakedPref = seesNakedPref
+		if currentObserverExhibiting
+			currentExhibitionistCount = exhibitionistCount
 		endIf
 	endFunction
 endState

@@ -17,7 +17,7 @@ The paths below use the SE folder; swap in `Skyrim VR` if you are on VR.
 | Log | Path | What it tells you |
 |-----|------|-------------------|
 | **SLA NG plugin log** | `SKSE\SexlabArousedNG.log` | The bundled `SexlabArousedNG.dll` (SKSE plugin) writes here — DLL load, native functions, serialization. If this file is **missing**, the DLL never loaded. |
-| **SLA NG script log** | `Logs\Script\User\SLOANG.log` | The Papyrus side of the mod (the framework, plugins, MCM) logs here via its own user log. |
+| **SLA NG script log** | `Logs\Script\User\SLOANG.log` | The Papyrus side of the mod (the framework, plugins, MCM) logs here via its own user log. Warnings and errors are always written; the informational lines need **Verbose script log** (MCM General page) ON. |
 | **SKSE log** | `SKSE\skse64.log` (`sksevr.log` on VR) | Why a plugin was rejected — usually a wrong game version or a missing Address Library. Search it for `SexlabArousedNG`. |
 | **Papyrus script log** | `Logs\Script\Papyrus.0.log` | Engine-wide script errors and traces. **Only written when Papyrus logging is enabled — see below.** |
 | **KID log** | `SKSE\po3_KeywordItemDistributor.log` | Whether your [exported KID file](kid-export.md) was found and applied. Look under the `**INI**` and `**RESULT**` blocks. |
@@ -27,7 +27,7 @@ The paths below use the SE folder; swap in `Skyrim VR` if you are on VR.
 
 ## Enabling Papyrus logging
 
-The mod's own `SLOANG.log` is always written. The engine-wide `Papyrus.0.log` is only written when Papyrus logging is enabled — turn it on while diagnosing, then turn it back off.
+The mod's own `SLOANG.log` always receives warnings and errors; switch **Verbose script log** ON (MCM General page) to get the informational lines as well. The engine-wide `Papyrus.0.log` is only written when Papyrus logging is enabled — turn it on while diagnosing, then turn it back off.
 
 Edit **`Skyrim.ini`** (in the My Games folder above) and add or update this section:
 
@@ -50,7 +50,6 @@ Then **launch the game through SKSE**, reproduce the issue, and quit. The fresh 
 - Check the **Notification Key** on yourself — does the corner message show a number? If not, the mod isn't tracking you. Try toggling **Disabled** off and on.
 - Check **Is Arousal Blocked** / **Is Arousal Locked** in Puppet Master — they should both be OFF on you.
 - Check the **Default** plugin is enabled in the General page Plugin List.
-- If you're testing passive/timed gains with no naked actor nearby, make sure **Naked Only** ("Require naked actors to change arousal") is OFF — when ON it skips arousal updates unless a naked actor is present.
 - If you expected passive buildup, note that it comes from the *Timed* effect, not *Naked* — see [Coming from OSL Aroused](tuning-recipes.md#coming-from-osl-aroused).
 
 ### Passive (Timed) and Naked stay at 0.0, but sleep and sex still work
@@ -58,7 +57,7 @@ Then **launch the game through SKSE**, reproduce the issue, and quit. The fresh 
 This specific split — the *Timed* and *Naked* effects frozen at `0.0` in Puppet Master while *Sleep*, *Sex*, and orgasm effects update normally — points to the plugin's periodic update subscription having desynced, usually after updating the mod from an older version on a long-running save. The event-driven effects keep working because they don't depend on the periodic scan; the passive ones do.
 
 - **Update to the current version and reload your save.** The framework now re-asserts its update subscriptions on every load, so loading once on the fixed build heals it automatically — no clean save needed.
-- To confirm the heal happened, enable Papyrus logging (above) and search `SLOANG.log` after a load for `Target state: Re-subscribed` on each plugin. Within a scan cycle or two, Timed should start climbing.
+- To confirm the heal happened, switch **Verbose script log** ON, reload, and search `SLOANG.log` for `Target state: Re-subscribed` on each plugin. Within a scan cycle or two, Timed should start climbing.
 - Remember passive buildup is the *Timed* effect and naked exposure is the *Naked* effect — both are separate from sleep/scene gains, and Naked additionally needs naked actors actually detected (see the nudity-detection notes in [Armor Curation](armor-curation.md)).
 
 ### The Export to KID button says "PapyrusExtenderSSE is required"
