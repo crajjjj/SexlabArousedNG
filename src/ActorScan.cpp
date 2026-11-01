@@ -13,12 +13,17 @@ namespace {
     bool IsCreature(RE::Actor* a_actor) { return HasKeywordOnRaceOrBase(a_actor, "ActorTypeCreature"sv); }
 
     // The slaScanAll aliases excluded these two races explicitly (chickens wander through
-    // every farm, mannequins are actors that never move).
+    // every farm, mannequins are actors that never move). Matched by FormID, as the alias
+    // GetIsRace conditions did: an override can rename a race's editor ID (one patch ships
+    // ManakinRace as "ManikinRace"), and Skyrim.esm always loads at index 00.
+    constexpr RE::FormID kChickenRace = 0x000A919D;
+    constexpr RE::FormID kManakinRace = 0x0010760A;
+
     bool IsExcludedRace(RE::Actor* a_actor) {
         const auto race = a_actor->GetRace();
-        const char* edid = race ? race->GetFormEditorID() : nullptr;
-        if (!edid) return false;
-        return _stricmp(edid, "ChickenRace") == 0 || _stricmp(edid, "ManakinRace") == 0;
+        if (!race) return false;
+        const auto id = race->GetFormID();
+        return id == kChickenRace || id == kManakinRace;
     }
 
     int SexOf(RE::Actor* a_actor) {
