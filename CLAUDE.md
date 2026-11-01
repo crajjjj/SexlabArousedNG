@@ -47,6 +47,7 @@ Cosave ID `SLAN` is stable across versions — do not change it without a save-c
 - Max 128 elements. Size must be an integer literal (`new int[128]`), not a variable.
 - `array[i] += 5` does NOT compile -- use `array[i] = array[i] + 5`.
 - No arrays of arrays. Passed/assigned by reference.
+- **Never compare an array to `None` or assign `none` to an array variable.** It compiles, but at runtime the VM logs `Cannot cast from None to Actor[]` (or `Mismatched types assigning to variable named "::tempN"`) and the comparison yields garbage: in 3.4.0, `If theActors == None` fired on a valid list and emptied it, so every cycle updated only the player. Test truthiness instead (`if arr` / `if !arr`, false for None and for an empty array), declare without an initializer (`float[] obs`), and keep a separate bool when "no data" must be told apart from "empty". `.Length` of a None array is 0 without an error. An empty array returned by a native arrives as None.
 - `Find()` / `RFind()` and SKSE string functions are case-insensitive; `==` string comparison is case-sensitive.
 
 ### States

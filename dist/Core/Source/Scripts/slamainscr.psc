@@ -585,23 +585,11 @@ event OnPlayerLoadGame()
         SendModEvent("sla_Int_PlayerLoadsGame")
     endIf
     slax.info("slaMainScr - OnPlayerLoadGame()")
-    if effectIds != None
-        slax.Info("slaMainScr effectIds length: " + effectIds.length)
-    else
-        slax.Info("slaMainScr effectIds length: 0")
-    endif
-
-    if effectTitles != None
-        slax.Info("slaMainScr effectTitles length: " + effectTitles.length)
-    else
-        slax.Info("slaMainScr effectTitles length: 0")
-    endif
-
-    if effectDescriptions != None
-        slax.Info("slaMainScr effectDescriptions length: " + effectDescriptions.length)
-    else
-        slax.Info("slaMainScr effectDescriptions length: 0")
-    endif
+    ; .Length of a None array is 0, so no None test is needed (and "arr != None" logs
+    ; "Cannot cast from None to String[]" on every load, as it did up to 3.4.0).
+    if slax.IsVerbose()
+        slax.Info("slaMainScr effect arrays: ids " + effectIds.Length + ", titles " + effectTitles.Length + ", descriptions " + effectDescriptions.Length)
+    endIf
 endEvent
 
 Int Function IsAnimatingFemales()
@@ -751,9 +739,12 @@ Int Function GetAllActors(Int lockID)
     EndIf
 
     Float now = Utility.GetCurrentRealTime()    ; In seconds
-    If now - lastActorScanTime > 10.0 || scannedActors == None  ; Don't rescan actors if not enough time passed
+    ; Arrays are tested by truthiness, never with "== None": the VM cannot cast None to an
+    ; array type ("Cannot cast from None to Actor[]") and the comparison then yields garbage.
+    ; "!arr" is true for both None and an empty array.
+    If now - lastActorScanTime > 10.0 || !scannedActors  ; Don't rescan actors if not enough time passed
         scannedActors = slaInternalModules.ScanActors(playerRef, slaConfig.scanRadius, slaConfig.maxTrackedActors, slaConfig.includeCreatures)
-        If scannedActors == None ; an empty native array arrives as None
+        If !scannedActors ; an empty native array arrives as None
             scannedActors = PapyrusUtil.ActorArray(0)
         EndIf
         _Internal_actorCount = scannedActors.Length
@@ -765,7 +756,7 @@ Int Function GetAllActors(Int lockID)
 
     ; Each theActors array is a unique array - so if another instance modifies it, it's completely safe.
     theActors = slaInternalModules.DuplicateActorArray(scannedActors, _Internal_actorCount)
-    If theActors == None
+    If !theActors
         theActors = PapyrusUtil.ActorArray(0)
     EndIf
 
@@ -857,7 +848,7 @@ function UpdateActorArousals(bool fullUpdate)
         creatureLover = defaultPlugin.slaCreatureSexLoverFaction
     endIf
     Faction slAnimating = sexlabPlugin.getSLAnimatingFaction()
-    Actor[] sceneActors = none
+    Actor[] sceneActors ; stays None without OStim (arrays are never assigned "none", see GetAllActors)
     if ostimPlugin && ostimPlugin.isEnabled
         sceneActors = ostimPlugin.GetSceneActors()
     endIf
@@ -892,7 +883,7 @@ function UpdateActorArousals(bool fullUpdate)
             f += 2
             anyExhibiting = true
         endIf
-        if sceneActors != none && sceneActors.Find(who) >= 0
+        if sceneActors && sceneActors.Find(who) >= 0
             f += 4
         endIf
         flags[i] = f
@@ -961,7 +952,8 @@ function UpdateActorArousals(bool fullUpdate)
             chunkSize = 1
         endIf
     endIf
-    float[] obs = none
+    float[] obs
+    bool haveObs = false ; obs holds a complete chunk (a bool, since arrays can't be compared to None)
     int chunkStart = actorCount
     int chunkCount
 
@@ -994,12 +986,12 @@ function UpdateActorArousals(bool fullUpdate)
                 endIf
                 chunkCount = i - chunkStart + 1
                 obs = slaInternalModules.ComputeObservations(updateActors, flags, exposure, genderPref, useLOS, creatureLover, slAnimating, chunkStart, chunkCount)
-                if obs != none && obs.Length < chunkCount * 8
+                haveObs = obs && obs.Length >= chunkCount * 8
+                if !haveObs
                     slax.Warning("slaMainScr - ComputeObservations returned " + obs.Length + " values for " + chunkCount + " observers; skipping them this cycle")
-                    obs = none
                 endIf
             endIf
-            if obs != none
+            if haveObs
                 base = (i - chunkStart) * 8
                 k = losCount
                 while k > 0
