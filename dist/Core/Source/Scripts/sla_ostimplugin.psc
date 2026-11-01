@@ -353,6 +353,12 @@ Actor[] function GetSceneActors()
     return PapyrusUtil.ActorArray(0)
 EndFunction
 
+; Script level (not in the Installed state): the Papyrus compiler cannot type-check a
+; value-returning function overridden only inside a state of a derived script.
+bool function UsesAggregatedObservations()
+    return true
+EndFunction
+
 state Installed
     event OnBeginState()
         OnInstalled()
@@ -480,10 +486,6 @@ state Installed
 			return
 		endIf
 
-	endFunction
-
-	bool function UsesAggregatedObservations()
-		return true
 	endFunction
 
 	function ApplyObservations(Actor observer, float nakedWeight, float nakedMaxExposure, bool seesNaked, bool seesNakedPref, int exhibitionistCount, bool seesSexLab, bool seesOStim)

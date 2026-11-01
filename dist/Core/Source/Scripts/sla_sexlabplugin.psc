@@ -202,6 +202,12 @@ Faction Function getSLAnimatingFaction()
 	return None
 EndFunction
 
+; Script level (not in the Installed state): the Papyrus compiler cannot type-check a
+; value-returning function overridden only inside a state of a derived script.
+bool function UsesAggregatedObservations()
+	return true
+endFunction
+
 
 state Installed
 	event OnBeginState()
@@ -320,10 +326,6 @@ state Installed
 		
 	endFunction
 	
-	bool function UsesAggregatedObservations()
-		return true
-	endFunction
-
 	function ApplyObservations(Actor observer, float nakedWeight, float nakedMaxExposure, bool seesNaked, bool seesNakedPref, int exhibitionistCount, bool seesSexLab, bool seesOStim)
 		; "Sees sex" = an actor in SexLab's animating faction in view; the faction test
 		; runs natively per pair since 3.4.0 (slaMainScr passes getSLAnimatingFaction()).

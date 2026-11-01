@@ -78,6 +78,12 @@ bool function RefreshExhibitionist(Actor who)
 	return slaUtil.IsActorExhibitionist(who)
 endFunction
 
+; Script level, not in the Installed state: the Papyrus compiler cannot type-check a
+; value-returning function overridden only inside a state of a derived script.
+bool function UsesAggregatedObservations()
+	return true
+endFunction
+
 function UpdateDenialModifier(Actor who)
 	float denialInc = timedBaseRate * ddPlugin.GetBeltAndPlugModifier(who)
 	SetLinearArousalEffect(who, timedEff, denialInc, timedMax)
@@ -396,10 +402,6 @@ state Installed
 		endIf
 	endFunction
 	
-	bool function UsesAggregatedObservations()
-		return true
-	endFunction
-
 	function ApplyObservations(Actor observer, float nakedWeight, float nakedMaxExposure, bool seesNaked, bool seesNakedPref, int exhibitionistCount, bool seesSexLab, bool seesOStim)
 		; The per-pair rules this plugin used to evaluate in UpdateObserver (creatures
 		; count only for creatures and creature lovers, the sla_Naked faction, the
